@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Paleta de colores de la marca</title>
+<style>
+:root{--bg:#F0D264;--ink:#10201A;--card:#D3D3BF;--muted:#3a463f;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#10201A;--ink:#F0E6C0;--card:#1c2f27;--muted:#b9c0a8}}
+:root[data-theme="dark"]{--bg:#10201A;--ink:#F0E6C0;--card:#1c2f27;--muted:#b9c0a8}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Trebuchet MS","Segoe UI",Arial,sans-serif;line-height:1.5}
+main{max-width:760px;margin:0 auto;padding:32px 20px 48px}
+h1{font-family:Georgia,"Times New Roman",serif;font-size:clamp(2rem,6vw,3rem);margin:0 0 8px;line-height:1.1}
+p.lead{margin:0 0 28px;color:var(--muted);max-width:60ch}
+.grid{display:grid;gap:14px}
+.sw{display:flex;gap:16px;align-items:center;background:var(--card);border-radius:14px;padding:12px;border:2px solid var(--ink)}
+.chip{width:84px;height:84px;border-radius:10px;flex:none;border:2px solid var(--ink)}
+.sw h2{font-size:1.05rem;margin:0}
+.sw p{margin:2px 0 0;font-size:.9rem;color:var(--muted)}
+button{margin-top:6px;font:inherit;font-weight:700;font-size:.95rem;background:var(--ink);color:var(--bg);border:0;border-radius:8px;padding:6px 12px;cursor:pointer}
+button:focus-visible{outline:3px solid #18B5B8;outline-offset:2px}
+h3{font-family:Georgia,serif;margin:36px 0 10px;font-size:1.4rem}
+ul{margin:0;padding-left:20px;max-width:62ch}
+li{margin-bottom:6px}
+.bar{display:flex;height:44px;border-radius:10px;overflow:hidden;border:2px solid var(--ink);margin:0 0 28px}
+.bar span{flex:1}
+small{display:block;margin-top:32px;color:var(--muted)}
+</style>
+</head>
+<body>
+<main>
+<h1>Paleta de colores de la marca</h1>
+<p class="lead">Colores tomados del logo de la chapa vintage. Los valores HEX son aproximados; confirma los exactos con un cuentagotas sobre el archivo original.</p>
+
+<div class="bar" aria-hidden="true">
+<span style="background:#F0D264"></span><span style="background:#10201A"></span><span style="background:#D3D3BF"></span><span style="background:#EE8A4C"></span><span style="background:#18B5B8"></span><span style="background:#8A8D85"></span>
+</div>
+
+<div class="grid" id="grid"></div>
+
+<h3>Cómo usarla</h3>
+<ul>
+<li><b>Principales:</b> verde oscuro #10201A y crema #D3D3BF, que dan el aspecto retro.</li>
+<li><b>Fondo o respaldo:</b> amarillo mostaza #F0D264.</li>
+<li><b>Acentos:</b> naranja #EE8A4C y turquesa #18B5B8 para botones, detalles y llamadas a la acción.</li>
+<li><b>Gris:</b> #8A8D85, solo para texturas o textos secundarios.</li>
+</ul>
+<small>Toca "Copiar HEX" para llevarte cada código.</small>
+</main>
+<script>
+var colors=[
+["Amarillo mostaza","#F0D264","Fondo"],
+["Verde oscuro","#10201A","Contornos, sombra y centro de la chapa"],
+["Crema / hueso","#D3D3BF","Cuerpo de la chapa"],
+["Naranja","#EE8A4C","Números 8 y 0 (semitransparentes)"],
+["Turquesa","#18B5B8","Barra del número 1"],
+["Gris","#8A8D85","Textura desgastada"]
+];
+var g=document.getElementById("grid");
+colors.forEach(function(c){
+var d=document.createElement("div");d.className="sw";
+d.innerHTML='<div class="chip" style="background:'+c[1]+'"></div><div><h2>'+c[0]+' &mdash; '+c[1]+'</h2><p>'+c[2]+'</p><button type="button">Copiar HEX</button></div>';
+var b=d.querySelector("button");
+b.onclick=function(){
+try{navigator.clipboard.writeText(c[1]).then(function(){b.textContent="Copiado";setTimeout(function(){b.textContent="Copiar HEX"},1500)},function(){b.textContent=c[1]})}catch(e){b.textContent=c[1]}
+};
+g.appendChild(d);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
+@layer base {
+  :root {
+    --color-bg: #F0D264;
+    --color-ink: #10201A;
+    --color-card: #D3D3BF;
+    --color-orange: #EE8A4C;
+    --color-turquoise: #18B5B8;
+    --color-muted: #8A8D85;
+  }
+
+  html.dark, html[data-theme="dark"] {
+    --color-bg: #10201A;
+    --color-ink: #F0E6C0;
+    --color-card: #1c2f27;
+  }
+
+  body {
+    @apply bg-brand-bg text-brand-ink dark:bg-brand-ink dark:text-brand-darkInk font-sans antialiased selection:bg-brand-orange selection:text-white transition-colors duration-200;
+  }
+}

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Paleta de colores del proyecto</title>
+<link href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#E8C860;--ink:#161715;--muted:#3b3a2c;--code-bg:#161715;--code-ink:#D5D5CF;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#161715;--ink:#E8C860;--muted:#D5D5CF;--code-bg:#0e0f0e;--code-ink:#D5D5CF}}
+:root[data-theme="dark"]{--bg:#161715;--ink:#E8C860;--muted:#D5D5CF;--code-bg:#0e0f0e;--code-ink:#D5D5CF}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'DM Sans',system-ui,sans-serif;line-height:1.55}
+header{padding:56px 24px 40px;max-width:960px;margin:0 auto}
+h1{font-family:'Bowlby One','Arial Black',sans-serif;font-weight:400;font-size:clamp(2rem,7vw,3.6rem);line-height:1.05;margin:0 0 16px}
+header p{max-width:60ch;margin:0;color:var(--muted);font-size:1.05rem}
+.band{padding:36px 24px}
+.band>div{max-width:960px;margin:0 auto;display:grid;gap:8px 32px;grid-template-columns:1fr auto;align-items:end}
+.band h2{font-family:'Bowlby One','Arial Black',sans-serif;font-weight:400;font-size:clamp(1.3rem,4vw,2rem);margin:0}
+.band .rol{font-weight:700;margin:0}
+.band .uso{margin:0;max-width:52ch;grid-column:1}
+.band button{grid-column:2;grid-row:1/4;align-self:center;font:700 1.4rem/1 'DM Sans',monospace;letter-spacing:.04em;background:transparent;color:inherit;border:3px solid currentColor;border-radius:999px;padding:14px 22px;cursor:pointer}
+.band button:focus-visible{outline:4px solid currentColor;outline-offset:4px}
+@media(max-width:560px){.band>div{grid-template-columns:1fr}.band button{grid-column:1;grid-row:auto;justify-self:start;margin-top:8px}}
+#c1{background:#E8C860;color:#161715;border-top:4px solid #161715}
+#c2{background:#E37A48;color:#161715}
+#c3{background:#2B9EA5;color:#161715}
+#c4{background:#161715;color:#E8C860}
+#c5{background:#D5D5CF;color:#161715}
+section.code{max-width:960px;margin:0 auto;padding:48px 24px 72px}
+section.code h2{font-family:'Bowlby One','Arial Black',sans-serif;font-weight:400;font-size:1.5rem;margin:0 0 8px}
+pre{background:var(--code-bg);color:var(--code-ink);padding:20px;border-radius:10px;overflow-x:auto;font-size:.9rem;margin:16px 0 0}
+#toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:#161715;color:#E8C860;padding:10px 18px;border-radius:999px;font-weight:700;opacity:0;pointer-events:none;transition:opacity .2s}
+#toast.on{opacity:1}
+@media(prefers-reduced-motion:reduce){#toast{transition:none}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Paleta de colores</h1>
+  <p>Cinco colores sacados de la chapa vintage del logo. Toca un código HEX para copiarlo.</p>
+</header>
+
+<div class="band" id="c1"><div>
+  <h2>Amarillo retro vintage</h2><button data-hex="#E8C860">#E8C860</button>
+  <p class="rol">Fondo principal</p>
+  <p class="uso">Insignia del logo, destacados y acentos vintage.</p>
+</div></div>
+
+<div class="band" id="c2"><div>
+  <h2>Naranja terracota</h2><button data-hex="#E37A48">#E37A48</button>
+  <p class="rol">Secundario (números)</p>
+  <p class="uso">Etiquetas de categorías secundarias y hover de links.</p>
+</div></div>
+
+<div class="band" id="c3"><div>
+  <h2>Turquesa / cian desgastado</h2><button data-hex="#2B9EA5">#2B9EA5</button>
+  <p class="rol">Acento (centro)</p>
+  <p class="uso">Detalles visuales, bordes activos y elementos especiales.</p>
+</div></div>
+
+<div class="band" id="c4"><div>
+  <h2>Negro puro desgastado</h2><button data-hex="#161715">#161715</button>
+  <p class="rol">Sombra y bordes</p>
+  <p class="uso">Textos, trazos oscuros y fondos profundos.</p>
+</div></div>
+
+<div class="band" id="c5"><div>
+  <h2>Gris claro texturizado</h2><button data-hex="#D5D5CF">#D5D5CF</button>
+  <p class="rol">Cuerpo de chapa</p>
+  <p class="uso">Tarjetas de contenido en modo claro o bordes suaves.</p>
+</div></div>
+
+<section class="code">
+  <h2>Variables CSS</h2>
+  <p>Copia este bloque en tu hoja de estilos.</p>
+  <pre id="css">:root {
+  --color-fondo:     #E8C860;
+  --color-secundario:#E37A48;
+  --color-acento:    #2B9EA5;
+  --color-tinta:     #161715;
+  --color-chapa:     #D5D5CF;
+}</pre>
+</section>
+<div id="toast" role="status" aria-live="polite"></div>
+<script>
+var t=document.getElementById('toast'),timer;
+function show(m){t.textContent=m;t.classList.add('on');clearTimeout(timer);timer=setTimeout(function(){t.classList.remove('on')},1400)}
+document.querySelectorAll('button[data-hex]').forEach(function(b){
+  b.addEventListener('click',function(){
+    try{navigator.clipboard.writeText(b.dataset.hex).then(function(){show('Copiado '+b.dataset.hex)},function(){show(b.dataset.hex)})}
+    catch(e){show(b.dataset.hex)}
+  });
+});
+</script>
+</body>
+</html>

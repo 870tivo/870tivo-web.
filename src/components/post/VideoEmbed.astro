@@ -1,0 +1,21 @@
+---
+interface Props {
+  caption?: string;
+  youtubeId?: string;
+}
+const { caption = "Video relacionado", youtubeId } = Astro.props;
+---
+<figure class="my-12 md:my-16 not-prose">
+  <a href={youtubeId ? `https://youtube.com/watch?v=${youtubeId}` : "#"} target="_blank" rel="noopener noreferrer" class="aspect-video bg-neutral-900 rounded-xl flex items-center justify-center border border-brand-ink/10 dark:border-white/5 relative overflow-hidden group cursor-pointer shadow-2xl shadow-brand-ink/40 dark:shadow-black/80 block">
+    <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-neutral-800 to-black opacity-50 z-0"></div>
+    <div class="w-16 h-12 bg-red-600 rounded-xl flex items-center justify-center z-10 transition-transform group-hover:scale-110 shadow-lg">
+      <div class="w-0 h-0 border-t-8 border-t-transparent border-l-[14px] border-l-white border-b-8 border-b-transparent ml-1"></div>
+    </div>
+    <span class="absolute bottom-4 right-4 bg-brand-ink/90 text-white text-[10px] md:text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full z-10 border border-white/10 backdrop-blur-sm">
+      Ver en YouTube
+    </span>
+  </a>
+  <figcaption class="text-xs font-sans mt-4 text-brand-ink/70 dark:text-brand-muted text-center uppercase tracking-widest font-medium">
+    {caption}
+  </figcaption>
+</figure>

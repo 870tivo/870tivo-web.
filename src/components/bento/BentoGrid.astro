@@ -1,0 +1,44 @@
+---
+import BentoCardFeatured from './BentoCardFeatured.astro';
+import BentoCardStandard from './BentoCardStandard.astro';
+---
+<section class="mt-8 pt-8 border-t border-brand-ink/10 dark:border-white/10">
+  <div class="mb-10">
+    <div class="flex items-center gap-3 mb-3">
+      <span class="inline-block w-3 h-3 bg-brand-orange rounded-full"></span>
+      <span class="text-xs uppercase tracking-[0.25em] font-bold text-brand-ink/70 dark:text-brand-turquoise">Colección Editorial</span>
+    </div>
+    <h1 class="font-serif text-4xl md:text-5xl lg:text-7xl font-bold tracking-[-0.02em] text-brand-ink dark:text-white mb-4">
+      Encuentros Inmateriales
+    </h1>
+    <p class="text-brand-ink/80 dark:text-brand-muted max-w-2xl text-lg md:text-xl font-medium">
+      Explorando las intersecciones entre la literatura, el cine y las artes visuales contemporáneas.
+    </p>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 md:gap-5 auto-rows-[250px] md:auto-rows-[300px]">
+    <BentoCardFeatured 
+      title="«Pájaro muerto»"
+      excerpt="Una reflexión sobre la transitoriedad y la belleza en la decadencia, a través de la lente documental y la narrativa poética en la obra de Uribe."
+      author="Miguel Ángel Uribe"
+      link="/blog/pajaro-muerto"
+      image="/assets/images/pajaro-muerto.jpeg"
+    />
+    <BentoCardStandard 
+      title="«Madres, maternidades colombianas a través del cine»"
+      category="Cuadernos de Cine"
+      author="Jose Gómez"
+    />
+    <BentoCardStandard 
+      title="«La Isla Rebelde de América, Cuba a través del cine»"
+      category="Latinoamérica"
+      author="Jose Gómez"
+    />
+    <BentoCardStandard 
+      title="«Del cine mudo al ¡Tango!»"
+      category="Podcast Visual"
+      author="Jose Gómez"
+      isWide={true}
+    />
+  </div>
+</section>

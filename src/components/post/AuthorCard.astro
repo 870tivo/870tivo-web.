@@ -1,0 +1,15 @@
+---
+interface Props {
+  author: string;
+  authorHandle: string;
+}
+const { author, authorHandle } = Astro.props;
+---
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-16 relative pt-10 border-t border-brand-ink/10 dark:border-white/10">
+  <div class="text-center sm:text-left">
+    <h4 class="font-serif text-xl font-bold text-brand-ink dark:text-white mb-1">{author}</h4>
+  </div>
+  <a href={`https://instagram.com/${authorHandle}`} target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center gap-2 bg-brand-card dark:bg-brand-darkCard text-brand-ink dark:text-white text-xs font-bold uppercase tracking-widest px-6 py-3 rounded-full border border-brand-ink/10 dark:border-white/10 hover:border-brand-orange dark:hover:border-brand-bg hover:text-brand-orange dark:hover:text-brand-bg transition-all w-full sm:w-auto shadow-sm">
+    @{authorHandle}
+  </a>
+</div>

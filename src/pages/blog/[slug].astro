@@ -1,0 +1,338 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import VideoEmbed from '../../components/post/VideoEmbed.astro';
+import CommentSection from '../../components/post/CommentSection';
+import { ArrowLeft, Clock, ArrowRight } from 'lucide-astro';
+
+export function getStaticPaths() {
+  const posts = [
+    {
+      slug: 'pajaro-muerto',
+      badge: 'ENSAYO DE PORTADA',
+      title: '«Pájaro muerto»',
+      subtitle: 'Una reflexión sobre la transitoriedad, el duelo fraternal y el despertar estético a través de la lente del cine inmaterial.',
+      author: 'MIGUEL ÁNGEL URIBE',
+      authorInitials: 'MU',
+      authorHandle: '870tivo',
+      date: 'OCTUBRE 14, 2026',
+      readingTime: '12 MIN DE LECTURA',
+      heroImage: '/assets/images/pajaro-muerto.jpeg',
+      heroCaption: 'Fotografía de portada: Colección Archivo Inmaterial (2026)',
+      recommended: [
+        {
+          slug: 'la-estetica-de-las-ruinas',
+          badge: 'FOTOGRAFÍA',
+          title: 'La estética de las ruinas en el paisaje contemporáneo',
+          excerpt: 'Un análisis visual sobre cómo los espacios abandonados redefinen nuestra relación con el tiempo.',
+          author: 'Jose Gómez',
+          initials: 'JG',
+          date: 'OCTUBRE 12, 2026',
+          readingTime: '6 MIN',
+        },
+        {
+          slug: 'buscando-el-silencio',
+          badge: 'PAISAJE SONORO',
+          title: 'Buscando el silencio en la metrópolis moderna',
+          excerpt: 'Registros sonoros y reflexiones literarias sobre el significado de la quietud en Bogotá.',
+          author: 'Mariana García',
+          initials: 'MG',
+          date: 'SEPTIEMBRE 28, 2026',
+          readingTime: '8 MIN',
+        }
+      ]
+    },
+    {
+      slug: 'la-estetica-de-las-ruinas',
+      badge: 'FOTOGRAFÍA & ARQUITECTURA',
+      title: 'La estética de las ruinas en el paisaje contemporáneo',
+      subtitle: 'Exploración sobre las texturas del concreto desgastado y la memoria que persiste en las esquinas olvidadas de la urbe.',
+      author: 'JOSE GÓMEZ',
+      authorInitials: 'JG',
+      authorHandle: '870tivo',
+      date: 'OCTUBRE 12, 2026',
+      readingTime: '6 MIN DE LECTURA',
+      heroImage: '/assets/images/pajaro-muerto.jpeg',
+      heroCaption: 'Fotografía de portada: Colección Archivo Inmaterial (2026)',
+      recommended: [
+        {
+          slug: 'pajaro-muerto',
+          badge: 'ENSAYO DE PORTADA',
+          title: '«Pájaro muerto»',
+          excerpt: 'Una reflexión sobre la transitoriedad y la belleza en la decadencia, a través de la lente documental.',
+          author: 'Miguel Ángel Uribe',
+          initials: 'MU',
+          date: 'OCTUBRE 14, 2026',
+          readingTime: '12 MIN',
+        },
+        {
+          slug: 'buscando-el-silencio',
+          badge: 'PAISAJE SONORO',
+          title: 'Buscando el silencio en la metrópolis moderna',
+          excerpt: 'Registros sonoros y reflexiones literarias sobre el significado de la quietud en Bogotá.',
+          author: 'Mariana García',
+          initials: 'MG',
+          date: 'SEPTIEMBRE 28, 2026',
+          readingTime: '8 MIN',
+        }
+      ]
+    },
+    {
+      slug: 'buscando-el-silencio',
+      badge: 'PAISAJE SONORO',
+      title: 'Buscando el silencio en la metrópolis moderna',
+      subtitle: 'Registros sonoros y reflexiones literarias sobre el significado de la quietud en Bogotá.',
+      author: 'MARIANA GARCÍA',
+      authorInitials: 'MG',
+      authorHandle: '870tivo',
+      date: 'SEPTIEMBRE 28, 2026',
+      readingTime: '8 MIN DE LECTURA',
+      heroImage: '/assets/images/pajaro-muerto.jpeg',
+      heroCaption: 'Fotografía de portada: Colección Archivo Inmaterial (2026)',
+      recommended: [
+        {
+          slug: 'pajaro-muerto',
+          badge: 'ENSAYO DE PORTADA',
+          title: '«Pájaro muerto»',
+          excerpt: 'Una reflexión sobre la transitoriedad y la belleza en la decadencia, a través de la lente documental.',
+          author: 'Miguel Ángel Uribe',
+          initials: 'MU',
+          date: 'OCTUBRE 14, 2026',
+          readingTime: '12 MIN',
+        },
+        {
+          slug: 'la-estetica-de-las-ruinas',
+          badge: 'FOTOGRAFÍA',
+          title: 'La estética de las ruinas en el paisaje contemporáneo',
+          excerpt: 'Un análisis visual sobre cómo los espacios abandonados redefinen nuestra relación con el tiempo.',
+          author: 'Jose Gómez',
+          initials: 'JG',
+          date: 'OCTUBRE 12, 2026',
+          readingTime: '6 MIN',
+        }
+      ]
+    }
+  ];
+
+  return posts.map((post) => ({
+    params: { slug: post.slug },
+    props: { post },
+  }));
+}
+
+const { post } = Astro.props;
+---
+
+<BaseLayout title={`${post.title} — 870tivo`} description={post.subtitle}>
+  <main class="flex-grow bg-brand-ink text-[#D3D3BF] selection:bg-brand-orange selection:text-white">
+    
+    <!-- 1. Top Back Navigation Link -->
+    <div class="max-w-4xl mx-auto px-4 md:px-6 pt-10 pb-6">
+      <a 
+        href="/" 
+        class="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.25em] text-brand-muted hover:text-brand-yellow transition-all duration-200 group"
+      >
+        <span class="inline-block transition-transform duration-200 group-hover:-translate-x-1">←</span>
+        <span>VOLVER AL INICIO</span>
+      </a>
+    </div>
+
+    <!-- 2. Post Header Section -->
+    <header class="max-w-4xl mx-auto px-4 md:px-6 pt-4 pb-10">
+      <!-- Category Badge -->
+      <div class="mb-5">
+        <span class="text-brand-turquoise text-xs sm:text-sm font-bold uppercase tracking-[0.25em] inline-block">
+          {post.badge}
+        </span>
+      </div>
+
+      <!-- Title: Big Serif font h1 -->
+      <h1 class="font-serif text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-white mb-6 leading-[1.08] text-balance">
+        {post.title}
+      </h1>
+
+      <!-- Subtitle / Lead paragraph -->
+      <p class="font-serif italic text-lg sm:text-xl md:text-2xl text-brand-muted font-normal leading-relaxed mb-8 max-w-3xl">
+        {post.subtitle}
+      </p>
+
+      <!-- Author & Meta Bar -->
+      <div class="flex flex-wrap items-center gap-4 sm:gap-6 pt-6 border-t border-white/10 text-xs tracking-wider uppercase font-medium text-brand-muted">
+        <!-- Author avatar/initials badge -->
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-brand-darkCard border border-brand-orange/40 flex items-center justify-center font-bold text-xs text-brand-yellow shadow-inner shrink-0 tracking-wider">
+            {post.authorInitials}
+          </div>
+          <span class="font-bold text-white tracking-widest text-xs sm:text-sm">{post.author}</span>
+        </div>
+
+        <span class="text-white/20 hidden sm:inline">•</span>
+
+        <!-- Published date -->
+        <span class="text-brand-muted text-[11px] sm:text-xs tracking-widest">{post.date}</span>
+
+        <span class="text-white/20 hidden sm:inline">•</span>
+
+        <!-- Reading time -->
+        <span class="inline-flex items-center gap-1.5 text-brand-muted text-[11px] sm:text-xs tracking-widest">
+          <Clock class="w-3.5 h-3.5 text-brand-orange" />
+          {post.readingTime}
+        </span>
+      </div>
+    </header>
+
+    <!-- 3. Main Hero Image & Captions -->
+    <section class="max-w-5xl mx-auto px-4 md:px-6 mb-8 lg:mb-12">
+      <div class="relative aspect-[21/9] rounded-xl overflow-hidden bg-neutral-900 border border-white/10 shadow-2xl group">
+        <img 
+          src={post.heroImage} 
+          alt={post.title} 
+          class="w-full h-full object-cover grayscale contrast-125 brightness-90 transition-transform duration-1000 ease-out group-hover:scale-[1.02]"
+          loading="eager"
+        />
+        <div class="absolute inset-0 bg-gradient-to-t from-brand-ink/70 via-transparent to-transparent pointer-events-none"></div>
+      </div>
+      <p class="mt-3 text-xs text-brand-muted font-serif italic tracking-wide text-center sm:text-left">
+        {post.heroCaption}
+      </p>
+    </section>
+
+    <!-- 4. Article Body Styling: Single focused reading column -->
+    <article class="max-w-3xl mx-auto px-4 py-12 text-[#D3D3BF]">
+      <!-- Opening paragraph with Drop Cap -->
+      <p class="first-letter:float-left first-letter:text-5xl first-letter:pr-3 first-letter:font-serif first-letter:text-brand-yellow first-letter:leading-none text-lg md:text-xl font-normal leading-[1.85] mb-8 text-[#D3D3BF]">
+        David ve su tabla recordando a su hermano, a quien le presume todo, ahora está muy ocupado y no puede mostrarle ninguna de sus hazañas. Aun así, no se desespera y va en búsqueda de más cosas que mostrarle cuando se desocupe. El asfalto húmedo de la carrera séptima refracta las luces mortecinas del atardecer; el crujido de las ruedas contra las grietas de la acera marca un compás que sólo quien patina conoce con devoción.
+      </p>
+
+      <p class="text-lg md:text-xl font-normal leading-[1.85] mb-8 text-[#D3D3BF]">
+        Así pasa una semana entera sudando, acumulando cosas que contar. Recorre los callejones del centro histórico, esquivando palomas que levantan vuelo perezoso y transeúntes absortos en el murmullo de sus propias urgencias. Cada salto en el bordillo, cada giro forzado sobre el concreto, es una carta muda escrita en el aire que aguarda un destinatario.
+      </p>
+
+      <!-- Section Title -->
+      <h2 class="font-serif text-2xl sm:text-3xl font-bold text-white mt-14 mb-6 tracking-tight flex items-center gap-3">
+        <span class="w-2.5 h-2.5 bg-brand-orange rounded-sm shrink-0"></span>
+        I. La epifanía en el suelo urbano
+      </h2>
+
+      <p class="text-lg md:text-xl font-normal leading-[1.85] mb-8 text-[#D3D3BF]">
+        Un día ve un pájaro muerto envuelto en sí mismo, reposado en el suelo. La palidez y la sombra alrededor de sus ojos le hace ver a su hermano reflejado en el cadáver, lo levanta y le abre las alas dejándolo brillar a la luz del sol. No hay morbo en el gesto, sino una ternura casi litúrgica: extender el plumaje inerte para devolverle, al menos por un instante bajo el destello del mediodía, la ilusión de la envergadura y el viento.
+      </p>
+
+      <!-- Blockquote with orange border and italic serif -->
+      <blockquote class="border-l-4 border-brand-orange pl-6 sm:pl-8 py-3 my-12 font-serif italic text-xl sm:text-2xl md:text-3xl text-white/95 leading-relaxed bg-brand-darkCard/40 rounded-r-lg">
+        «En ese momento pasaban muchas cosas por mi cabeza, pero haberlo visto abriéndole las alas a un pájaro muerto, me hizo pensar que ha hecho lo mismo conmigo muchas veces.»
+      </blockquote>
+
+      <!-- Section Title -->
+      <h2 class="font-serif text-2xl sm:text-3xl font-bold text-white mt-14 mb-6 tracking-tight flex items-center gap-3">
+        <span class="w-2.5 h-2.5 bg-brand-turquoise rounded-sm shrink-0"></span>
+        II. Archivo inmaterial y memoria
+      </h2>
+
+      <p class="text-lg md:text-xl font-normal leading-[1.85] mb-8 text-[#D3D3BF]">
+        Este microcuento proviene de la realidad más descarnada y pura. En el universo estético de 870tivo, la documentación audiovisual no busca catalogar certezas, sino registrar aquellos instantes donde la fragilidad humana se cruza con lo trascendente. El ave muerta recogida por un niño en una calle cualquiera de Bogotá no es una metáfora fabricada; es el punto de fuga donde la memoria, el duelo y el afecto fraternal se funden en una sola imagen indeleble.
+      </p>
+
+      <!-- Video / Cinematic Embed figure -->
+      <VideoEmbed caption="Registro visual y sonoro: Documentación del proceso creativo (870tivo)" />
+
+      <p class="text-lg md:text-xl font-normal leading-[1.85] mb-8 text-[#D3D3BF]">
+        Al abrir las alas a lo que ya no vuela, David no sólo honra al cuerpo caído; inventa una forma de sostener la presencia ausente de su hermano. El cine y la literatura inmaterial nacen precisamente ahí: en la obstinación de mirar donde otros apartan la vista, en encontrar la luz dorada filtrándose entre las plumas y el polvo.
+      </p>
+
+      <!-- 5. Author Bio Box -->
+      <div class="mt-16 pt-10 border-t border-white/10">
+        <div class="bg-brand-darkCard/70 rounded-xl p-6 sm:p-8 border border-white/5 flex flex-col sm:flex-row items-center sm:items-start gap-6 shadow-xl">
+          <div class="w-16 h-16 rounded-full bg-brand-ink border-2 border-brand-orange/50 flex items-center justify-center font-serif font-bold text-xl text-brand-yellow shrink-0 shadow-lg tracking-wider">
+            {post.authorInitials}
+          </div>
+          <div class="flex-grow text-center sm:text-left">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+              <h3 class="font-serif text-xl font-bold text-white tracking-wide">{post.author}</h3>
+              <a 
+                href="https://instagram.com/870tivo" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                class="inline-flex items-center justify-center gap-1.5 text-xs font-bold uppercase tracking-widest text-brand-orange hover:text-brand-yellow transition-colors"
+              >
+                @{post.authorHandle}
+                <ArrowRight class="w-3.5 h-3.5" />
+              </a>
+            </div>
+            <p class="text-sm text-brand-muted leading-relaxed mb-4">
+              Cineasta, fotógrafo e investigador visual en el colectivo 870tivo. Su obra explora la memoria urbana en Bogotá, la poesía en los espacios residuales y las narrativas de la transitoriedad a través de la imagen en movimiento.
+            </p>
+            <div class="flex items-center justify-center sm:justify-start gap-4 text-xs font-semibold uppercase tracking-wider text-brand-muted/80">
+              <span>Bogotá, Colombia</span>
+              <span class="text-white/20">•</span>
+              <a href="https://instagram.com/870raw" target="_blank" rel="noopener noreferrer" class="hover:text-white transition-colors">@870raw</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Comment Section Island -->
+      <div class="mt-12">
+        <CommentSection client:visible />
+      </div>
+    </article>
+
+    <!-- 5. "Lecturas recomendadas" 2-card mini grid -->
+    <section class="max-w-5xl mx-auto px-4 md:px-6 pt-12 pb-24 border-t border-white/10 mt-12">
+      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
+        <div>
+          <div class="flex items-center gap-2.5 mb-2">
+            <div class="w-3 h-3 bg-brand-orange rounded-sm"></div>
+            <span class="text-xs uppercase tracking-[0.25em] font-bold text-brand-turquoise">Continuar Explorando</span>
+          </div>
+          <h2 class="font-serif text-2xl sm:text-3xl font-bold text-white tracking-tight">Lecturas recomendadas</h2>
+        </div>
+        <a 
+          href="/" 
+          class="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-brand-muted hover:text-brand-yellow transition-colors group"
+        >
+          <span>Ver todo el archivo</span>
+          <ArrowRight class="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+        </a>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {post.recommended.map((item) => (
+          <a 
+            href={`/blog/${item.slug}`} 
+            class="group bg-brand-darkCard/40 hover:bg-brand-darkCard/80 border border-white/5 hover:border-brand-orange/40 rounded-xl p-6 sm:p-8 flex flex-col justify-between transition-all duration-300 hover:-translate-y-1 shadow-lg"
+          >
+            <div>
+              <div class="flex items-center justify-between gap-4 mb-4">
+                <span class="text-brand-turquoise text-[11px] font-bold uppercase tracking-[0.2em]">
+                  {item.badge}
+                </span>
+                <span class="text-brand-muted text-[11px] font-medium uppercase tracking-wider flex items-center gap-1">
+                  <Clock class="w-3 h-3 text-brand-orange" /> {item.readingTime}
+                </span>
+              </div>
+              <h3 class="font-serif text-xl sm:text-2xl font-bold text-white group-hover:text-brand-yellow transition-colors mb-3 leading-snug">
+                {item.title}
+              </h3>
+              <p class="text-brand-muted text-sm leading-relaxed mb-6 line-clamp-2">
+                {item.excerpt}
+              </p>
+            </div>
+
+            <div class="flex items-center justify-between pt-4 border-t border-white/5 mt-auto">
+              <div class="flex items-center gap-2.5">
+                <div class="w-7 h-7 rounded-full bg-brand-ink border border-white/10 flex items-center justify-center font-bold text-[10px] text-brand-yellow">
+                  {item.initials}
+                </div>
+                <span class="text-xs font-medium text-white/70 uppercase tracking-wider">{item.author}</span>
+              </div>
+              <span class="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-widest text-brand-orange group-hover:text-brand-yellow transition-colors">
+                Leer <ArrowRight class="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+              </span>
+            </div>
+          </a>
+        ))}
+      </div>
+    </section>
+
+  </main>
+</BaseLayout>

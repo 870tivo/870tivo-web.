@@ -1,0 +1,30 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import ArticleHeader from '../components/post/ArticleHeader.astro';
+import ArticleBody from '../components/post/ArticleBody.astro';
+import AuthorCard from '../components/post/AuthorCard.astro';
+import CommentSection from '../components/post/CommentSection';
+
+interface Props {
+  title: string;
+  author: string;
+  authorHandle: string;
+  date: string;
+  description?: string;
+}
+
+const { title, author, authorHandle, date, description } = Astro.props;
+---
+
+<BaseLayout title={`${title} - 870tivo`} description={description}>
+  <main class="flex-grow flex flex-col -mt-[72px]">
+    <ArticleHeader title={title} author={author} date={date} />
+    <ArticleBody>
+      <slot />
+    </ArticleBody>
+    <div class="max-w-3xl mx-auto px-4 md:px-6 w-full">
+      <AuthorCard author={author} authorHandle={authorHandle} />
+    </div>
+    <CommentSection client:visible />
+  </main>
+</BaseLayout>

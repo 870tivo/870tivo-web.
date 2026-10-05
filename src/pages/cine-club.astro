@@ -1,0 +1,56 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import CinePoster from '../components/CinePoster.astro';
+
+const posters = [
+  { title: "La Vendedora de Rosas", director: "Víctor Gaviria", datetime: "3 de Febrero - 7pm", variant: "pink" },
+  { title: "Matar a Jesús", director: "Laura Mora", datetime: "10 de Febrero - 7pm", variant: "blue" },
+  { title: "Lo Peor Hasta El Momento", director: "Ivan Garzón", datetime: "17 de Febrero - 7pm", variant: "blue" },
+  { title: "Yo Ví Tres Luces Negras", director: "Santiago Lozano", datetime: "25 de Febrero - 7pm", variant: "dark" },
+  { title: "Juventudes Cine", director: "Latinoamericano", datetime: "1 Marzo - 7pm", variant: "blue" },
+  { title: "Los Nadie", director: "Juan Sebastián Mesa", datetime: "12 de Marzo - 7pm", variant: "blue" },
+  { title: "El Ángel", director: "Luis Ortega", datetime: "19 de Marzo - 7pm", variant: "blue" },
+  { title: "Tarde para morir joven", director: "Dominga Sotomayor", datetime: "Julio Marzo - 7pm", variant: "blue" },
+  { title: "Y tu mamá también", director: "Alfonso Cuarón", datetime: "29 de Marzo - 7pm", variant: "blue" },
+  { title: "Soul", director: "Pete Docter", datetime: "28 de Mayo - 7pm", variant: "orange" },
+  { title: "Akira", director: "Katsuhiro Otomo", datetime: "11 de Junio - 7pm", variant: "color" },
+  { title: "La Novia Cadáver", director: "Tim Burton", datetime: "11 de Mayo - 7pm", variant: "orange" },
+];
+---
+
+<BaseLayout title="Ciclos de Cine - 870tivo">
+  <main class="flex-grow flex flex-col bg-brand-bg dark:bg-brand-ink transition-colors">
+    <div class="container mx-auto px-4 md:px-6 py-12 md:py-20">
+      
+      <div class="mb-12 border-b border-brand-ink/10 dark:border-white/10 pb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div>
+          <span class="text-brand-orange dark:text-brand-turquoise text-[10px] md:text-xs font-bold uppercase tracking-[0.3em] mb-2 block">
+            Archivo de Afiches
+          </span>
+          <h1 class="font-serif text-4xl md:text-5xl lg:text-7xl font-bold text-brand-ink dark:text-white tracking-tighter">
+            Ciclos de cine
+          </h1>
+        </div>
+        <div class="flex items-center gap-3 text-brand-orange dark:text-brand-bg">
+          <div class="w-12 h-12 border border-brand-orange/40 dark:border-brand-bg/40 flex items-center justify-center rotate-45 text-xs font-bold shrink-0 bg-brand-orange/10 dark:bg-brand-bg/10">
+             <span class="-rotate-45 font-sans tracking-tighter text-brand-ink dark:text-brand-bg font-black">870</span>
+          </div>
+          <span class="text-xs uppercase tracking-widest font-bold text-brand-ink dark:text-brand-bg">Cine club</span>
+        </div>
+      </div>
+
+      <!-- Masonry-like Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 lg:gap-8">
+        {posters.map(poster => (
+          <CinePoster 
+            title={poster.title}
+            director={poster.director}
+            datetime={poster.datetime}
+            variant={poster.variant as any}
+          />
+        ))}
+      </div>
+
+    </div>
+  </main>
+</BaseLayout>

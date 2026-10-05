@@ -1,0 +1,50 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+// Static pages: Nosotros, Redes, Contacto
+export function getStaticPaths() {
+  return [
+    {
+      params: { slug: 'nosotros' },
+      props: {
+        title: 'Nosotros',
+        description: '870tivo es un colectivo editorial inmaterial dedicado a la literatura, el cine y las artes visuales.',
+        content: '870tivo nació como un encuentro inmaterial entre artistas, escritores y cinéfilos de Bogotá y Latinoamérica. Nuestra misión es documentar, crear y diseminar expresiones culturales a través de la escritura, el cine club y la fotografía.',
+      }
+    },
+    {
+      params: { slug: 'contacto' },
+      props: {
+        title: 'Contacto',
+        description: 'Ponte en contacto con el colectivo 870tivo.',
+        content: 'Para colaboraciones, propuestas editoriales o solo para saludar, escríbenos a 870colectivo@gmail.com',
+      }
+    },
+    {
+      params: { slug: 'redes' },
+      props: {
+        title: 'Redes',
+        description: 'Síguenos en nuestras redes sociales.',
+        content: 'Encuentra nuestro trabajo en Instagram: @870tivo para el blog y galería, @870raw para fotografía sin editar.',
+      }
+    },
+  ];
+}
+
+interface Props {
+  title: string;
+  description: string;
+  content: string;
+}
+const { title, description, content } = Astro.props;
+---
+
+<BaseLayout title={`${title} - 870tivo`} description={description}>
+  <main class="flex-grow container mx-auto px-4 md:px-6 py-20 max-w-3xl">
+    <div class="mb-10 pb-6 border-b border-brand-ink/10 dark:border-white/10">
+      <h1 class="font-serif text-5xl md:text-7xl font-bold text-brand-ink dark:text-white tracking-tighter mb-4">{title}</h1>
+      <div class="w-12 h-1 bg-brand-orange dark:bg-brand-bg"></div>
+    </div>
+    <p class="text-brand-ink/80 dark:text-neutral-300 text-lg md:text-xl leading-relaxed font-medium">{content}</p>
+  </main>
+</BaseLayout>

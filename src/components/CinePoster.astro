@@ -1,0 +1,62 @@
+---
+interface Props {
+  title: string;
+  director: string;
+  datetime: string;
+  variant?: 'blue' | 'pink' | 'orange' | 'dark' | 'color';
+}
+const { title, director, datetime, variant = 'blue' } = Astro.props;
+
+// Conditional CSS styling depending on variant
+const tintOverlay = {
+  blue: 'bg-[#18B5B8]/40 mix-blend-multiply',
+  pink: 'bg-[#EE8A4C]/40 mix-blend-multiply',
+  orange: 'bg-[#F0D264]/40 mix-blend-multiply',
+  dark: 'bg-[#10201A]/80 mix-blend-multiply',
+  color: 'bg-transparent',
+}[variant];
+
+const bannerStyle = {
+  blue: 'bg-[#18B5B8] text-[#10201A]',
+  pink: 'bg-[#EE8A4C] text-[#10201A]',
+  orange: 'bg-[#F0D264] text-[#10201A]',
+  dark: 'bg-[#1c2f27] text-[#F0E6C0]',
+  color: 'bg-gradient-to-r from-[#18B5B8] to-[#EE8A4C] text-[#10201A]',
+}[variant];
+---
+
+<article class="flex flex-col rounded-md overflow-hidden bg-brand-card/50 dark:bg-brand-darkCard border border-brand-ink/10 dark:border-white/5 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-brand-orange/10 group cursor-pointer h-full">
+  <!-- Poster Image Area (Top) -->
+  <div class="w-full aspect-[3/4] bg-neutral-900 relative overflow-hidden">
+    <!-- Image Fallback base -->
+    <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-neutral-800 to-black"></div>
+    <div class={`absolute inset-0 ${tintOverlay}`}></div>
+    
+    <!-- Title Text inside for some posters -->
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full px-4 transform transition-transform duration-500 group-hover:scale-105 pointer-events-none">
+      <h3 class="font-serif font-black text-2xl lg:text-3xl uppercase leading-none tracking-tight text-center text-white/90 drop-shadow-md">
+        {title.split(' ').map(w => <span>{w}<br/></span>)}
+      </h3>
+    </div>
+
+    <!-- Gradient overlay to bottom footer -->
+    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-80"></div>
+    
+    <!-- Footer Logos area inside poster -->
+    <div class="absolute bottom-4 left-0 w-full flex justify-center gap-3 items-center opacity-80">
+      <div class="w-6 h-6 rounded-full bg-brand-bg backdrop-blur-sm"></div>
+      <div class="w-16 h-3 bg-brand-orange backdrop-blur-sm rounded-sm"></div>
+      <div class="w-10 h-3 bg-brand-turquoise backdrop-blur-sm rounded-sm"></div>
+    </div>
+  </div>
+
+  <!-- Bottom Banner Context Area -->
+  <div class={`w-full p-4 flex flex-col justify-center items-center mt-auto font-medium ${bannerStyle}`}>
+    <h3 class="font-serif font-black text-lg md:text-xl uppercase leading-snug tracking-tighter mb-1.5 text-center">
+      {title}
+    </h3>
+    <span class="text-[9px] md:text-[10px] font-sans font-bold uppercase tracking-widest opacity-90 text-center">
+      {director} &bull; {datetime}
+    </span>
+  </div>
+</article>

@@ -1,0 +1,93 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { Instagram } from 'lucide-astro';
+
+const posts870tivo = [
+  { img: "/assets/images/pajaro-muerto.jpeg", isImage: true, text: "Pájaro Muerto / Visita el Blog" },
+  { img: "radial-gradient(circle at top right, #EE8A4C, #10201A)", text: "Entradas Nuevas en 870tivo.com" },
+  { img: "linear-gradient(135deg, #EE8A4C, #F0D264)", text: "¡Vuelve crochetero y crochet!" },
+  { img: "/assets/logo/870.jpeg", isImage: true, text: "Visita 870tivo (Nuevo logo)" },
+  { img: "linear-gradient(to right, #18B5B8 0%, #10201A 100%)", text: "Easy Rider - 25 de Marzo" },
+  { img: "linear-gradient(120deg, #F0D264 0%, #EE8A4C 100%)", text: "La Belle Verte - 18 de Marzo" },
+];
+
+const posts870raw = [
+  { img: "radial-gradient(circle, #D3D3BF, #8A8D85)", text: "Taxi amarillo en Medellín" },
+  { img: "linear-gradient(to top, #8A8D85 0%, #D3D3BF 100%)", text: "Fotografía de calle" },
+  { img: "radial-gradient(circle, #10201A, #1c2f27, #F0D264)", text: "Atardecer urbano" },
+];
+---
+
+<BaseLayout title="Redes Sociales - 870tivo">
+  <main class="flex-grow flex flex-col bg-brand-bg dark:bg-brand-ink py-12 md:py-20 transition-colors">
+    <div class="container mx-auto px-4 md:px-6 max-w-5xl">
+      
+      <!-- Section 870tivo -->
+      <section class="mb-24">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 pb-6 border-b border-brand-ink/10 dark:border-white/10">
+          <div class="flex items-center gap-4">
+            <div class="w-12 h-12 bg-brand-orange dark:bg-brand-bg flex items-center justify-center font-bold text-white dark:text-brand-ink text-sm uppercase tracking-tighter shrink-0 rounded-sm shadow-md">
+              870
+            </div>
+            <h1 class="font-serif text-3xl md:text-5xl font-bold text-brand-ink dark:text-white tracking-tighter">
+              Instagram de 870tivo
+            </h1>
+          </div>
+          <a href="https://instagram.com/870tivo" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 bg-brand-card dark:bg-brand-darkCard hover:bg-brand-orange hover:text-white dark:hover:bg-brand-bg dark:hover:text-brand-ink text-brand-ink dark:text-white text-xs font-bold uppercase tracking-[0.2em] px-6 py-4 rounded-sm border border-brand-ink/10 dark:border-white/5 transition-all duration-300 shadow">
+            <Instagram class="w-4 h-4" /> Seguir @870tivo
+          </a>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-4 lg:gap-6">
+          {posts870tivo.map(post => (
+             <a href="https://instagram.com/870tivo" target="_blank" rel="noopener noreferrer" class="aspect-square bg-brand-card dark:bg-neutral-900 border border-brand-ink/10 dark:border-white/5 relative overflow-hidden group rounded-sm shadow hover:shadow-lg transition-all">
+                {post.isImage ? (
+                  <img src={post.img} alt={post.text} class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105" />
+                ) : (
+                  <div class="absolute inset-0 transition-transform duration-700 ease-out group-hover:scale-105" style={{ background: post.img }}>
+                  </div>
+                )}
+                <div class="absolute inset-0 bg-brand-ink/75 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center p-4 backdrop-blur-[2px]">
+                  <p class="text-white font-sans text-xs md:text-sm font-bold text-center translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
+                    {post.text}
+                  </p>
+                </div>
+             </a>
+          ))}
+        </div>
+      </section>
+
+      <!-- Section 870raw -->
+      <section>
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 pb-6 border-b border-brand-ink/10 dark:border-white/10">
+          <div class="flex items-center gap-4">
+            <div class="w-12 h-12 bg-brand-card dark:bg-brand-darkCard flex items-center justify-center font-bold text-brand-ink dark:text-brand-muted text-xs uppercase tracking-widest shrink-0 rounded-md shadow">
+              RAW
+            </div>
+            <h2 class="font-serif text-3xl md:text-5xl font-bold text-brand-ink dark:text-white tracking-tighter">
+              Instagram de 870raw
+            </h2>
+          </div>
+          <a href="https://instagram.com/870raw" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 bg-brand-card dark:bg-brand-darkCard hover:bg-brand-ink hover:text-white dark:hover:bg-white dark:hover:text-black text-brand-ink dark:text-white text-xs font-bold uppercase tracking-[0.2em] px-6 py-4 rounded-sm border border-brand-ink/10 dark:border-white/5 transition-all duration-300 shadow">
+            <Instagram class="w-4 h-4" /> Seguir @870raw
+          </a>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-4 lg:gap-6">
+          {posts870raw.map(post => (
+             <a href="https://instagram.com/870raw" target="_blank" rel="noopener noreferrer" class="aspect-square bg-brand-card dark:bg-neutral-900 border border-brand-ink/10 dark:border-white/5 relative overflow-hidden group rounded-sm shadow hover:shadow-lg transition-all">
+                <div class="absolute inset-0 transition-transform duration-700 ease-out group-hover:scale-105" style={{ background: post.img }}>
+                </div>
+                <div class="absolute inset-0 bg-brand-ink/75 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center p-4 backdrop-blur-[2px]">
+                  <p class="text-white font-sans text-xs md:text-sm font-bold text-center translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
+                    {post.text}
+                  </p>
+                </div>
+             </a>
+          ))}
+        </div>
+      </section>
+
+    </div>
+  </main>
+</BaseLayout>

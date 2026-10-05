@@ -1,0 +1,20 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import BentoGrid from '../components/bento/BentoGrid.astro';
+import EditorialQuote from '../components/EditorialQuote.astro';
+import RecentPosts from '../components/RecentPosts.astro';
+---
+
+<BaseLayout title="870tivo - Encuentros Inmateriales">
+  <main class="flex-grow flex flex-col gap-6 lg:gap-12 pb-12">
+    <div class="container mx-auto px-4 md:px-6">
+      <BentoGrid />
+    </div>
+    <div class="container mx-auto px-4 md:px-6">
+      <EditorialQuote />
+    </div>
+    <div class="container mx-auto px-4 md:px-6">
+      <RecentPosts />
+    </div>
+  </main>
+</BaseLayout>
