@@ -1,0 +1,5 @@
+---
+// Admin index route: redirects to the admin dashboard.
+// Astro middleware will intercept and redirect to /admin/login if the user is unauthenticated.
+return Astro.redirect('/admin/dashboard');
+---
