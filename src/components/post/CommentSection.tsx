@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 export default function CommentSection() {
     const [likes, setLikes] = useState(1);

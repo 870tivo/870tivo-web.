@@ -1,14 +1,12 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
 import { posts } from '../../lib/posts';
-import { staticPages } from '../../lib/pages';
 
 // Server-side authentication context
 const user = Astro.locals.user;
 const userEmail = user?.email || 'Administrador';
 
 const totalPosts = posts.length;
-const totalPages = staticPages.length + 3; // nosotros, contacto, redes + galeria, cine-club, index
 ---
 
 <AdminLayout 
