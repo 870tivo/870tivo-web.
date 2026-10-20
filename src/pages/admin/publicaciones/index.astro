@@ -1,0 +1,752 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { posts, getVisibilityMap } from '../../../lib/posts';
+
+// Server-side authentication check inherited via AdminLayout and Astro middleware
+const visibilityMap = getVisibilityMap();
+const totalPosts = posts.length;
+const publishedCount = posts.filter((p) => visibilityMap[p.slug] !== false).length;
+const draftCount = totalPosts - publishedCount;
+---
+
+<AdminLayout 
+  title="Gestión de Publicaciones | 870tivo Control Studio" 
+  headerTitle="Publicaciones & Artículos"
+  activeModule="publicaciones"
+>
+  <!-- Header with Actions -->
+  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+    <div>
+      <div class="flex items-center gap-2 mb-1">
+        <span class="text-xs uppercase font-bold tracking-widest text-amber-400">Editorial & Blog</span>
+        <span class="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-semibold">{totalPosts} Artículos Registrados</span>
+      </div>
+      <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+        Módulo de Publicaciones
+      </h2>
+      <p class="text-xs sm:text-sm text-slate-300 mt-1 max-w-xl">
+        Administra, redacta y gestiona la visibilidad pública de ensayos y reseñas críticas en la landing page de Galería 870tivo.
+      </p>
+    </div>
+
+    <!-- Quick Action Buttons -->
+    <div class="flex items-center gap-3">
+      <button 
+        type="button" 
+        id="toggleCreateModalBtn"
+        class="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-gradient-to-r from-amber-400 via-amber-300 to-amber-400 hover:from-amber-300 hover:to-amber-200 text-slate-950 font-bold text-xs uppercase tracking-wider shadow-lg shadow-amber-500/20 hover:shadow-amber-500/30 transition-all cursor-pointer"
+      >
+        <svg class="w-4 h-4 text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+        </svg>
+        <span>+ Nueva Publicación</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- TEXTO INFORMATIVO / BANNER DE EXPLICACIÓN DE VISIBILIDAD -->
+  <div class="rounded-2xl bg-gradient-to-r from-cyan-950/40 via-slate-900/60 to-slate-900/60 border border-cyan-500/30 p-4 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-lg shadow-cyan-950/10">
+    <div class="flex items-start sm:items-center gap-3.5">
+      <div class="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/25 text-cyan-400 shrink-0">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h4 class="font-bold text-white text-xs uppercase tracking-wider">
+            Control de Publicación y Visibilidad en la Landing
+          </h4>
+          <span class="px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 font-bold text-[10px] border border-cyan-500/30">
+            Interruptor Activo
+          </span>
+        </div>
+        <p class="text-xs text-slate-300 mt-0.5 leading-relaxed">
+          Cada publicación cuenta con un <strong>switch de visibilidad</strong>. Si está 
+          <span class="text-emerald-400 font-semibold">Activo (Publicado)</span>, los visitantes pueden leerla en la página principal. 
+          Al <span class="text-amber-400 font-semibold">desactivarlo</span>, pasa a <strong>Borrador</strong> y se oculta automáticamente de la landing page para el público.
+        </p>
+      </div>
+    </div>
+    <div class="hidden lg:flex items-center gap-2 text-[11px] text-slate-400 shrink-0 bg-slate-950/60 px-3.5 py-2 rounded-xl border border-slate-800">
+      <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+      <span>Activo = Visible</span>
+      <span class="text-slate-600 mx-1">•</span>
+      <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+      <span>Inactivo = Borrador</span>
+    </div>
+  </div>
+
+  <!-- Filter Tabs & Search Bar -->
+  <div class="rounded-2xl bg-slate-900/60 border border-slate-800/80 p-4 mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+    
+    <!-- Status Tabs -->
+    <div class="flex items-center gap-1.5 overflow-x-auto pb-2 md:pb-0" id="filterTabs">
+      <button 
+        type="button"
+        data-filter="all" 
+        class="tab-btn active px-3.5 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-semibold whitespace-nowrap cursor-pointer transition-all"
+      >
+        Todas (<span id="countAll">{totalPosts}</span>)
+      </button>
+      <button 
+        type="button"
+        data-filter="published" 
+        class="tab-btn px-3.5 py-1.5 rounded-xl border border-transparent text-slate-400 hover:text-white hover:bg-slate-800/60 text-xs font-medium whitespace-nowrap cursor-pointer transition-all"
+      >
+        Publicadas (<span id="countPublished">{publishedCount}</span>)
+      </button>
+      <button 
+        type="button"
+        data-filter="draft" 
+        class="tab-btn px-3.5 py-1.5 rounded-xl border border-transparent text-slate-400 hover:text-white hover:bg-slate-800/60 text-xs font-medium whitespace-nowrap cursor-pointer transition-all"
+      >
+        Borradores (<span id="countDraft">{draftCount}</span>)
+      </button>
+      <button 
+        type="button"
+        data-filter="scheduled" 
+        class="tab-btn px-3.5 py-1.5 rounded-xl border border-transparent text-slate-400 hover:text-white hover:bg-slate-800/60 text-xs font-medium whitespace-nowrap cursor-pointer transition-all"
+      >
+        Programadas (0)
+      </button>
+    </div>
+
+    <!-- Search Input -->
+    <div class="relative w-full md:w-72">
+      <input 
+        type="text" 
+        id="postSearchInput"
+        placeholder="Buscar por título o autor..." 
+        class="w-full pl-9 pr-4 py-2 bg-slate-950/80 border border-slate-800 rounded-xl text-xs text-slate-200 placeholder-slate-400 focus:outline-none focus:border-amber-400/60 focus:ring-1 focus:ring-amber-400/60 transition-all"
+      />
+      <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+      </svg>
+    </div>
+
+  </div>
+
+  <!-- Publicaciones Data Table -->
+  <div class="rounded-3xl bg-slate-900/60 border border-slate-800/80 overflow-hidden shadow-xl mb-10">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-xs text-slate-300" id="postsTable">
+        <thead class="bg-slate-950/80 text-[11px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-800">
+          <tr>
+            <th class="py-4 px-6">Publicación / Ensayo</th>
+            <th class="py-4 px-6">Categoría</th>
+            <th class="py-4 px-6">Autor</th>
+            <th class="py-4 px-6">Fecha</th>
+            <th class="py-4 px-6">
+              <div class="flex items-center gap-1.5">
+                <span>Estado & Visibilidad</span>
+                <span class="cursor-help text-slate-400 hover:text-cyan-400 transition-colors" title="Controla si se muestra o se oculta de la landing page pública">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </span>
+              </div>
+            </th>
+            <th class="py-4 px-6 text-right">Acciones</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-800/60" id="postsTableBody">
+          {posts.map((post) => {
+            const isPublished = visibilityMap[post.slug] !== false;
+            return (
+              <tr 
+                class="hover:bg-slate-850/50 transition-colors group post-row" 
+                data-slug={post.slug}
+                data-title={post.title.toLowerCase()} 
+                data-author={post.author.toLowerCase()}
+                data-status={isPublished ? 'published' : 'draft'}
+              >
+                <!-- Title & Excerpt -->
+                <td class="py-4 px-6">
+                  <div class="flex items-center gap-3.5">
+                    <div class="w-12 h-12 rounded-xl bg-slate-800 border border-slate-700/80 overflow-hidden shrink-0 shadow-sm">
+                      <img 
+                        src={post.heroImage || '/assets/logo/870.jpeg'} 
+                        alt={post.title} 
+                        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        onerror="this.src='/assets/logo/870.jpeg'"
+                      />
+                    </div>
+                    <div class="min-w-0">
+                      <a 
+                        href={`/blog/${post.slug}`} 
+                        target="_blank"
+                        class="text-sm font-semibold text-white group-hover:text-amber-300 transition-colors line-clamp-1"
+                      >
+                        {post.title}
+                      </a>
+                      <p class="text-[11px] text-slate-300 line-clamp-1 mt-0.5">
+                        {post.subtitle || 'Sin subtítulo'}
+                      </p>
+                    </div>
+                  </div>
+                </td>
+
+                <!-- Category Badge -->
+                <td class="py-4 px-6">
+                  <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-semibold bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 whitespace-nowrap">
+                    {post.badge || 'EDITORIAL'}
+                  </span>
+                </td>
+
+                <!-- Author -->
+                <td class="py-4 px-6">
+                  <div class="flex items-center gap-2">
+                    <span class="w-6 h-6 rounded-full bg-slate-800 border border-slate-700 text-slate-300 flex items-center justify-center text-[10px] font-bold">
+                      {post.authorInitials || '870'}
+                    </span>
+                    <span class="font-medium text-slate-200">{post.author}</span>
+                  </div>
+                </td>
+
+                <!-- Date & Reading Time -->
+                <td class="py-4 px-6 whitespace-nowrap">
+                  <div class="text-slate-200 font-medium">{post.date}</div>
+                  <div class="text-[10px] text-slate-400">{post.readingTime}</div>
+                </td>
+
+                <!-- Status with Switch & Info -->
+                <td class="py-4 px-6 whitespace-nowrap">
+                  <div class="flex flex-col gap-1.5">
+                    <div class="flex items-center gap-3">
+                      <!-- Interactive Switch Button -->
+                      <button 
+                        type="button" 
+                        role="switch" 
+                        aria-checked={isPublished ? "true" : "false"}
+                        data-slug={post.slug}
+                        data-title={post.title}
+                        data-published={isPublished ? "true" : "false"}
+                        class={`status-toggle-btn relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-amber-400/50 ${isPublished ? 'bg-emerald-500 shadow-sm shadow-emerald-500/40' : 'bg-slate-700'}`}
+                        title={isPublished ? "Desactivar para ocultar de la landing page" : "Activar para publicar en la landing page"}
+                      >
+                        <span class="sr-only">Cambiar visibilidad de {post.title}</span>
+                        <span 
+                          aria-hidden="true" 
+                          class={`toggle-knob pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${isPublished ? 'translate-x-5' : 'translate-x-0'}`}
+                        ></span>
+                      </button>
+
+                      <!-- Status Badge Pill -->
+                      <span class={`status-pill inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border ${isPublished ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border-amber-500/20'}`}>
+                        <span class={`status-dot w-1.5 h-1.5 rounded-full ${isPublished ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`}></span>
+                        <span class="status-text">{isPublished ? 'Publicado' : 'Borrador'}</span>
+                      </span>
+                    </div>
+
+                    <!-- Micro descriptive text -->
+                    <span class="status-subtext text-[10px] text-slate-400 font-medium">
+                      {isPublished ? 'Visible en landing pública' : 'Oculto para el público'}
+                    </span>
+                  </div>
+                </td>
+
+                <!-- Actions -->
+                <td class="py-4 px-6 text-right whitespace-nowrap">
+                  <div class="inline-flex items-center gap-2">
+                    <a 
+                      href={`/blog/${post.slug}`} 
+                      target="_blank"
+                      class="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                      title="Ver en vivo"
+                    >
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                    </a>
+                    <button 
+                      type="button" 
+                      class="p-2 rounded-xl text-slate-400 hover:text-amber-400 hover:bg-amber-500/10 transition-colors edit-btn cursor-pointer"
+                      title="Editar publicación"
+                      data-post-title={post.title}
+                    >
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+
+      <!-- Empty State for filters -->
+      <div id="noResultsState" class="hidden py-12 text-center text-slate-400 text-xs">
+        <svg class="w-8 h-8 mx-auto text-slate-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <p class="font-medium text-slate-300">No se encontraron publicaciones en esta sección</p>
+        <p class="text-[11px] text-slate-400 mt-1">Prueba seleccionando la pestaña "Todas" o ajustando la búsqueda.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONFIRMATION MODAL -->
+  <div 
+    id="confirmationModal" 
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm opacity-0 pointer-events-none transition-all duration-300"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="modalTitle"
+  >
+    <div 
+      id="modalCard"
+      class="relative w-full max-w-md rounded-3xl bg-slate-900 border border-slate-800 p-6 sm:p-7 shadow-2xl shadow-cyan-950/30 transform scale-95 transition-all duration-300"
+    >
+      <!-- Icon Container -->
+      <div id="modalIconBox" class="w-12 h-12 rounded-2xl flex items-center justify-center mb-4 transition-colors">
+        <!-- Injected Icon via JS -->
+        <svg id="modalIconSvg" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+      </div>
+
+      <!-- Title -->
+      <h3 id="modalTitle" class="text-xl font-bold text-white tracking-tight">
+        ¿Confirmar cambio de estado?
+      </h3>
+
+      <!-- Description -->
+      <div id="modalBody" class="text-xs sm:text-sm text-slate-300 mt-2.5 leading-relaxed space-y-2">
+        <!-- Injected via JS -->
+      </div>
+
+      <!-- Explanatory Info Box inside modal -->
+      <div id="modalInfoBox" class="mt-4 p-3.5 rounded-2xl bg-slate-950/70 border border-slate-800/80 flex items-start gap-2.5 text-[11px] text-slate-300">
+        <span class="text-amber-400 font-bold shrink-0 mt-0.5">💡 Nota:</span>
+        <span id="modalInfoNote" class="leading-relaxed">
+          Al confirmar, el estado cambiará en tiempo real. Puedes volver a cambiarlo cuando lo consideres necesario.
+        </span>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="mt-6 flex items-center justify-end gap-3">
+        <button 
+          type="button" 
+          id="modalCancelBtn"
+          class="px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold transition-colors cursor-pointer"
+        >
+          Cancelar
+        </button>
+        <button 
+          type="button" 
+          id="modalConfirmBtn"
+          class="px-5 py-2.5 rounded-xl text-slate-950 text-xs font-bold uppercase tracking-wider shadow-lg transition-all cursor-pointer"
+        >
+          Confirmar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div 
+    id="toastNotification" 
+    class="fixed bottom-6 right-6 z-50 transform translate-y-10 opacity-0 pointer-events-none transition-all duration-300 flex items-center gap-3 px-4 py-3 rounded-2xl bg-slate-900 border border-emerald-500/40 text-white shadow-xl shadow-slate-950/60"
+  >
+    <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+    <span id="toastMessage" class="text-xs font-medium text-slate-200">Visibilidad actualizada</span>
+  </div>
+
+  <!-- ÁREA EN BLANCO / ESQUELETO DE CREACIÓN DE PUBLICACIÓN -->
+  <section id="crearPublicacionSeccion" class="rounded-3xl bg-slate-900/40 border border-slate-800/80 p-6 sm:p-8 lg:p-10 relative overflow-hidden">
+    <div class="max-w-3xl">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs font-semibold mb-4">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+        </svg>
+        Espacio de Redacción & Creación
+      </div>
+
+      <h3 class="text-xl sm:text-2xl font-bold text-white tracking-tight">
+        Sección de Nueva Publicación (Editor de Contenidos)
+      </h3>
+      <p class="text-xs sm:text-sm text-slate-300 leading-relaxed mt-2 mb-6">
+        Este espacio está preparado con la arquitectura base para la carga de nuevos artículos editoriales. Aquí podrás introducir el título, subtítulo, selección de autor, carga de imagen de portada y cuerpo del ensayo.
+      </p>
+
+      <!-- Form Scaffold Visual -->
+      <div class="space-y-4 p-6 rounded-2xl bg-slate-950/60 border border-slate-800/90 text-xs">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1.5">Título del Artículo</label>
+            <input 
+              type="text" 
+              placeholder="Ej: «El Cine Inmaterial y la Memoria»" 
+              class="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-slate-200 placeholder-slate-400 focus:outline-none focus:border-amber-400/60 transition-colors"
+            />
+          </div>
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1.5">Categoría / Etiqueta</label>
+            <input 
+              type="text" 
+              placeholder="Ej: ENSAYO DE PORTADA, FOTOGRAFÍA..." 
+              class="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-slate-200 placeholder-slate-400 focus:outline-none focus:border-amber-400/60 transition-colors"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-slate-300 font-semibold mb-1.5">Subtítulo o Resumen</label>
+          <input 
+            type="text" 
+            placeholder="Breve reflexión que introduce el artículo..." 
+            class="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-slate-200 placeholder-slate-400 focus:outline-none focus:border-amber-400/60 transition-colors"
+          />
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1.5">Autor</label>
+            <input 
+              type="text" 
+              placeholder="Nombre del redactor o crítico" 
+              class="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-slate-200 placeholder-slate-400 focus:outline-none focus:border-amber-400/60 transition-colors"
+            />
+          </div>
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1.5">Ruta de Imagen de Portada</label>
+            <input 
+              type="text" 
+              placeholder="/assets/images/nombre-imagen.jpeg" 
+              class="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-slate-200 placeholder-slate-400 focus:outline-none focus:border-amber-400/60 transition-colors"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-slate-300 font-semibold mb-1.5">Cuerpo del Ensayo / Texto (Markdown o HTML)</label>
+          <textarea 
+            rows="4" 
+            placeholder="Escribe el cuerpo del artículo aquí..."
+            class="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-slate-200 placeholder-slate-400 focus:outline-none focus:border-amber-400/60 transition-colors resize-none"
+          ></textarea>
+        </div>
+
+        <div class="pt-2 flex items-center justify-between">
+          <span class="text-[11px] text-slate-400 flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+            Estructura en blanco lista para persistencia en base de datos o CMS.
+          </span>
+          <button 
+            type="button" 
+            class="px-5 py-2 rounded-xl bg-amber-400/90 hover:bg-amber-300 text-slate-950 font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer"
+            onclick="alert('Módulo de creación estructurado. Para el siguiente paso conectaremos la persistencia directa.')"
+          >
+            Guardar Borrador
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+</AdminLayout>
+
+<script>
+  // Elements
+  const searchInput = document.getElementById('postSearchInput') as HTMLInputElement | null;
+  const rows = document.querySelectorAll('.post-row') as NodeListOf<HTMLTableRowElement>;
+  const filterTabs = document.querySelectorAll('.tab-btn') as NodeListOf<HTMLButtonElement>;
+  const noResultsState = document.getElementById('noResultsState') as HTMLElement | null;
+
+  const countAllEl = document.getElementById('countAll') as HTMLElement | null;
+  const countPublishedEl = document.getElementById('countPublished') as HTMLElement | null;
+  const countDraftEl = document.getElementById('countDraft') as HTMLElement | null;
+
+  // Modal elements
+  const modal = document.getElementById('confirmationModal') as HTMLElement | null;
+  const modalCard = document.getElementById('modalCard') as HTMLElement | null;
+  const modalIconBox = document.getElementById('modalIconBox') as HTMLElement | null;
+  const modalTitle = document.getElementById('modalTitle') as HTMLElement | null;
+  const modalBody = document.getElementById('modalBody') as HTMLElement | null;
+  const modalInfoNote = document.getElementById('modalInfoNote') as HTMLElement | null;
+  const modalCancelBtn = document.getElementById('modalCancelBtn') as HTMLButtonElement | null;
+  const modalConfirmBtn = document.getElementById('modalConfirmBtn') as HTMLButtonElement | null;
+
+  // Toast
+  const toastNotification = document.getElementById('toastNotification') as HTMLElement | null;
+  const toastMessage = document.getElementById('toastMessage') as HTMLElement | null;
+
+  let currentFilter = 'all'; // Default is 'all' as requested by the user
+  let activePendingAction: {
+    btn: HTMLButtonElement;
+    slug: string;
+    title: string;
+    currentPublished: boolean;
+    targetPublished: boolean;
+  } | null = null;
+
+  function showToast(message: string) {
+    if (!toastNotification || !toastMessage) return;
+    toastMessage.textContent = message;
+    toastNotification.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-10');
+    toastNotification.classList.add('opacity-100', 'translate-y-0');
+
+    setTimeout(() => {
+      toastNotification.classList.remove('opacity-100', 'translate-y-0');
+      toastNotification.classList.add('opacity-0', 'pointer-events-none', 'translate-y-10');
+    }, 3200);
+  }
+
+  function updateCounts() {
+    let published = 0;
+    let draft = 0;
+    const total = rows.length;
+
+    rows.forEach((row) => {
+      const status = row.getAttribute('data-status');
+      if (status === 'published') published++;
+      else if (status === 'draft') draft++;
+    });
+
+    if (countAllEl) countAllEl.textContent = String(total);
+    if (countPublishedEl) countPublishedEl.textContent = String(published);
+    if (countDraftEl) countDraftEl.textContent = String(draft);
+  }
+
+  function applyFilters() {
+    const query = searchInput?.value.toLowerCase().trim() || '';
+    let visibleCount = 0;
+
+    rows.forEach((row) => {
+      const title = row.getAttribute('data-title') || '';
+      const author = row.getAttribute('data-author') || '';
+      const status = row.getAttribute('data-status') || '';
+
+      const matchesSearch = !query || title.includes(query) || author.includes(query);
+      let matchesFilter = true;
+
+      if (currentFilter === 'published') {
+        matchesFilter = status === 'published';
+      } else if (currentFilter === 'draft') {
+        matchesFilter = status === 'draft';
+      } else if (currentFilter === 'scheduled') {
+        matchesFilter = false;
+      }
+
+      if (matchesSearch && matchesFilter) {
+        row.style.display = '';
+        visibleCount++;
+      } else {
+        row.style.display = 'none';
+      }
+    });
+
+    if (noResultsState) {
+      if (visibleCount === 0) {
+        noResultsState.classList.remove('hidden');
+      } else {
+        noResultsState.classList.add('hidden');
+      }
+    }
+  }
+
+  // Handle Tab Switch
+  filterTabs.forEach((tab) => {
+    tab.addEventListener('click', () => {
+      filterTabs.forEach((t) => {
+        t.classList.remove('active', 'bg-amber-500/15', 'border-amber-500/30', 'text-amber-300', 'font-semibold');
+        t.classList.add('text-slate-400', 'border-transparent', 'font-medium');
+      });
+
+      tab.classList.add('active', 'bg-amber-500/15', 'border-amber-500/30', 'text-amber-300', 'font-semibold');
+      tab.classList.remove('text-slate-400', 'border-transparent', 'font-medium');
+
+      currentFilter = tab.getAttribute('data-filter') || 'all';
+      applyFilters();
+    });
+  });
+
+  // Search input event
+  searchInput?.addEventListener('input', applyFilters);
+
+  // Switch Toggle Click Handlers
+  const toggleButtons = document.querySelectorAll('.status-toggle-btn') as NodeListOf<HTMLButtonElement>;
+
+  toggleButtons.forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const slug = btn.getAttribute('data-slug') || '';
+      const title = btn.getAttribute('data-title') || 'esta publicación';
+      const isCurrentlyPublished = btn.getAttribute('data-published') === 'true';
+      const targetPublished = !isCurrentlyPublished;
+
+      activePendingAction = {
+        btn,
+        slug,
+        title,
+        currentPublished: isCurrentlyPublished,
+        targetPublished,
+      };
+
+      openConfirmationModal(title, isCurrentlyPublished);
+    });
+  });
+
+  function openConfirmationModal(title: string, isCurrentlyPublished: boolean) {
+    if (!modal || !modalCard || !modalTitle || !modalBody || !modalIconBox || !modalConfirmBtn || !modalInfoNote) return;
+
+    if (isCurrentlyPublished) {
+      // User is about to UNPUBLISH / DEACTIVATE
+      modalIconBox.className = 'w-12 h-12 rounded-2xl flex items-center justify-center mb-4 bg-amber-500/15 border border-amber-500/30 text-amber-400';
+      modalIconBox.innerHTML = `
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+        </svg>
+      `;
+
+      modalTitle.textContent = '¿Ocultar publicación de la Landing?';
+      modalBody.innerHTML = `
+        <p>¿Estás seguro de que deseas desactivar la publicación <strong class="text-white">«${title}»</strong>?</p>
+        <p class="text-slate-400">Pasará a estado <span class="text-amber-400 font-semibold">Borrador</span> y <strong>dejará de ser visible para el público en la página principal</strong>.</p>
+      `;
+      modalInfoNote.textContent = 'Esta acción retirará inmediatamente el artículo de la lista pública de la landing. Podrás volver a publicarlo en cualquier momento.';
+
+      modalConfirmBtn.className = 'px-5 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-bold uppercase tracking-wider shadow-lg shadow-amber-500/20 transition-all cursor-pointer';
+      modalConfirmBtn.textContent = 'Sí, Ocultar de la Landing';
+    } else {
+      // User is about to PUBLISH / ACTIVATE
+      modalIconBox.className = 'w-12 h-12 rounded-2xl flex items-center justify-center mb-4 bg-emerald-500/15 border border-emerald-500/30 text-emerald-400';
+      modalIconBox.innerHTML = `
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+        </svg>
+      `;
+
+      modalTitle.textContent = '¿Publicar artículo en la Landing?';
+      modalBody.innerHTML = `
+        <p>¿Estás seguro de que deseas activar la publicación <strong class="text-white">«${title}»</strong>?</p>
+        <p class="text-slate-400">Pasará a estado <span class="text-emerald-400 font-semibold">Publicado</span> y <strong>será visible inmediatamente para todos los visitantes</strong> en la página principal.</p>
+      `;
+      modalInfoNote.textContent = 'El artículo se mostrará en las entradas destacadas de la revista y en la landing page.';
+
+      modalConfirmBtn.className = 'px-5 py-2.5 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-slate-950 text-xs font-bold uppercase tracking-wider shadow-lg shadow-emerald-500/20 transition-all cursor-pointer';
+      modalConfirmBtn.textContent = 'Sí, Publicar Ahora';
+    }
+
+    modal.classList.remove('opacity-0', 'pointer-events-none');
+    modal.classList.add('opacity-100');
+    modalCard.classList.remove('scale-95');
+    modalCard.classList.add('scale-100');
+  }
+
+  function closeModal() {
+    if (!modal || !modalCard) return;
+    modal.classList.remove('opacity-100');
+    modal.classList.add('opacity-0', 'pointer-events-none');
+    modalCard.classList.remove('scale-100');
+    modalCard.classList.add('scale-95');
+    activePendingAction = null;
+  }
+
+  modalCancelBtn?.addEventListener('click', closeModal);
+
+  // Close when clicking backdrop outside card
+  modal?.addEventListener('click', (e) => {
+    if (e.target === modal) closeModal();
+  });
+
+  // Close on Escape key
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modal && !modal.classList.contains('pointer-events-none')) {
+      closeModal();
+    }
+  });
+
+  // Modal Confirm Button Execution
+  modalConfirmBtn?.addEventListener('click', async () => {
+    if (!activePendingAction) return;
+
+    const { btn, slug, title, targetPublished } = activePendingAction;
+    const row = btn.closest('.post-row') as HTMLTableRowElement | null;
+    const knob = btn.querySelector('.toggle-knob') as HTMLElement | null;
+    const pill = row?.querySelector('.status-pill') as HTMLElement | null;
+    const dot = row?.querySelector('.status-dot') as HTMLElement | null;
+    const text = row?.querySelector('.status-text') as HTMLElement | null;
+    const subtext = row?.querySelector('.status-subtext') as HTMLElement | null;
+
+    // Show loading on confirm button
+    modalConfirmBtn.disabled = true;
+    const originalBtnText = modalConfirmBtn.textContent;
+    modalConfirmBtn.textContent = 'Guardando...';
+
+    try {
+      const response = await fetch('/api/posts/toggle-visibility', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug, isPublished: targetPublished }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Update DOM elements for the switch & status pill
+        btn.setAttribute('data-published', String(targetPublished));
+        btn.setAttribute('aria-checked', String(targetPublished));
+
+        if (targetPublished) {
+          btn.className = 'status-toggle-btn relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-amber-400/50 bg-emerald-500 shadow-sm shadow-emerald-500/40';
+          btn.title = 'Desactivar para ocultar de la landing page';
+          if (knob) knob.className = 'toggle-knob pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out translate-x-5';
+          if (pill) pill.className = 'status-pill inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+          if (dot) dot.className = 'status-dot w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse';
+          if (text) text.textContent = 'Publicado';
+          if (subtext) {
+            subtext.textContent = 'Visible en landing pública';
+            subtext.className = 'status-subtext text-[10px] text-slate-400 font-medium';
+          }
+          if (row) row.setAttribute('data-status', 'published');
+          showToast(`«${title}» ahora está publicado en la landing.`);
+        } else {
+          btn.className = 'status-toggle-btn relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-amber-400/50 bg-slate-700';
+          btn.title = 'Activar para publicar en la landing page';
+          if (knob) knob.className = 'toggle-knob pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out translate-x-0';
+          if (pill) pill.className = 'status-pill inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border bg-amber-500/10 text-amber-400 border-amber-500/20';
+          if (dot) dot.className = 'status-dot w-1.5 h-1.5 rounded-full bg-amber-400';
+          if (text) text.textContent = 'Borrador';
+          if (subtext) {
+            subtext.textContent = 'Oculto para el público';
+            subtext.className = 'status-subtext text-[10px] text-amber-400/80 font-medium';
+          }
+          if (row) row.setAttribute('data-status', 'draft');
+          showToast(`«${title}» ahora está en borrador (oculto de la landing).`);
+        }
+
+        // Update counts and re-apply active tab filter
+        updateCounts();
+        applyFilters();
+      } else {
+        alert('Error al actualizar el estado: ' + (result.message || 'Error desconocido'));
+      }
+    } catch (err) {
+      console.error('Error toggling visibility:', err);
+      alert('Ocurrió un error al intentar cambiar la visibilidad.');
+    } finally {
+      modalConfirmBtn.disabled = false;
+      modalConfirmBtn.textContent = originalBtnText || 'Confirmar';
+      closeModal();
+    }
+  });
+
+  // Scroll to scaffold on "+ Nueva Publicación" click
+  const toggleBtn = document.getElementById('toggleCreateModalBtn');
+  const section = document.getElementById('crearPublicacionSeccion');
+
+  toggleBtn?.addEventListener('click', () => {
+    section?.scrollIntoView({ behavior: 'smooth' });
+    const firstInput = section?.querySelector('input') as HTMLInputElement | null;
+    firstInput?.focus();
+  });
+</script>
