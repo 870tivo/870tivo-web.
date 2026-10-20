@@ -1,0 +1,586 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { supabaseAdmin } from '../../../lib/supabase';
+import { getAllRoles } from '../../../lib/auth';
+import type { AdminUserListItem } from '../../../types/roles';
+
+// 1. Fetch available roles
+const roles = await getAllRoles();
+
+// 2. Fetch all users from Supabase Auth via admin client
+let usersList: AdminUserListItem[] = [];
+let fetchError: string | null = null;
+
+try {
+  const { data: authData, error: authErr } = await supabaseAdmin.auth.admin.listUsers({
+    page: 1,
+    perPage: 100,
+  });
+
+  if (authErr) throw authErr;
+
+  // 3. Fetch all role assignments
+  const { data: userRoles, error: urErr } = await supabaseAdmin
+    .from('user_roles')
+    .select('user_id, role_id, roles(id, name, permissions)');
+
+  if (urErr) throw urErr;
+
+  // Build lookup map for user roles
+  const roleMap: Record<string, { roleId: string; roleName: string; permissions: any }> = {};
+  if (userRoles) {
+    for (const ur of userRoles) {
+      const roleData = Array.isArray(ur.roles) ? ur.roles[0] : ur.roles;
+      if (roleData) {
+        roleMap[ur.user_id] = {
+          roleId: roleData.id,
+          roleName: roleData.name,
+          permissions: roleData.permissions,
+        };
+      }
+    }
+  }
+
+  // Combine auth users with their roles
+  usersList = (authData?.users || []).map((u: any) => {
+    const assigned = roleMap[u.id];
+    return {
+      id: u.id,
+      email: u.email || 'Sin correo',
+      created_at: u.created_at,
+      last_sign_in_at: u.last_sign_in_at || null,
+      roleId: assigned?.roleId || null,
+      roleName: assigned?.roleName || null,
+      permissions: assigned?.permissions || null,
+    };
+  });
+} catch (err: any) {
+  console.error('Error cargando usuarios en SSR:', err);
+  fetchError = err?.message || 'Error al conectar con el servidor de autenticación.';
+}
+
+const totalUsers = usersList.length;
+const usersWithRole = usersList.filter((u) => u.roleId !== null).length;
+const usersWithoutRole = totalUsers - usersWithRole;
+---
+
+<AdminLayout 
+  title="Gestión de Usuarios & Roles | 870tivo Control Studio" 
+  headerTitle="Usuarios & Accesos"
+  activeModule="usuarios"
+>
+  <!-- Header with Actions -->
+  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+    <div>
+      <div class="flex items-center gap-2 mb-1">
+        <span class="text-xs uppercase font-bold tracking-widest text-purple-400">Control de Miembros</span>
+        <span class="text-xs px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 font-semibold">
+          {totalUsers} Usuarios Registrados
+        </span>
+      </div>
+      <h1 class="text-3xl font-black text-white tracking-tight">
+        Usuarios & Asignación de Roles
+      </h1>
+      <p class="text-xs sm:text-sm text-slate-200 mt-1 max-w-2xl">
+        Administra las cuentas de usuario registradas en Supabase Auth y asigna el rol correspondiente a cada miembro de tu equipo.
+      </p>
+    </div>
+
+    <!-- Quick Action: Manage Roles -->
+    <div class="flex items-center gap-3">
+      <a 
+        href="/admin/roles" 
+        class="admin-btn-scale inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-gradient-to-r from-purple-500/20 to-cyan-500/20 hover:from-purple-500/30 hover:to-cyan-500/30 text-cyan-300 border border-cyan-500/40 text-xs font-bold uppercase tracking-wider shadow-lg shadow-cyan-950/40"
+      >
+        <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+        </svg>
+        <span>Gestionar Catálogo de Roles</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Metric Quick Cards -->
+  <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div class="metric-card p-5 rounded-2xl bg-slate-900/60 border border-slate-800/80">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-xs text-slate-400 font-medium">Usuarios Registrados</span>
+        <span class="p-2 rounded-xl bg-purple-500/10 text-purple-400">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+        </span>
+      </div>
+      <div class="text-2xl font-extrabold text-white">{totalUsers}</div>
+      <div class="text-xs text-slate-500 mt-1">Cuentas en Supabase Auth</div>
+    </div>
+
+    <div class="metric-card p-5 rounded-2xl bg-slate-900/60 border border-slate-800/80">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-xs text-slate-400 font-medium">Con Rol Asignado</span>
+        <span class="p-2 rounded-xl bg-emerald-500/10 text-emerald-400">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </span>
+      </div>
+      <div class="text-2xl font-extrabold text-emerald-400">{usersWithRole}</div>
+      <div class="text-xs text-slate-500 mt-1">Permisos activos en el sistema</div>
+    </div>
+
+    <div class="metric-card p-5 rounded-2xl bg-slate-900/60 border border-slate-800/80">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-xs text-slate-400 font-medium">Sin Rol Asignado</span>
+        <span class="p-2 rounded-xl bg-amber-500/10 text-amber-400">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+        </span>
+      </div>
+      <div class="text-2xl font-extrabold text-amber-400">{usersWithoutRole}</div>
+      <div class="text-xs text-slate-500 mt-1">Requieren asignación de rol</div>
+    </div>
+
+    <div class="metric-card p-5 rounded-2xl bg-slate-900/60 border border-slate-800/80">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-xs text-slate-400 font-medium">Roles Disponibles</span>
+        <span class="p-2 rounded-xl bg-cyan-500/10 text-cyan-400">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+          </svg>
+        </span>
+      </div>
+      <div class="text-2xl font-extrabold text-white">{roles.length}</div>
+      <div class="text-xs text-slate-500 mt-1">Catálogo configurable</div>
+    </div>
+  </section>
+
+  {fetchError && (
+    <div class="p-4 mb-6 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-300 text-xs">
+      <strong>Error:</strong> {fetchError}
+    </div>
+  )}
+
+  <!-- Filter & Search Bar -->
+  <div class="rounded-2xl bg-slate-900/60 border border-slate-800/80 p-4 mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <!-- Status Tabs -->
+    <div class="flex items-center gap-1.5 overflow-x-auto pb-2 md:pb-0" id="userFilterTabs">
+      <button 
+        type="button" 
+        data-filter="all"
+        class="user-tab-btn active px-3.5 py-1.5 rounded-xl bg-purple-500/15 border border-purple-500/30 text-purple-300 text-xs font-semibold whitespace-nowrap cursor-pointer transition-all"
+      >
+        Todos (<span id="countAllUsers">{totalUsers}</span>)
+      </button>
+      <button 
+        type="button" 
+        data-filter="with-role"
+        class="user-tab-btn px-3.5 py-1.5 rounded-xl border border-transparent text-slate-400 hover:text-white hover:bg-slate-800/60 text-xs font-medium whitespace-nowrap cursor-pointer transition-all"
+      >
+        Con Rol (<span id="countWithRole">{usersWithRole}</span>)
+      </button>
+      <button 
+        type="button" 
+        data-filter="without-role"
+        class="user-tab-btn px-3.5 py-1.5 rounded-xl border border-transparent text-slate-400 hover:text-white hover:bg-slate-800/60 text-xs font-medium whitespace-nowrap cursor-pointer transition-all"
+      >
+        Sin Rol (<span id="countWithoutRole">{usersWithoutRole}</span>)
+      </button>
+    </div>
+
+    <!-- Search Input -->
+    <div class="relative w-full md:w-80">
+      <input 
+        type="text" 
+        id="userSearchInput" 
+        placeholder="Buscar por correo electrónico o ID..."
+        class="w-full pl-9 pr-4 py-2 bg-slate-950/80 border border-slate-800 rounded-xl text-xs text-slate-200 placeholder-slate-400 focus:outline-none focus:border-purple-400/60 focus:ring-1 focus:ring-purple-400/60 transition-all"
+      />
+      <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+      </svg>
+    </div>
+  </div>
+
+  <!-- Users Table -->
+  <div class="rounded-3xl bg-slate-900/60 border border-slate-800/80 overflow-hidden shadow-xl mb-10">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-xs text-slate-300" id="usersTable">
+        <thead class="bg-slate-950/80 text-xs font-semibold uppercase tracking-widest text-slate-400 border-b border-slate-800">
+          <tr>
+            <th class="py-4 px-6">Usuario & Correo</th>
+            <th class="py-4 px-6">Fecha Registro</th>
+            <th class="py-4 px-6">Rol Actual</th>
+            <th class="py-4 px-6">
+              <div class="flex items-center gap-1.5">
+                <span>Cambiar Rol Asignado</span>
+                <span class="cursor-help text-cyan-400" title="Selecciona un rol para actualizar los permisos en tiempo real">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </span>
+              </div>
+            </th>
+            <th class="py-4 px-6 text-right">Permisos Módulos</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-800/60" id="usersTableBody">
+          {usersList.map((user) => {
+            const hasRole = Boolean(user.roleId);
+            const isSuperAdmin = user.roleName === 'Super Administrador';
+            const userInitial = (user.email?.[0] || 'U').toUpperCase();
+            const dateFormatted = new Date(user.created_at).toLocaleDateString('es-ES', {
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric',
+            });
+
+            return (
+              <tr 
+                class="admin-row-hover group user-row"
+                data-user-id={user.id}
+                data-email={user.email.toLowerCase()}
+                data-role-id={user.roleId || ''}
+                data-has-role={hasRole ? 'true' : 'false'}
+              >
+                <!-- User email and avatar -->
+                <td class="py-4 px-6">
+                  <div class="flex items-center gap-3.5">
+                    <div class={`admin-avatar-hover w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm shrink-0 shadow-inner group-hover:scale-105 group-hover:ring-2 group-hover:ring-purple-500/40 ${
+                      isSuperAdmin 
+                        ? 'bg-gradient-to-tr from-cyan-600 to-purple-600' 
+                        : hasRole 
+                          ? 'bg-gradient-to-tr from-cyan-600 to-teal-500' 
+                          : 'bg-slate-800 text-slate-400 border border-slate-700'
+                    }`}>
+                      {userInitial}
+                    </div>
+                    <div class="min-w-0">
+                      <div class="font-semibold text-white group-hover:text-cyan-300 transition-colors truncate">
+                        {user.email}
+                      </div>
+                      <div class="text-xs text-slate-500 font-mono flex items-center gap-1.5 mt-0.5">
+                        <span>ID:</span>
+                        <span class="truncate max-w-[130px]" title={user.id}>{user.id}</span>
+                      </div>
+                    </div>
+                  </div>
+                </td>
+
+                <!-- Date -->
+                <td class="py-4 px-6 whitespace-nowrap">
+                  <span class="text-slate-300 font-medium">{dateFormatted}</span>
+                  <div class="text-xs text-slate-500">
+                    {user.last_sign_in_at ? 'Conectado recientemente' : 'Sin inicio de sesión'}
+                  </div>
+                </td>
+
+                <!-- Current Role Badge -->
+                <td class="py-4 px-6 whitespace-nowrap">
+                  <div class="role-badge-container">
+                    {user.roleName ? (
+                      <span class={`admin-badge-glow inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border transition-all duration-150 group-hover:brightness-125 ${
+                        isSuperAdmin 
+                          ? 'bg-gradient-to-r from-cyan-500/20 to-purple-500/20 text-cyan-200 border-cyan-500/30' 
+                          : user.roleName === 'Editor' 
+                            ? 'bg-amber-500/15 text-amber-300 border-amber-500/30' 
+                            : 'bg-emerald-500/15 text-emerald-300 border-emerald-500/25'
+                      }`}>
+                        <span class={`w-1.5 h-1.5 rounded-full ${isSuperAdmin ? 'bg-purple-400 animate-pulse' : 'bg-emerald-400'}`}></span>
+                        <span class="role-badge-text">{user.roleName}</span>
+                      </span>
+                    ) : (
+                      <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-amber-500/15 text-amber-300 border border-amber-500/25 transition-all duration-150 group-hover:brightness-125">
+                        <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                        <span class="role-badge-text">Sin Rol Asignado</span>
+                      </span>
+                    )}
+                  </div>
+                </td>
+
+                <!-- Role Selector Dropdown -->
+                <td class="py-4 px-6 whitespace-nowrap">
+                  <div class="relative w-56">
+                    <select 
+                      class="role-select w-full px-3 py-2 bg-slate-950 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 cursor-pointer transition-[border-color,box-shadow] duration-150"
+                      data-user-id={user.id}
+                      data-user-email={user.email}
+                      data-original-role={user.roleId || ''}
+                    >
+                      <option value="" class="bg-slate-900 text-slate-400">
+                        -- Sin Rol (Sin Privilegios) --
+                      </option>
+                      {roles.map((r) => (
+                        <option 
+                          value={r.id} 
+                          selected={user.roleId === r.id}
+                          class="bg-slate-900 text-white"
+                        >
+                          {r.name} {r.name === 'Super Administrador' ? '★' : ''}
+                        </option>
+                      ))}
+                    </select>
+
+                    <!-- Loading spinner on the select (hidden by default) -->
+                    <div class="select-spinner hidden absolute right-8 top-2.5 pointer-events-none">
+                      <span class="w-3.5 h-3.5 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin block"></span>
+                    </div>
+                  </div>
+                </td>
+
+                <!-- Module Access Summary Badges -->
+                <td class="py-4 px-6 text-right whitespace-nowrap">
+                  <div class="inline-flex items-center gap-1.5">
+                    {isSuperAdmin ? (
+                      <span class="px-2 py-0.5 rounded-md bg-purple-500/20 text-purple-300 border border-purple-500/30 text-xs font-bold">
+                        Acceso Total Irrestricto
+                      </span>
+                    ) : user.permissions ? (
+                      <>
+                        <span 
+                          class={`px-2 py-0.5 rounded-md text-xs font-semibold ${user.permissions.publicaciones?.read ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30' : 'bg-slate-900 text-red-400/60'}`}
+                          title="Permiso en Publicaciones"
+                        >
+                          {user.permissions.publicaciones?.read ? 'Pubs' : '✕ Pubs'}
+                        </span>
+                        <span 
+                          class={`px-2 py-0.5 rounded-md text-xs font-semibold ${user.permissions.galeria?.read ? 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/30' : 'bg-slate-900 text-red-400/60'}`}
+                          title="Permiso en Galería"
+                        >
+                          {user.permissions.galeria?.read ? 'Galería' : '✕ Galería'}
+                        </span>
+                        <span 
+                          class={`px-2 py-0.5 rounded-md text-xs font-semibold ${user.permissions.usuarios?.read ? 'bg-purple-500/15 text-purple-300 border border-purple-500/30' : 'bg-slate-900 text-red-400/60'}`}
+                          title="Permiso en Usuarios"
+                        >
+                          {user.permissions.usuarios?.read ? 'Usuarios' : '✕ Usuarios'}
+                        </span>
+                      </>
+                    ) : (
+                      <span class="text-slate-500 text-xs">Ninguno</span>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+
+      <!-- Empty State -->
+      <div id="noUsersState" class="hidden py-12 text-center text-slate-400 text-xs">
+        <svg class="w-8 h-8 mx-auto text-slate-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+        </svg>
+        <p class="font-medium text-slate-300">No se encontraron usuarios coincidentes</p>
+        <p class="text-[11px] text-slate-400 mt-1">Ajusta los términos de búsqueda o selecciona otra pestaña.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div 
+    id="userToastNotification" 
+    class="fixed bottom-6 right-6 z-50 transform translate-y-10 opacity-0 pointer-events-none transition-all duration-300 flex items-center gap-3 px-4 py-3 rounded-2xl bg-slate-900 border border-emerald-500/40 text-white shadow-xl shadow-slate-950/60"
+  >
+    <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+    <span id="userToastMessage" class="text-xs font-medium text-slate-200">Rol asignado exitosamente</span>
+  </div>
+
+</AdminLayout>
+
+<script>
+  const searchInput = document.getElementById('userSearchInput') as HTMLInputElement | null;
+  const userRows = document.querySelectorAll('.user-row') as NodeListOf<HTMLTableRowElement>;
+  const filterTabs = document.querySelectorAll('.user-tab-btn') as NodeListOf<HTMLButtonElement>;
+  const noUsersState = document.getElementById('noUsersState');
+
+  const countAllEl = document.getElementById('countAllUsers');
+  const countWithRoleEl = document.getElementById('countWithRole');
+  const countWithoutRoleEl = document.getElementById('countWithoutRole');
+
+  const toastNotification = document.getElementById('userToastNotification');
+  const toastMessage = document.getElementById('userToastMessage');
+
+  let currentFilter = 'all';
+
+  function showToast(message: string, isError = false) {
+    if (!toastNotification || !toastMessage) return;
+    toastMessage.textContent = message;
+
+    if (isError) {
+      toastNotification.className = 'fixed bottom-6 right-6 z-50 transform translate-y-0 opacity-100 transition-all duration-300 flex items-center gap-3 px-4 py-3 rounded-2xl bg-slate-900 border border-red-500/40 text-white shadow-xl shadow-slate-950/60';
+    } else {
+      toastNotification.className = 'fixed bottom-6 right-6 z-50 transform translate-y-0 opacity-100 transition-all duration-300 flex items-center gap-3 px-4 py-3 rounded-2xl bg-slate-900 border border-emerald-500/40 text-white shadow-xl shadow-slate-950/60';
+    }
+
+    setTimeout(() => {
+      toastNotification.classList.remove('opacity-100', 'translate-y-0');
+      toastNotification.classList.add('opacity-0', 'pointer-events-none', 'translate-y-10');
+    }, 3500);
+  }
+
+  function updateUserCounts() {
+    let withRole = 0;
+    let withoutRole = 0;
+    userRows.forEach((row) => {
+      const hasRole = row.getAttribute('data-has-role') === 'true';
+      if (hasRole) withRole++;
+      else withoutRole++;
+    });
+    if (countAllEl) countAllEl.textContent = String(userRows.length);
+    if (countWithRoleEl) countWithRoleEl.textContent = String(withRole);
+    if (countWithoutRoleEl) countWithoutRoleEl.textContent = String(withoutRole);
+  }
+
+  function applyFilters() {
+    const query = searchInput?.value.toLowerCase().trim() || '';
+    let visibleCount = 0;
+
+    userRows.forEach((row) => {
+      const email = row.getAttribute('data-email') || '';
+      const userId = row.getAttribute('data-user-id') || '';
+      const hasRole = row.getAttribute('data-has-role') === 'true';
+
+      const matchesSearch = !query || email.includes(query) || userId.includes(query);
+      let matchesFilter = true;
+
+      if (currentFilter === 'with-role') {
+        matchesFilter = hasRole;
+      } else if (currentFilter === 'without-role') {
+        matchesFilter = !hasRole;
+      }
+
+      if (matchesSearch && matchesFilter) {
+        row.style.display = '';
+        visibleCount++;
+      } else {
+        row.style.display = 'none';
+      }
+    });
+
+    if (noUsersState) {
+      if (visibleCount === 0) {
+        noUsersState.classList.remove('hidden');
+      } else {
+        noUsersState.classList.add('hidden');
+      }
+    }
+  }
+
+  // Filter tab buttons
+  filterTabs.forEach((tab) => {
+    tab.addEventListener('click', () => {
+      filterTabs.forEach((t) => {
+        t.classList.remove('active', 'bg-purple-500/15', 'border-purple-500/30', 'text-purple-300', 'font-semibold');
+        t.classList.add('text-slate-400', 'border-transparent', 'font-medium');
+      });
+
+      tab.classList.add('active', 'bg-purple-500/15', 'border-purple-500/30', 'text-purple-300', 'font-semibold');
+      tab.classList.remove('text-slate-400', 'border-transparent', 'font-medium');
+
+      currentFilter = tab.getAttribute('data-filter') || 'all';
+      applyFilters();
+    });
+  });
+
+  searchInput?.addEventListener('input', applyFilters);
+
+  // Role select change handler
+  const roleSelects = document.querySelectorAll('.role-select') as NodeListOf<HTMLSelectElement>;
+
+  roleSelects.forEach((select) => {
+    select.addEventListener('change', async () => {
+      const userId = select.getAttribute('data-user-id');
+      const userEmail = select.getAttribute('data-user-email') || 'este usuario';
+      const originalRoleId = select.getAttribute('data-original-role') || '';
+      const newRoleId = select.value.trim() || null;
+
+      // Add visual modified ring indicator immediately
+      select.classList.add('ring-2', 'ring-amber-400/40');
+
+      const row = select.closest('.user-row') as HTMLTableRowElement | null;
+      const spinner = select.parentElement?.querySelector('.select-spinner');
+      const badgeContainer = row?.querySelector('.role-badge-container');
+
+      // Confirmation if assigning Super Admin
+      const selectedOptionText = select.options[select.selectedIndex]?.text || '';
+      if (selectedOptionText.includes('Super Administrador')) {
+        const confirmed = confirm(`¿Estás seguro de que deseas otorgar permisos de «Super Administrador» a ${userEmail}? Tendrá acceso total e irrestricto.`);
+        if (!confirmed) {
+          select.value = originalRoleId;
+          select.classList.remove('ring-2', 'ring-amber-400/40');
+          return;
+        }
+      }
+
+      // Show spinner and disable select during request
+      select.disabled = true;
+      spinner?.classList.remove('hidden');
+
+      try {
+        const res = await fetch('/api/admin/users/assign-role', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, roleId: newRoleId }),
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          // Update original role attribute
+          select.setAttribute('data-original-role', newRoleId || '');
+          // Clear modified indicator since save succeeded
+          select.classList.remove('ring-2', 'ring-amber-400/40');
+
+          // Update UI badge
+          if (badgeContainer) {
+            if (data.role) {
+              const isSA = data.role.name === 'Super Administrador';
+              badgeContainer.innerHTML = `
+                <span class="admin-badge-glow inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border transition-all duration-150 group-hover:brightness-125 ${
+                  isSA 
+                    ? 'bg-gradient-to-r from-cyan-500/20 to-purple-500/20 text-cyan-200 border-cyan-500/30' 
+                    : data.role.name === 'Editor'
+                      ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+                      : 'bg-emerald-500/15 text-emerald-300 border-emerald-500/25'
+                }">
+                  <span class="w-1.5 h-1.5 rounded-full ${isSA ? 'bg-purple-400 animate-pulse' : 'bg-emerald-400'}"></span>
+                  <span class="role-badge-text">${data.role.name}</span>
+                </span>
+              `;
+              row?.setAttribute('data-has-role', 'true');
+              row?.setAttribute('data-role-id', data.role.id);
+            } else {
+              badgeContainer.innerHTML = `
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-amber-500/15 text-amber-300 border border-amber-500/25 transition-all duration-150 group-hover:brightness-125">
+                  <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                  <span class="role-badge-text">Sin Rol Asignado</span>
+                </span>
+              `;
+              row?.setAttribute('data-has-role', 'false');
+              row?.setAttribute('data-role-id', '');
+            }
+          }
+
+          showToast(data.message || `Rol actualizado para ${userEmail}`);
+          updateUserCounts();
+          applyFilters();
+        } else {
+          alert('Error: ' + (data.message || 'No se pudo asignar el rol'));
+          // Revert select value and clear indicator
+          select.value = originalRoleId;
+          select.classList.remove('ring-2', 'ring-amber-400/40');
+        }
+      } catch (err: any) {
+        console.error('Error al asignar rol:', err);
+        alert('Error al conectar con el servidor.');
+        select.value = originalRoleId;
+        select.classList.remove('ring-2', 'ring-amber-400/40');
+      } finally {
+        select.disabled = false;
+        spinner?.classList.add('hidden');
+      }
+    });
+  });
+</script>

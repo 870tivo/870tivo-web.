@@ -1,9 +1,29 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL as string;
-const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY as string;
+const supabaseUrl = (import.meta.env.PUBLIC_SUPABASE_URL || '') as string;
+const supabaseAnonKey = (import.meta.env.PUBLIC_SUPABASE_ANON_KEY || '') as string;
+const supabaseServiceRoleKey = (
+  (typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env.SUPABASE_SERVICE_ROLE_KEY : '') ||
+  (typeof process !== 'undefined' && process.env ? process.env.SUPABASE_SERVICE_ROLE_KEY : '') ||
+  ''
+) as string;
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+/**
+ * Cliente administrativo de Supabase con Service Role Key.
+ * Diseñado para operaciones SSR y endpoints de administración backend.
+ */
+export const supabaseAdmin = createClient(
+  supabaseUrl,
+  supabaseServiceRoleKey || supabaseAnonKey,
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  }
+);
 
 /**
  * Synchronizes Supabase auth session tokens to cookies for Astro middleware validation.

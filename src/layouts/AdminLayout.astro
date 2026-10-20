@@ -50,11 +50,12 @@ const fontsUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;60
         background: transparent;
       }
       .custom-scrollbar::-webkit-scrollbar-thumb {
-        background: #1e293b;
+        background: #334155;
         border-radius: 9999px;
+        transition: background 0.15s ease;
       }
       .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-        background: #334155;
+        background: #475569;
       }
     </style>
   </head>
@@ -93,7 +94,7 @@ const fontsUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;60
             <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
             <span>&copy; {new Date().getFullYear()} <strong>870tivo Control Studio</strong> &mdash; Plataforma Administrativa Privada</span>
           </div>
-          <div class="flex items-center gap-4 text-slate-400 text-[11px]">
+          <div class="flex items-center gap-4 text-slate-400 text-xs">
             <span>Protegido con Supabase Auth & Astro SSR</span>
             <span>&bull;</span>
             <a href="/" target="_blank" class="hover:text-cyan-400 transition-colors">Portal Web</a>

@@ -10,6 +10,15 @@
     --color-orange: #EE8A4C;
     --color-turquoise: #18B5B8;
     --color-muted: #8A8D85;
+
+    /* Admin panel tokens */
+    --admin-duration-fast: 120ms;
+    --admin-duration-base: 180ms;
+    --admin-duration-slow: 300ms;
+    --admin-ease: cubic-bezier(0.16, 1, 0.3, 1);
+    --admin-shadow-elevated: 0 8px 32px -4px rgba(0,0,0,0.45), 0 4px 12px -2px rgba(0,0,0,0.25);
+    --admin-shadow-cyan: 0 4px 24px -4px rgba(6,182,212,0.15);
+    --admin-shadow-red: 0 4px 24px -4px rgba(239,68,68,0.12);
   }
 
   html.dark, html[data-theme="dark"] {
@@ -20,5 +29,94 @@
 
   body {
     @apply bg-brand-bg text-brand-ink dark:bg-brand-ink dark:text-brand-darkInk font-sans antialiased selection:bg-brand-orange selection:text-white transition-colors duration-200;
+  }
+}
+
+@layer utilities {
+  /* ── Admin row hover ── */
+  .admin-row-hover {
+    transition: background-color 150ms ease, box-shadow 150ms ease;
+  }
+  .admin-row-hover:hover {
+    background-color: rgba(30, 41, 59, 0.4);
+    box-shadow: inset 0 1px 0 0 rgba(148, 163, 184, 0.05),
+                inset 0 -1px 0 0 rgba(148, 163, 184, 0.05);
+  }
+
+  /* ── Admin avatar scale on row hover ── */
+  .admin-avatar {
+    transition: transform 150ms ease, box-shadow 150ms ease;
+  }
+  .admin-row-hover:hover .admin-avatar {
+    transform: scale(1.08);
+    box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.3);
+  }
+
+  /* ── Admin button press effect ── */
+  .admin-btn {
+    transition: all 150ms ease;
+  }
+  .admin-btn:hover {
+    transform: scale(1.02);
+  }
+  .admin-btn:active {
+    transform: scale(0.98);
+  }
+
+  /* ── Permission check/cross icon ── */
+  .perm-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.625rem;
+    height: 1.625rem;
+    border-radius: 0.5rem;
+    font-size: 0.6875rem;
+    font-weight: 700;
+  }
+
+  /* ── Metric card hover ── */
+  .metric-card {
+    transition: border-color 200ms ease, box-shadow 200ms ease;
+  }
+  .metric-card:hover {
+    border-color: rgba(100, 116, 139, 0.4);
+    box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.3);
+  }
+
+  /* ── Role select modified indicator ── */
+  .role-select.modified {
+    box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.4) !important;
+    border-color: rgba(251, 191, 36, 0.5) !important;
+  }
+}
+
+/* Admin row/card hover transitions */
+@layer utilities {
+  .admin-row-hover {
+    transition: background-color var(--admin-duration-fast) var(--admin-ease),
+                box-shadow var(--admin-duration-base) var(--admin-ease);
+  }
+  .admin-row-hover:hover {
+    background-color: rgba(30, 41, 59, 0.4);
+    box-shadow: inset 0 1px 0 rgba(148,163,184,0.06), inset 0 -1px 0 rgba(148,163,184,0.06);
+  }
+  .admin-btn-scale {
+    transition: transform var(--admin-duration-fast) var(--admin-ease),
+                box-shadow var(--admin-duration-base) var(--admin-ease),
+                background-color var(--admin-duration-fast) var(--admin-ease);
+  }
+  .admin-btn-scale:hover {
+    transform: scale(1.02);
+  }
+  .admin-btn-scale:active {
+    transform: scale(0.98);
+  }
+  .admin-avatar-hover {
+    transition: transform var(--admin-duration-base) var(--admin-ease),
+                box-shadow var(--admin-duration-base) var(--admin-ease);
+  }
+  .admin-badge-glow {
+    transition: filter var(--admin-duration-base) var(--admin-ease);
   }
 }

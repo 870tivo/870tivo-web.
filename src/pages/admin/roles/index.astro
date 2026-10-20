@@ -1,0 +1,934 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { getAllRoles } from '../../../lib/auth';
+
+// Server-side fetching of roles
+const roles = await getAllRoles();
+const totalRoles = roles.length;
+const totalUsersWithRoles = roles.reduce((acc, r) => acc + (r.user_count || 0), 0);
+---
+
+<AdminLayout 
+  title="Gestión de Roles y Permisos | 870tivo Control Studio" 
+  headerTitle="Roles & Permisos"
+  activeModule="roles"
+>
+  <!-- Header with Actions -->
+  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+    <div>
+      <div class="flex items-center gap-2 mb-1">
+        <span class="text-xs uppercase font-bold tracking-widest text-cyan-400">Control de Acceso</span>
+        <span class="text-xs px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 font-semibold">
+          {totalRoles} Roles Configurados
+        </span>
+      </div>
+      <h1 class="text-3xl font-black text-white tracking-tight">
+        Roles & Permisos Granulares
+      </h1>
+      <p class="text-xs sm:text-sm text-slate-200 mt-1 max-w-2xl">
+        Configura la matriz de permisos por módulo (Publicaciones, Galería y Usuarios) para determinar con precisión qué acciones puede realizar cada miembro del equipo.
+      </p>
+    </div>
+
+    <!-- Quick Action Buttons -->
+    <div class="flex items-center gap-3">
+      <a 
+        href="/admin/usuarios"
+        class="admin-btn-scale inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 text-xs font-semibold"
+      >
+        <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+        </svg>
+        <span>Ver Asignación de Usuarios</span>
+      </a>
+
+      <button 
+        type="button" 
+        id="openCreateRoleModalBtn"
+        class="admin-btn-scale inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-gradient-to-r from-cyan-400 via-teal-300 to-cyan-400 hover:from-cyan-300 hover:to-teal-200 text-slate-950 font-bold text-xs uppercase tracking-wider shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/30 cursor-pointer"
+      >
+        <svg class="w-4 h-4 text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+        </svg>
+        <span>+ Crear Nuevo Rol</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Metric Quick Cards -->
+  <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div class="metric-card p-5 rounded-2xl bg-slate-900/60 border border-slate-800/80">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-xs text-slate-400 font-medium">Total de Roles</span>
+        <span class="p-2 rounded-xl bg-cyan-500/10 text-cyan-400">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+          </svg>
+        </span>
+      </div>
+      <div class="text-2xl font-extrabold text-white">{totalRoles}</div>
+      <div class="text-xs text-slate-500 mt-1">Definidos en Supabase DB</div>
+    </div>
+
+    <div class="metric-card p-5 rounded-2xl bg-slate-900/60 border border-slate-800/80">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-xs text-slate-400 font-medium">Usuarios Asignados</span>
+        <span class="p-2 rounded-xl bg-emerald-500/10 text-emerald-400">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+          </svg>
+        </span>
+      </div>
+      <div class="text-2xl font-extrabold text-emerald-400">{totalUsersWithRoles}</div>
+      <div class="text-xs text-slate-500 mt-1">Con privilegios activos</div>
+    </div>
+
+    <div class="metric-card p-5 rounded-2xl bg-slate-900/60 border border-slate-800/80">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-xs text-slate-400 font-medium">Módulos Gobernados</span>
+        <span class="p-2 rounded-xl bg-amber-500/10 text-amber-400">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+          </svg>
+        </span>
+      </div>
+      <div class="text-2xl font-extrabold text-white">3 Módulos</div>
+      <div class="text-xs text-slate-500 mt-1">Publicaciones, Galería, Usuarios</div>
+    </div>
+
+    <div class="metric-card p-5 rounded-2xl bg-slate-900/60 border border-slate-800/80">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-xs text-slate-400 font-medium">Seguridad RLS</span>
+        <span class="p-2 rounded-xl bg-purple-500/10 text-purple-400">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+        </span>
+      </div>
+      <div class="text-2xl font-extrabold text-purple-400">Activa</div>
+      <div class="text-xs text-slate-500 mt-1">Postgres Row Level Security</div>
+    </div>
+  </section>
+
+  <!-- Explanation Banner -->
+  <div class="rounded-2xl bg-gradient-to-r from-cyan-950/40 via-slate-900/60 to-slate-900/60 border border-cyan-500/30 p-4 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-lg shadow-cyan-950/10">
+    <div class="flex items-start sm:items-center gap-3.5">
+      <div class="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/25 text-cyan-400 shrink-0">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </div>
+      <div>
+        <h4 class="font-bold text-white text-xs uppercase tracking-wider">
+          Estructura de Permisos Granulares y Switches de Visibilidad
+        </h4>
+        <p class="text-xs text-slate-200 mt-0.5 leading-relaxed">
+          Cada rol almacena una estructura JSONB en la base de datos con acciones CRUD (<code class="text-cyan-300">read</code>, <code class="text-cyan-300">create</code>, <code class="text-cyan-300">update</code>, <code class="text-cyan-300">delete</code>) y la acción especial <code class="text-amber-300">toggle_visibility</code> que autoriza encender o apagar los switches de la landing page pública.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Roles Grid / Table -->
+  <div class="space-y-4 mb-10">
+    {roles.map((role) => {
+      const isSuperAdmin = role.name === 'Super Administrador';
+      const perms = role.permissions || {};
+      const pubPerms = perms.publicaciones || {};
+      const galPerms = perms.galeria || {};
+      const userPerms = perms.usuarios || {};
+
+      return (
+        <div 
+          class="rounded-3xl bg-slate-900/70 border border-slate-800/80 p-5 sm:p-6 hover:border-slate-700/80 hover:bg-slate-800/40 shadow-xl transition-[border-color,background-color] duration-150"
+          data-role-id={role.id}
+          data-role-name={role.name}
+          data-role-raw={JSON.stringify(role)}
+        >
+          <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-800/60">
+            <div class="flex items-start sm:items-center gap-3.5">
+              <div class={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 shadow-inner ${
+                isSuperAdmin 
+                  ? 'bg-gradient-to-tr from-cyan-600 to-purple-600 text-white' 
+                  : 'bg-slate-800 border border-slate-700 text-cyan-400'
+              }`}>
+                {isSuperAdmin ? (
+                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                  </svg>
+                ) : (
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                )}
+              </div>
+
+              <div>
+                <div class="flex items-center gap-2.5 flex-wrap">
+                  <h3 class="text-base sm:text-lg font-bold text-white tracking-tight">
+                    {role.name}
+                  </h3>
+                  {isSuperAdmin && (
+                    <span class="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-cyan-500/20 to-purple-500/20 text-cyan-200 border border-cyan-500/30 text-xs font-extrabold uppercase tracking-wider">
+                      Rol del Sistema
+                    </span>
+                  )}
+                  <span class="px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 text-xs font-medium border border-slate-700">
+                    {role.user_count || 0} usuario(s) asignados
+                  </span>
+                </div>
+                <p class="text-xs text-slate-400 mt-1 max-w-2xl leading-relaxed">
+                  {role.description || 'Sin descripción asignada.'}
+                </p>
+              </div>
+            </div>
+
+            <!-- Action buttons -->
+            <div class="flex items-center gap-2 self-end lg:self-center">
+              <button 
+                type="button" 
+                class="edit-role-btn admin-btn-scale inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 text-xs font-semibold cursor-pointer hover:shadow-[var(--admin-shadow-cyan)]"
+                data-role-id={role.id}
+              >
+                <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                <span>Editar Permisos</span>
+              </button>
+
+              {!isSuperAdmin && (
+                <button 
+                  type="button" 
+                  class="delete-role-btn admin-btn-scale p-2 rounded-xl text-slate-400 hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/20 cursor-pointer hover:shadow-[var(--admin-shadow-red)]"
+                  data-role-id={role.id}
+                  data-role-name={role.name}
+                  data-user-count={role.user_count || 0}
+                  title="Eliminar rol"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+              )}
+            </div>
+          </div>
+
+          <!-- Permissions Inline Table -->
+          <div class="pt-4">
+            <div class="rounded-2xl border border-slate-800/60 overflow-hidden">
+              <table class="w-full text-xs">
+                <thead>
+                  <tr class="bg-slate-950/60">
+                    <th class="py-2.5 px-4 text-left text-xs font-semibold uppercase tracking-widest text-slate-400">Módulo</th>
+                    <th class="py-2.5 px-3 text-center text-xs font-semibold uppercase tracking-widest text-slate-400">Leer</th>
+                    <th class="py-2.5 px-3 text-center text-xs font-semibold uppercase tracking-widest text-slate-400">Crear</th>
+                    <th class="py-2.5 px-3 text-center text-xs font-semibold uppercase tracking-widest text-slate-400">Editar</th>
+                    <th class="py-2.5 px-3 text-center text-xs font-semibold uppercase tracking-widest text-slate-400">Borrar</th>
+                    <th class="py-2.5 px-3 text-center text-xs font-semibold uppercase tracking-widest text-slate-400">⚡ Switch</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800/40">
+                  <tr class="admin-row-hover">
+                    <td class="py-3 px-4 font-semibold text-white">
+                      <span class="flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                        Publicaciones
+                      </span>
+                    </td>
+                    <td class="py-3 px-3 text-center">
+                      {pubPerms.read || isSuperAdmin
+                        ? <span class="text-emerald-400 font-bold">✓</span>
+                        : <span class="text-red-400/60">✕</span>}
+                    </td>
+                    <td class="py-3 px-3 text-center">
+                      {pubPerms.create || isSuperAdmin
+                        ? <span class="text-emerald-400 font-bold">✓</span>
+                        : <span class="text-red-400/60">✕</span>}
+                    </td>
+                    <td class="py-3 px-3 text-center">
+                      {pubPerms.update || isSuperAdmin
+                        ? <span class="text-emerald-400 font-bold">✓</span>
+                        : <span class="text-red-400/60">✕</span>}
+                    </td>
+                    <td class="py-3 px-3 text-center">
+                      {pubPerms.delete || isSuperAdmin
+                        ? <span class="text-emerald-400 font-bold">✓</span>
+                        : <span class="text-red-400/60">✕</span>}
+                    </td>
+                    <td class="py-3 px-3 text-center">
+                      {pubPerms.toggle_visibility || isSuperAdmin
+                        ? <span class="text-cyan-400 font-bold">✓</span>
+                        : <span class="text-red-400/60">✕</span>}
+                    </td>
+                  </tr>
+                  <tr class="admin-row-hover">
+                    <td class="py-3 px-4 font-semibold text-white">
+                      <span class="flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+                        Galería de Arte
+                      </span>
+                    </td>
+                    <td class="py-3 px-3 text-center">
+                      {galPerms.read || isSuperAdmin
+                        ? <span class="text-emerald-400 font-bold">✓</span>
+                        : <span class="text-red-400/60">✕</span>}
+                    </td>
+                    <td class="py-3 px-3 text-center">
+                      {galPerms.create || isSuperAdmin
+                        ? <span class="text-emerald-400 font-bold">✓</span>
+                        : <span class="text-red-400/60">✕</span>}
+                    </td>
+                    <td class="py-3 px-3 text-center">
+                      {galPerms.update || isSuperAdmin
+                        ? <span class="text-emerald-400 font-bold">✓</span>
+                        : <span class="text-red-400/60">✕</span>}
+                    </td>
+                    <td class="py-3 px-3 text-center">
+                      {galPerms.delete || isSuperAdmin
+                        ? <span class="text-emerald-400 font-bold">✓</span>
+                        : <span class="text-red-400/60">✕</span>}
+                    </td>
+                    <td class="py-3 px-3 text-center">
+                      {galPerms.toggle_visibility || isSuperAdmin
+                        ? <span class="text-cyan-400 font-bold">✓</span>
+                        : <span class="text-red-400/60">✕</span>}
+                    </td>
+                  </tr>
+                  <tr class="admin-row-hover">
+                    <td class="py-3 px-4 font-semibold text-white">
+                      <span class="flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-purple-400"></span>
+                        Usuarios & Roles
+                      </span>
+                    </td>
+                    <td class="py-3 px-3 text-center">
+                      {userPerms.read || isSuperAdmin
+                        ? <span class="text-emerald-400 font-bold">✓</span>
+                        : <span class="text-red-400/60">✕</span>}
+                    </td>
+                    <td class="py-3 px-3 text-center">
+                      {userPerms.create || isSuperAdmin
+                        ? <span class="text-emerald-400 font-bold">✓</span>
+                        : <span class="text-red-400/60">✕</span>}
+                    </td>
+                    <td class="py-3 px-3 text-center">
+                      {userPerms.update || isSuperAdmin
+                        ? <span class="text-emerald-400 font-bold">✓</span>
+                        : <span class="text-red-400/60">✕</span>}
+                    </td>
+                    <td class="py-3 px-3 text-center">
+                      {userPerms.delete || isSuperAdmin
+                        ? <span class="text-emerald-400 font-bold">✓</span>
+                        : <span class="text-red-400/60">✕</span>}
+                    </td>
+                    <td class="py-3 px-3 text-center">
+                      <span class="text-slate-600">—</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      );
+    })}
+  </div>
+
+  <!-- CREATE / EDIT ROLE MODAL -->
+  <div 
+    id="roleModal" 
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-300 overflow-y-auto"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="roleModalTitle"
+  >
+    <div 
+      id="roleModalCard"
+      class="relative w-full max-w-3xl my-8 rounded-3xl bg-slate-900 border border-slate-800 p-6 sm:p-8 shadow-2xl shadow-cyan-950/40 transform scale-95 transition-all duration-300 max-h-[90vh] overflow-y-auto custom-scrollbar"
+    >
+      <!-- Modal Close button -->
+      <button 
+        type="button" 
+        id="closeRoleModalBtn"
+        class="absolute top-6 right-6 p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition-colors"
+        aria-label="Cerrar modal"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+
+      <!-- Modal Header -->
+      <div class="mb-6">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-300 text-[11px] font-bold mb-2">
+          <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+          Matriz de Permisos Granulares
+        </div>
+        <h3 id="roleModalTitle" class="text-xl sm:text-2xl font-bold text-white tracking-tight">
+          Crear Nuevo Rol
+        </h3>
+        <p class="text-xs sm:text-sm text-slate-200 mt-1">
+          Define el nombre, descripción y la matriz detallada de permisos asignados a este rol.
+        </p>
+      </div>
+
+      <!-- Form Inputs -->
+      <form id="roleForm" class="space-y-6">
+        <input type="hidden" id="roleIdInput" name="id" value="" />
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div class="sm:col-span-1">
+            <label class="block text-xs font-bold text-slate-200 uppercase tracking-wider mb-1.5" for="roleNameInput">
+              Nombre del Rol *
+            </label>
+            <input 
+              type="text" 
+              id="roleNameInput" 
+              name="name" 
+              required
+              placeholder="Ej. Editor de Contenidos" 
+              class="w-full px-3.5 py-2.5 bg-slate-950/80 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all"
+            />
+          </div>
+
+          <div class="sm:col-span-2">
+            <label class="block text-xs font-bold text-slate-200 uppercase tracking-wider mb-1.5" for="roleDescInput">
+              Descripción del Rol
+            </label>
+            <input 
+              type="text" 
+              id="roleDescInput" 
+              name="description" 
+              placeholder="Breve resumen de las responsabilidades asignadas..." 
+              class="w-full px-3.5 py-2.5 bg-slate-950/80 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all"
+            />
+          </div>
+        </div>
+
+        <!-- Presets Bar -->
+        <div class="p-3 rounded-2xl bg-slate-950/60 border border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+          <span class="text-xs text-slate-400 font-medium">Plantillas de Asignación Rápida:</span>
+          <div class="flex items-center gap-2 flex-wrap">
+            <button 
+              type="button" 
+              id="presetReadOnlyBtn"
+              class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-white text-[11px] font-semibold border border-slate-700 transition-colors cursor-pointer"
+            >
+              Solo Lectura
+            </button>
+            <button 
+              type="button" 
+              id="presetEditorBtn"
+              class="px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 text-[11px] font-semibold border border-amber-500/30 transition-colors cursor-pointer"
+            >
+              Editor Estándar
+            </button>
+            <button 
+              type="button" 
+              id="presetFullBtn"
+              class="px-2.5 py-1 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 text-[11px] font-semibold border border-cyan-500/30 transition-colors cursor-pointer"
+            >
+              Control Total
+            </button>
+            <button 
+              type="button" 
+              id="presetClearBtn"
+              class="px-2.5 py-1 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-300 text-[11px] font-semibold border border-red-500/30 transition-colors cursor-pointer"
+            >
+              Desmarcar Todo
+            </button>
+          </div>
+        </div>
+
+        <!-- Granular Permissions Matrix Table -->
+        <div class="rounded-2xl border border-slate-800 bg-slate-950/70 overflow-hidden">
+          <div class="p-3.5 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
+            <span class="text-xs font-semibold uppercase tracking-widest text-slate-400">
+              Matriz Granular por Módulo
+            </span>
+            <span class="text-xs text-slate-500">CRUD + Toggle de Visibilidad</span>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300" id="permissionsTable">
+              <thead class="bg-slate-900/80 text-xs font-semibold uppercase tracking-widest text-slate-400 border-b border-slate-800">
+                <tr>
+                  <th class="py-3 px-4">Módulo</th>
+                  <th class="py-3 px-3 text-center">Leer</th>
+                  <th class="py-3 px-3 text-center">Crear</th>
+                  <th class="py-3 px-3 text-center">Editar</th>
+                  <th class="py-3 px-3 text-center">Eliminar</th>
+                  <th class="py-3 px-3 text-center">⚡ Switch Visibilidad</th>
+                  <th class="py-3 px-4 text-right">Fila</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800/60">
+                <!-- 1. Publicaciones -->
+                <tr class="admin-row-hover" data-module="publicaciones">
+                  <td class="py-3.5 px-4 font-semibold text-white">
+                    <div class="flex items-center gap-2">
+                      <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                      <span>Publicaciones</span>
+                    </div>
+                    <span class="text-xs text-slate-500 block font-normal">Artículos y ensayos</span>
+                  </td>
+                  <td class="py-3.5 px-3 text-center">
+                    <input type="checkbox" data-mod="publicaciones" data-action="read" class="perm-check w-4 h-4 rounded text-cyan-500 bg-slate-900 border-slate-700 focus:ring-cyan-400 cursor-pointer" />
+                  </td>
+                  <td class="py-3.5 px-3 text-center">
+                    <input type="checkbox" data-mod="publicaciones" data-action="create" class="perm-check w-4 h-4 rounded text-cyan-500 bg-slate-900 border-slate-700 focus:ring-cyan-400 cursor-pointer" />
+                  </td>
+                  <td class="py-3.5 px-3 text-center">
+                    <input type="checkbox" data-mod="publicaciones" data-action="update" class="perm-check w-4 h-4 rounded text-cyan-500 bg-slate-900 border-slate-700 focus:ring-cyan-400 cursor-pointer" />
+                  </td>
+                  <td class="py-3.5 px-3 text-center">
+                    <input type="checkbox" data-mod="publicaciones" data-action="delete" class="perm-check w-4 h-4 rounded text-cyan-500 bg-slate-900 border-slate-700 focus:ring-cyan-400 cursor-pointer" />
+                  </td>
+                  <td class="py-3.5 px-3 text-center">
+                    <input type="checkbox" data-mod="publicaciones" data-action="toggle_visibility" class="perm-check w-4 h-4 rounded text-amber-500 bg-slate-900 border-slate-700 focus:ring-amber-400 cursor-pointer" />
+                  </td>
+                  <td class="py-3.5 px-4 text-right">
+                    <button type="button" class="toggle-row-btn text-[11px] text-cyan-400 hover:text-cyan-300 font-medium cursor-pointer" data-target-mod="publicaciones">
+                      Invertir
+                    </button>
+                  </td>
+                </tr>
+
+                <!-- 2. Galería -->
+                <tr class="admin-row-hover" data-module="galeria">
+                  <td class="py-3.5 px-4 font-semibold text-white">
+                    <div class="flex items-center gap-2">
+                      <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+                      <span>Galería de Arte</span>
+                    </div>
+                    <span class="text-xs text-slate-500 block font-normal">Obras y exposiciones</span>
+                  </td>
+                  <td class="py-3.5 px-3 text-center">
+                    <input type="checkbox" data-mod="galeria" data-action="read" class="perm-check w-4 h-4 rounded text-cyan-500 bg-slate-900 border-slate-700 focus:ring-cyan-400 cursor-pointer" />
+                  </td>
+                  <td class="py-3.5 px-3 text-center">
+                    <input type="checkbox" data-mod="galeria" data-action="create" class="perm-check w-4 h-4 rounded text-cyan-500 bg-slate-900 border-slate-700 focus:ring-cyan-400 cursor-pointer" />
+                  </td>
+                  <td class="py-3.5 px-3 text-center">
+                    <input type="checkbox" data-mod="galeria" data-action="update" class="perm-check w-4 h-4 rounded text-cyan-500 bg-slate-900 border-slate-700 focus:ring-cyan-400 cursor-pointer" />
+                  </td>
+                  <td class="py-3.5 px-3 text-center">
+                    <input type="checkbox" data-mod="galeria" data-action="delete" class="perm-check w-4 h-4 rounded text-cyan-500 bg-slate-900 border-slate-700 focus:ring-cyan-400 cursor-pointer" />
+                  </td>
+                  <td class="py-3.5 px-3 text-center">
+                    <input type="checkbox" data-mod="galeria" data-action="toggle_visibility" class="perm-check w-4 h-4 rounded text-amber-500 bg-slate-900 border-slate-700 focus:ring-amber-400 cursor-pointer" />
+                  </td>
+                  <td class="py-3.5 px-4 text-right">
+                    <button type="button" class="toggle-row-btn text-[11px] text-cyan-400 hover:text-cyan-300 font-medium cursor-pointer" data-target-mod="galeria">
+                      Invertir
+                    </button>
+                  </td>
+                </tr>
+
+                <!-- 3. Usuarios -->
+                <tr class="admin-row-hover" data-module="usuarios">
+                  <td class="py-3.5 px-4 font-semibold text-white">
+                    <div class="flex items-center gap-2">
+                      <span class="w-2 h-2 rounded-full bg-purple-400"></span>
+                      <span>Usuarios & Roles</span>
+                    </div>
+                    <span class="text-xs text-slate-500 block font-normal">Cuentas y privilegios</span>
+                  </td>
+                  <td class="py-3.5 px-3 text-center">
+                    <input type="checkbox" data-mod="usuarios" data-action="read" class="perm-check w-4 h-4 rounded text-cyan-500 bg-slate-900 border-slate-700 focus:ring-cyan-400 cursor-pointer" />
+                  </td>
+                  <td class="py-3.5 px-3 text-center">
+                    <input type="checkbox" data-mod="usuarios" data-action="create" class="perm-check w-4 h-4 rounded text-cyan-500 bg-slate-900 border-slate-700 focus:ring-cyan-400 cursor-pointer" />
+                  </td>
+                  <td class="py-3.5 px-3 text-center">
+                    <input type="checkbox" data-mod="usuarios" data-action="update" class="perm-check w-4 h-4 rounded text-cyan-500 bg-slate-900 border-slate-700 focus:ring-cyan-400 cursor-pointer" />
+                  </td>
+                  <td class="py-3.5 px-3 text-center">
+                    <input type="checkbox" data-mod="usuarios" data-action="delete" class="perm-check w-4 h-4 rounded text-cyan-500 bg-slate-900 border-slate-700 focus:ring-cyan-400 cursor-pointer" />
+                  </td>
+                  <td class="py-3.5 px-3 text-center text-slate-600 text-xs">
+                    N/A
+                  </td>
+                  <td class="py-3.5 px-4 text-right">
+                    <button type="button" class="toggle-row-btn text-[11px] text-cyan-400 hover:text-cyan-300 font-medium cursor-pointer" data-target-mod="usuarios">
+                      Invertir
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Submit & Cancel buttons -->
+        <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+          <button 
+            type="button" 
+            id="cancelRoleModalBtn"
+            class="px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold transition-colors cursor-pointer"
+          >
+            Cancelar
+          </button>
+
+          <button 
+            type="submit" 
+            id="saveRoleSubmitBtn"
+            class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-bold text-xs uppercase tracking-wider shadow-lg shadow-cyan-500/20 transition-all cursor-pointer"
+          >
+            <span id="saveRoleBtnText">Guardar Rol</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- DELETE CONFIRMATION MODAL -->
+  <div 
+    id="deleteRoleModal" 
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm opacity-0 pointer-events-none transition-all duration-300"
+    role="dialog"
+    aria-modal="true"
+  >
+    <div class="relative w-full max-w-md rounded-3xl bg-slate-900 border border-slate-800 p-6 sm:p-7 shadow-2xl">
+      <div class="w-12 h-12 rounded-2xl bg-red-500/15 border border-red-500/30 text-red-400 flex items-center justify-center mb-4">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+        </svg>
+      </div>
+
+      <h3 class="text-xl font-bold text-white tracking-tight">¿Eliminar este rol?</h3>
+      <p id="deleteRoleModalMsg" class="text-xs sm:text-sm text-slate-200 mt-2 leading-relaxed">
+        Esta acción es irreversible y eliminará la definición de permisos asociada.
+      </p>
+
+      <div class="mt-6 flex items-center justify-end gap-3">
+        <button 
+          type="button" 
+          id="cancelDeleteRoleBtn"
+          class="px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold transition-colors cursor-pointer"
+        >
+          Cancelar
+        </button>
+        <button 
+          type="button" 
+          id="confirmDeleteRoleBtn"
+          class="px-5 py-2.5 rounded-xl bg-red-500 hover:bg-red-400 text-white text-xs font-bold uppercase tracking-wider shadow-lg shadow-red-500/20 transition-all cursor-pointer"
+        >
+          Sí, Eliminar Rol
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div 
+    id="toastNotification" 
+    class="fixed bottom-6 right-6 z-50 transform translate-y-10 opacity-0 pointer-events-none transition-all duration-300 flex items-center gap-3 px-4 py-3 rounded-2xl bg-slate-900 border border-cyan-500/40 text-white shadow-xl shadow-slate-950/60"
+  >
+    <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping"></span>
+    <span id="toastMessage" class="text-xs font-medium text-slate-200">Operación exitosa</span>
+  </div>
+
+</AdminLayout>
+
+<script>
+  import type { Role, RolePermissions } from '../../../types/roles';
+
+  // Modal elements
+  const modal = document.getElementById('roleModal') as HTMLElement | null;
+  const modalCard = document.getElementById('roleModalCard') as HTMLElement | null;
+  const openCreateBtn = document.getElementById('openCreateRoleModalBtn');
+  const closeBtn = document.getElementById('closeRoleModalBtn');
+  const cancelBtn = document.getElementById('cancelRoleModalBtn');
+  const form = document.getElementById('roleForm') as HTMLFormElement | null;
+  const modalTitle = document.getElementById('roleModalTitle');
+  const roleIdInput = document.getElementById('roleIdInput') as HTMLInputElement | null;
+  const roleNameInput = document.getElementById('roleNameInput') as HTMLInputElement | null;
+  const roleDescInput = document.getElementById('roleDescInput') as HTMLInputElement | null;
+  const saveBtn = document.getElementById('saveRoleSubmitBtn') as HTMLButtonElement | null;
+  const saveBtnText = document.getElementById('saveRoleBtnText');
+
+  // Delete modal
+  const deleteModal = document.getElementById('deleteRoleModal') as HTMLElement | null;
+  const deleteModalMsg = document.getElementById('deleteRoleModalMsg');
+  const cancelDeleteBtn = document.getElementById('cancelDeleteRoleBtn');
+  const confirmDeleteBtn = document.getElementById('confirmDeleteRoleBtn') as HTMLButtonElement | null;
+
+  // Toast
+  const toastNotification = document.getElementById('toastNotification');
+  const toastMessage = document.getElementById('toastMessage');
+
+  let activeDeleteRoleId: string | null = null;
+
+  function showToast(message: string, isError = false) {
+    if (!toastNotification || !toastMessage) return;
+    toastMessage.textContent = message;
+    if (isError) {
+      toastNotification.className = 'fixed bottom-6 right-6 z-50 transform translate-y-0 opacity-100 transition-all duration-300 flex items-center gap-3 px-4 py-3 rounded-2xl bg-slate-900 border border-red-500/40 text-white shadow-xl shadow-slate-950/60';
+    } else {
+      toastNotification.className = 'fixed bottom-6 right-6 z-50 transform translate-y-0 opacity-100 transition-all duration-300 flex items-center gap-3 px-4 py-3 rounded-2xl bg-slate-900 border border-cyan-500/40 text-white shadow-xl shadow-slate-950/60';
+    }
+
+    setTimeout(() => {
+      toastNotification.classList.remove('opacity-100', 'translate-y-0');
+      toastNotification.classList.add('opacity-0', 'pointer-events-none', 'translate-y-10');
+    }, 3500);
+  }
+
+  function openModal(isEdit = false, roleData?: Role) {
+    if (!modal || !modalCard) return;
+
+    if (isEdit && roleData) {
+      if (modalTitle) modalTitle.textContent = `Editar Rol: ${roleData.name}`;
+      if (roleIdInput) roleIdInput.value = roleData.id;
+      if (roleNameInput) {
+        roleNameInput.value = roleData.name;
+        // Don't allow changing the system Super Admin name
+        roleNameInput.disabled = roleData.name === 'Super Administrador';
+      }
+      if (roleDescInput) roleDescInput.value = roleData.description || '';
+      if (saveBtnText) saveBtnText.textContent = 'Actualizar Rol';
+
+      // Fill permissions checkboxes
+      const perms = roleData.permissions || {};
+      document.querySelectorAll<HTMLInputElement>('.perm-check').forEach((cb) => {
+        const mod = cb.getAttribute('data-mod') as keyof RolePermissions;
+        const action = cb.getAttribute('data-action') as string;
+        const modPerms = (perms[mod] || {}) as unknown as Record<string, boolean>;
+        cb.checked = Boolean(modPerms[action]);
+      });
+    } else {
+      if (modalTitle) modalTitle.textContent = 'Crear Nuevo Rol';
+      if (roleIdInput) roleIdInput.value = '';
+      if (roleNameInput) {
+        roleNameInput.value = '';
+        roleNameInput.disabled = false;
+      }
+      if (roleDescInput) roleDescInput.value = '';
+      if (saveBtnText) saveBtnText.textContent = 'Guardar Rol';
+
+      // Clear all checkboxes by default
+      document.querySelectorAll<HTMLInputElement>('.perm-check').forEach((cb) => {
+        cb.checked = false;
+      });
+    }
+
+    modal.classList.remove('opacity-0', 'pointer-events-none');
+    modal.classList.add('opacity-100');
+    modalCard.classList.remove('scale-95');
+    modalCard.classList.add('scale-100');
+    roleNameInput?.focus();
+  }
+
+  function closeModal() {
+    if (!modal || !modalCard) return;
+    modal.classList.remove('opacity-100');
+    modal.classList.add('opacity-0', 'pointer-events-none');
+    modalCard.classList.remove('scale-100');
+    modalCard.classList.add('scale-95');
+  }
+
+  openCreateBtn?.addEventListener('click', () => openModal(false));
+  closeBtn?.addEventListener('click', closeModal);
+  cancelBtn?.addEventListener('click', closeModal);
+
+  // Close on backdrop
+  modal?.addEventListener('click', (e) => {
+    if (e.target === modal) closeModal();
+  });
+
+  // Edit role buttons click
+  document.querySelectorAll('.edit-role-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const container = btn.closest('[data-role-raw]') as HTMLElement | null;
+      if (!container) return;
+      try {
+        const rawJson = container.getAttribute('data-role-raw') || '{}';
+        const roleData: Role = JSON.parse(rawJson);
+        openModal(true, roleData);
+      } catch (err) {
+        console.error('Error parsing role data:', err);
+      }
+    });
+  });
+
+  // Presets handlers
+  document.getElementById('presetReadOnlyBtn')?.addEventListener('click', () => {
+    document.querySelectorAll<HTMLInputElement>('.perm-check').forEach((cb) => {
+      cb.checked = cb.getAttribute('data-action') === 'read';
+    });
+  });
+
+  document.getElementById('presetEditorBtn')?.addEventListener('click', () => {
+    document.querySelectorAll<HTMLInputElement>('.perm-check').forEach((cb) => {
+      const mod = cb.getAttribute('data-mod');
+      const action = cb.getAttribute('data-action');
+      if (mod === 'publicaciones' || mod === 'galeria') {
+        cb.checked = action !== 'delete';
+      } else if (mod === 'usuarios') {
+        cb.checked = false;
+      }
+    });
+  });
+
+  document.getElementById('presetFullBtn')?.addEventListener('click', () => {
+    document.querySelectorAll<HTMLInputElement>('.perm-check').forEach((cb) => {
+      cb.checked = true;
+    });
+  });
+
+  document.getElementById('presetClearBtn')?.addEventListener('click', () => {
+    document.querySelectorAll<HTMLInputElement>('.perm-check').forEach((cb) => {
+      cb.checked = false;
+    });
+  });
+
+  // Toggle Row buttons
+  document.querySelectorAll('.toggle-row-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const mod = btn.getAttribute('data-target-mod');
+      const rowChecks = document.querySelectorAll<HTMLInputElement>(`.perm-check[data-mod="${mod}"]`);
+      const allChecked = Array.from(rowChecks).every((cb) => cb.checked);
+      rowChecks.forEach((cb) => {
+        cb.checked = !allChecked;
+      });
+    });
+  });
+
+  // Form Submission
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!saveBtn || !roleNameInput) return;
+
+    const id = roleIdInput?.value.trim() || null;
+    const name = roleNameInput.value.trim();
+    const description = roleDescInput?.value.trim() || null;
+
+    if (!name) {
+      alert('Por favor ingresa un nombre para el rol.');
+      return;
+    }
+
+    // Build permissions object
+    const permissions: RolePermissions = {
+      publicaciones: {
+        read: false,
+        create: false,
+        update: false,
+        delete: false,
+        toggle_visibility: false,
+      },
+      galeria: {
+        read: false,
+        create: false,
+        update: false,
+        delete: false,
+        toggle_visibility: false,
+      },
+      usuarios: {
+        read: false,
+        create: false,
+        update: false,
+        delete: false,
+      },
+    };
+
+    document.querySelectorAll<HTMLInputElement>('.perm-check').forEach((cb) => {
+      const mod = cb.getAttribute('data-mod') as keyof RolePermissions;
+      const action = cb.getAttribute('data-action') as string;
+      if (permissions[mod]) {
+        (permissions[mod] as any)[action] = cb.checked;
+      }
+    });
+
+    saveBtn.disabled = true;
+    const originalText = saveBtnText?.textContent;
+    if (saveBtnText) saveBtnText.textContent = 'Guardando...';
+
+    try {
+      const isEdit = Boolean(id);
+      const url = '/api/admin/roles';
+      const method = isEdit ? 'PUT' : 'POST';
+      const payload = isEdit ? { id, name, description, permissions } : { name, description, permissions };
+
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        showToast(isEdit ? 'Rol actualizado exitosamente' : 'Rol creado exitosamente');
+        closeModal();
+        setTimeout(() => window.location.reload(), 900);
+      } else {
+        alert(data.message || 'Error al guardar el rol');
+      }
+    } catch (err: any) {
+      console.error('Error guardando rol:', err);
+      alert('Ocurrió un error inesperado al procesar la solicitud.');
+    } finally {
+      saveBtn.disabled = false;
+      if (saveBtnText) saveBtnText.textContent = originalText || 'Guardar Rol';
+    }
+  });
+
+  // Delete Role Handlers
+  document.querySelectorAll('.delete-role-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const roleId = btn.getAttribute('data-role-id');
+      const roleName = btn.getAttribute('data-role-name') || 'este rol';
+      const userCount = parseInt(btn.getAttribute('data-user-count') || '0', 10);
+
+      if (userCount > 0) {
+        alert(`No es posible eliminar el rol «${roleName}» porque está asignado a ${userCount} usuario(s). Reasigna a los usuarios primero desde el módulo de Usuarios.`);
+        return;
+      }
+
+      activeDeleteRoleId = roleId;
+      if (deleteModalMsg) {
+        deleteModalMsg.innerHTML = `¿Estás seguro de que deseas eliminar permanentemente el rol <strong class="text-white">«${roleName}»</strong>? Esta acción no se puede deshacer.`;
+      }
+
+      deleteModal?.classList.remove('opacity-0', 'pointer-events-none');
+      deleteModal?.classList.add('opacity-100');
+    });
+  });
+
+  cancelDeleteBtn?.addEventListener('click', () => {
+    deleteModal?.classList.remove('opacity-100');
+    deleteModal?.classList.add('opacity-0', 'pointer-events-none');
+    activeDeleteRoleId = null;
+  });
+
+  confirmDeleteBtn?.addEventListener('click', async () => {
+    if (!activeDeleteRoleId || !confirmDeleteBtn) return;
+
+    confirmDeleteBtn.disabled = true;
+    confirmDeleteBtn.textContent = 'Eliminando...';
+
+    try {
+      const res = await fetch(`/api/admin/roles?id=${activeDeleteRoleId}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        showToast('Rol eliminado exitosamente');
+        deleteModal?.classList.remove('opacity-100');
+        deleteModal?.classList.add('opacity-0', 'pointer-events-none');
+        setTimeout(() => window.location.reload(), 900);
+      } else {
+        alert(data.message || 'Error al eliminar rol');
+      }
+    } catch (err) {
+      console.error('Error deleting role:', err);
+      alert('Error al comunicar con el servidor.');
+    } finally {
+      confirmDeleteBtn.disabled = false;
+      confirmDeleteBtn.textContent = 'Sí, Eliminar Rol';
+    }
+  });
+</script>
