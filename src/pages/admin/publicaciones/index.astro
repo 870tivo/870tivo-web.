@@ -169,7 +169,7 @@ const draftCount = totalPosts - publishedCount;
                         src={post.heroImage || '/assets/logo/870.jpeg'} 
                         alt={post.title} 
                         class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        onerror="this.src='/assets/logo/870.jpeg'"
+                        onerror="this.setAttribute('src', '/assets/logo/870.jpeg')"
                       />
                     </div>
                     <div class="min-w-0">
