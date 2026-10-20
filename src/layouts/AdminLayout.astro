@@ -1,0 +1,119 @@
+---
+import '../styles/global.css';
+import AdminSidebar from '../components/admin/AdminSidebar.astro';
+import AdminHeader from '../components/admin/AdminHeader.astro';
+
+interface Props {
+  title?: string;
+  headerTitle?: string;
+  activeModule?: 'dashboard' | 'publicaciones' | string;
+}
+
+const { 
+  title = 'Panel de Administración | 870tivo',
+  headerTitle = 'Panel de Control',
+  activeModule = 'dashboard'
+} = Astro.props;
+
+// SSR session retrieval from middleware
+const user = Astro.locals.user;
+const userEmail = user?.email || '';
+const fontsUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,400&display=swap';
+---
+
+<!doctype html>
+<html lang="es" class="dark" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+    <meta name="description" content="Panel privado de administración de Galería 870tivo" />
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href={fontsUrl} rel="stylesheet" is:inline />
+
+    <style is:global>
+      /* Ensure admin theme overrides any light client backgrounds */
+      body.admin-body {
+        background-color: #090d16 !important;
+        color: #f1f5f9 !important;
+      }
+      /* Custom scrollbars for admin */
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #1e293b;
+        border-radius: 9999px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: #334155;
+      }
+    </style>
+  </head>
+
+  <body class="admin-body min-h-screen font-sans antialiased flex text-slate-100 selection:bg-cyan-400 selection:text-slate-950">
+    
+    <!-- Ambient subtle background lighting -->
+    <div class="fixed inset-0 pointer-events-none -z-10 bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(6,182,212,0.08),rgba(15,23,42,0))]"></div>
+    <div class="fixed -bottom-40 -right-40 w-96 h-96 rounded-full bg-amber-500/5 blur-3xl pointer-events-none -z-10"></div>
+
+    <!-- Navigation Sidebar -->
+    <AdminSidebar 
+      activeModule={activeModule}
+      userEmail={userEmail}
+    />
+
+    <!-- Main Content Area with offset for Sidebar -->
+    <div class="flex-1 lg:pl-72 flex flex-col min-h-screen min-w-0">
+      
+      <!-- Top Sticky Header -->
+      <AdminHeader 
+        title={headerTitle}
+        activeModule={activeModule}
+        userEmail={userEmail}
+      />
+
+      <!-- Content Container -->
+      <main class="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+        <slot />
+      </main>
+
+      <!-- Admin Footer -->
+      <footer class="border-t border-slate-800/80 bg-slate-950/60 py-6 px-4 sm:px-6 lg:px-8 text-xs text-slate-400">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+            <span>&copy; {new Date().getFullYear()} <strong>870tivo Control Studio</strong> &mdash; Plataforma Administrativa Privada</span>
+          </div>
+          <div class="flex items-center gap-4 text-slate-400 text-[11px]">
+            <span>Protegido con Supabase Auth & Astro SSR</span>
+            <span>&bull;</span>
+            <a href="/" target="_blank" class="hover:text-cyan-400 transition-colors">Portal Web</a>
+          </div>
+        </div>
+      </footer>
+
+    </div>
+
+    <!-- Defense-in-depth Client Auth Guard -->
+    <script>
+      import { supabase, clearAuthCookies } from '../lib/supabase';
+
+      // Check user session actively in client
+      supabase.auth.getSession().then(({ data: { session }, error }) => {
+        if (!session || error) {
+          clearAuthCookies();
+          window.location.href = '/admin/login';
+        }
+      });
+    </script>
+  </body>
+</html>
