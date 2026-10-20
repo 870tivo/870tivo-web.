@@ -1,5 +1,9 @@
 ---
 import { ArrowRight, Clock } from 'lucide-astro';
+import { getPublishedPosts } from '../lib/posts';
+
+const publishedPosts = getPublishedPosts();
+const firstSlug = publishedPosts.length > 0 ? publishedPosts[0].slug : '';
 ---
 <section class="mb-20">
   <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10 pb-6 border-b border-brand-ink/10 dark:border-white/10">
@@ -8,113 +12,69 @@ import { ArrowRight, Clock } from 'lucide-astro';
       <h2 class="font-serif text-3xl md:text-4xl font-bold tracking-tight text-brand-ink dark:text-white">Entradas Recientes</h2>
     </div>
     
-    <a href="/blog/pajaro-muerto" class="inline-flex items-center gap-2 text-xs font-bold text-brand-orange dark:text-brand-bg uppercase tracking-[0.2em] hover:text-brand-ink dark:hover:text-white transition-colors group">
-      Ver todas las publicaciones <ArrowRight class="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-    </a>
+    {firstSlug && (
+      <a href={`/blog/${firstSlug}`} class="inline-flex items-center gap-2 text-xs font-bold text-brand-orange dark:text-brand-bg uppercase tracking-[0.2em] hover:text-brand-ink dark:hover:text-white transition-colors group">
+        Ver todas las publicaciones <ArrowRight class="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+      </a>
+    )}
   </div>
 
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-16">
-    <!-- Post 1 -->
-    <article class="group cursor-pointer">
-      <div class="aspect-[4/3] rounded-xl bg-brand-card dark:bg-neutral-900 mb-6 overflow-hidden relative shadow-lg">
-        <div class="absolute inset-0 bg-neutral-800 transition-transform duration-700 ease-in-out group-hover:scale-105">
-           <!-- Placeholder for featured image -->
-           <div class="w-full h-full bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))] from-neutral-800 to-brand-ink opacity-70"></div>
-        </div>
-      </div>
-      
-      <div class="flex flex-col">
-        <div class="flex items-center justify-between mb-4">
-          <span class="text-brand-orange dark:text-brand-turquoise text-[10px] sm:text-xs font-bold uppercase tracking-[0.2em]">Fotografía</span>
-          <div class="flex items-center gap-3 text-[10px] md:text-xs text-brand-muted font-medium">
-            <span>Oct 12, 2026</span>
-            <span class="flex items-center gap-1"><Clock class="w-3 h-3" /> 6 min</span>
-          </div>
-        </div>
-        
-        <h3 class="font-serif text-2xl font-bold mb-3 leading-snug text-brand-ink dark:text-white group-hover:text-brand-orange dark:group-hover:text-brand-bg transition-colors">
-          La estética de las ruinas en el paisaje contemporáneo
-        </h3>
-        
-        <p class="text-brand-ink/70 dark:text-neutral-400 font-medium mb-6 line-clamp-2 text-sm max-w-sm leading-relaxed">
-          Un análisis visual sobre cómo los espacios abandonados redefinen nuestra relación con el tiempo.
-        </p>
-        
-        <div class="flex items-center gap-3 mt-auto">
-          <div class="w-8 h-8 rounded-full bg-brand-card dark:bg-brand-darkCard flex items-center justify-center text-xs font-bold text-brand-ink dark:text-brand-muted border border-brand-ink/10 dark:border-white/5 uppercase shadow-inner">
-            MU
-          </div>
-          <span class="text-[10px] md:text-xs font-semibold text-brand-ink/60 dark:text-white/50 uppercase tracking-widest">por Miguel Ángel Uribe</span>
-        </div>
-      </div>
-    </article>
-
-    <!-- Post 2 -->
-    <article class="group cursor-pointer">
-      <div class="aspect-[4/3] rounded-xl bg-brand-card dark:bg-neutral-900 mb-6 overflow-hidden relative shadow-lg">
-        <div class="absolute inset-0 bg-neutral-800 transition-transform duration-700 ease-in-out group-hover:scale-105">
-           <div class="w-full h-full bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))] from-neutral-800 to-brand-ink opacity-70"></div>
-        </div>
-      </div>
-      
-      <div class="flex flex-col">
-        <div class="flex items-center justify-between mb-4">
-          <span class="text-brand-orange dark:text-brand-turquoise text-[10px] sm:text-xs font-bold uppercase tracking-[0.2em]">Paisaje Sonoro</span>
-          <div class="flex items-center gap-3 text-[10px] md:text-xs text-brand-muted font-medium">
-            <span>Sep 28, 2026</span>
-            <span class="flex items-center gap-1"><Clock class="w-3 h-3" /> 12 min</span>
-          </div>
-        </div>
-        
-        <h3 class="font-serif text-2xl font-bold mb-3 leading-snug text-brand-ink dark:text-white group-hover:text-brand-orange dark:group-hover:text-brand-bg transition-colors">
-          Buscando el silencio en la metrópolis moderna
-        </h3>
-        
-        <p class="text-brand-ink/70 dark:text-neutral-400 font-medium mb-6 line-clamp-2 text-sm max-w-sm leading-relaxed">
-          Registros sonoros y reflexiones literarias sobre el significado de la quietud en Bogotá.
-        </p>
-        
-        <div class="flex items-center gap-3 mt-auto">
-          <div class="w-8 h-8 rounded-full bg-brand-card dark:bg-brand-darkCard flex items-center justify-center text-xs font-bold text-brand-ink dark:text-brand-muted border border-brand-ink/10 dark:border-white/5 uppercase shadow-inner">
-            JG
-          </div>
-          <span class="text-[10px] md:text-xs font-semibold text-brand-ink/60 dark:text-white/50 uppercase tracking-widest">por Jose Gómez</span>
-        </div>
-      </div>
-    </article>
-
-    <!-- Post 3 -->
-    <article class="group cursor-pointer">
-      <div class="aspect-[4/3] rounded-xl bg-brand-card dark:bg-neutral-900 mb-6 overflow-hidden relative shadow-lg">
-        <div class="absolute inset-0 bg-neutral-800 transition-transform duration-700 ease-in-out group-hover:scale-105">
-           <div class="w-full h-full bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))] from-neutral-800 to-brand-ink opacity-70"></div>
-        </div>
-      </div>
-      
-      <div class="flex flex-col">
-        <div class="flex items-center justify-between mb-4">
-          <span class="text-brand-orange dark:text-brand-turquoise text-[10px] sm:text-xs font-bold uppercase tracking-[0.2em]">Entrevista</span>
-          <div class="flex items-center gap-3 text-[10px] md:text-xs text-brand-muted font-medium">
-            <span>Sep 15, 2026</span>
-            <span class="flex items-center gap-1"><Clock class="w-3 h-3" /> 8 min</span>
-          </div>
-        </div>
-        
-        <h3 class="font-serif text-2xl font-bold mb-3 leading-snug text-brand-ink dark:text-white group-hover:text-brand-orange dark:group-hover:text-brand-bg transition-colors">
-          Diálogos inmateriales: el arte de narrar con luz
-        </h3>
-        
-        <p class="text-brand-ink/70 dark:text-neutral-400 font-medium mb-6 line-clamp-2 text-sm max-w-sm leading-relaxed">
-          Conversación íntima con directores emergentes del nuevo cine colombiano sobre su proceso creativo.
-        </p>
-        
-        <div class="flex items-center gap-3 mt-auto">
-          <div class="w-8 h-8 rounded-full bg-brand-card dark:bg-brand-darkCard flex items-center justify-center text-xs font-bold text-brand-ink dark:text-brand-muted border border-brand-ink/10 dark:border-white/5 uppercase shadow-inner">
-            MG
-          </div>
-          <span class="text-[10px] md:text-xs font-semibold text-brand-ink/60 dark:text-white/50 uppercase tracking-widest">por Mariana García</span>
-        </div>
-      </div>
-    </article>
-  </div>
+  {publishedPosts.length === 0 ? (
+    <div class="py-16 text-center rounded-2xl bg-brand-card/40 dark:bg-neutral-900/40 border border-brand-ink/10 dark:border-white/5">
+      <p class="font-serif text-lg text-brand-muted">No hay publicaciones visibles en este momento.</p>
+      <p class="text-xs text-brand-muted/70 mt-1">Próximamente nuevos ensayos y textos críticos.</p>
+    </div>
+  ) : (
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-16">
+      {publishedPosts.map((post) => (
+        <article class="group cursor-pointer">
+          <a href={`/blog/${post.slug}`} class="block">
+            <div class="aspect-[4/3] rounded-xl bg-brand-card dark:bg-neutral-900 mb-6 overflow-hidden relative shadow-lg">
+              <div class="absolute inset-0 bg-neutral-800 transition-transform duration-700 ease-in-out group-hover:scale-105">
+                {post.heroImage ? (
+                  <img 
+                    src={post.heroImage} 
+                    alt={post.title} 
+                    class="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity"
+                    onerror="this.src='/assets/logo/870.jpeg'"
+                  />
+                ) : (
+                  <div class="w-full h-full bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))] from-neutral-800 to-brand-ink opacity-70"></div>
+                )}
+              </div>
+            </div>
+            
+            <div class="flex flex-col">
+              <div class="flex items-center justify-between mb-4">
+                <span class="text-brand-orange dark:text-brand-turquoise text-[10px] sm:text-xs font-bold uppercase tracking-[0.2em]">
+                  {post.badge}
+                </span>
+                <div class="flex items-center gap-3 text-[10px] md:text-xs text-brand-muted font-medium">
+                  <span>{post.date}</span>
+                  <span class="flex items-center gap-1"><Clock class="w-3 h-3" /> {post.readingTime}</span>
+                </div>
+              </div>
+              
+              <h3 class="font-serif text-2xl font-bold mb-3 leading-snug text-brand-ink dark:text-white group-hover:text-brand-orange dark:group-hover:text-brand-bg transition-colors">
+                {post.title}
+              </h3>
+              
+              <p class="text-brand-ink/70 dark:text-neutral-400 font-medium mb-6 line-clamp-2 text-sm max-w-sm leading-relaxed">
+                {post.subtitle}
+              </p>
+              
+              <div class="flex items-center gap-3 mt-auto">
+                <div class="w-8 h-8 rounded-full bg-brand-card dark:bg-brand-darkCard flex items-center justify-center text-xs font-bold text-brand-ink dark:text-brand-muted border border-brand-ink/10 dark:border-white/5 uppercase shadow-inner">
+                  {post.authorInitials}
+                </div>
+                <span class="text-[10px] md:text-xs font-semibold text-brand-ink/60 dark:text-white/50 uppercase tracking-widest">
+                  por {post.author}
+                </span>
+              </div>
+            </div>
+          </a>
+        </article>
+      ))}
+    </div>
+  )}
 </section>

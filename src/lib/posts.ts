@@ -131,3 +131,19 @@ export const posts: BlogPost[] = [
     ]
   }
 ];
+
+import { getVisibilityMap, isPostPublished } from './postVisibility';
+
+export { isPostPublished, getVisibilityMap };
+
+export function getPublishedPosts(): BlogPost[] {
+  return posts.filter((p) => isPostPublished(p.slug));
+}
+
+export function getPostsWithStatus(): (BlogPost & { isPublished: boolean })[] {
+  const map = getVisibilityMap();
+  return posts.map((p) => ({
+    ...p,
+    isPublished: map[p.slug] !== false,
+  }));
+}
