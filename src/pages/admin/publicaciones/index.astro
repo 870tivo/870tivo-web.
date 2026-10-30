@@ -806,6 +806,16 @@ function getPageUrl(p: number) {
     }
   });
 
+  // Abrir automáticamente el modal si se ingresa con ?new=1 o ?action=new
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('new') === '1' || urlParams.get('new') === 'true' || urlParams.get('action') === 'new') {
+    setTimeout(() => {
+      if (typeof (window as any).__openPublicationEditor === 'function') {
+        (window as any).__openPublicationEditor();
+      }
+    }, 120);
+  }
+
   // 2. Botón "Editar" en cada fila de la tabla
   const editButtons = document.querySelectorAll('.edit-btn') as NodeListOf<HTMLButtonElement>;
   editButtons.forEach((btn) => {
