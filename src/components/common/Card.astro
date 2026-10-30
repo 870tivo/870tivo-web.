@@ -1,0 +1,64 @@
+---
+import type { HTMLAttributes } from 'astro/types';
+
+export interface Props extends HTMLAttributes<'div'> {
+  as?: 'div' | 'article' | 'section' | 'aside' | 'a';
+  variant?: 'default' | 'subtle' | 'flat' | 'interactive';
+  padding?: 'none' | 'sm' | 'md' | 'lg';
+  class?: string;
+  id?: string;
+  href?: string;
+}
+
+const {
+  as: Component = 'div',
+  variant = 'default',
+  padding = 'md',
+  class: className = '',
+  id,
+  href,
+  ...rest
+} = Astro.props;
+
+const variantClasses: Record<string, string> = {
+  // Tarjeta plana limpia con borde editorial sutil
+  default: 'bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] text-[#1F1B16] dark:text-[#FAF6F0] rounded-2xl shadow-sm',
+  // Variante sutil para contenedores o filtros
+  subtle: 'bg-[#FAF6F0] dark:bg-[#141414] border border-[#E5DFD5] dark:border-[#242424] text-[#1F1B16] dark:text-[#FAF6F0] rounded-2xl',
+  // Variante plana sin bordes marcados
+  flat: 'bg-transparent text-[#1F1B16] dark:text-[#FAF6F0]',
+  // Variante interactiva con hover suave
+  interactive: 'bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] hover:border-[#E4572E]/60 dark:hover:border-[#E4572E]/60 text-[#1F1B16] dark:text-[#FAF6F0] rounded-2xl transition-all duration-200 cursor-pointer shadow-sm',
+};
+
+const paddingClasses: Record<string, string> = {
+  none: 'p-0',
+  sm: 'p-3 sm:p-4',
+  md: 'p-5 sm:p-6',
+  lg: 'p-6 sm:p-8',
+};
+
+const combinedClasses = `${variantClasses[variant] || variantClasses.default} ${paddingClasses[padding] || paddingClasses.md} ${className}`.trim();
+---
+
+{Component === 'a' ? (
+  <a href={href} class={combinedClasses} id={id} {...rest as any}>
+    <slot />
+  </a>
+) : Component === 'article' ? (
+  <article class={combinedClasses} id={id} {...rest}>
+    <slot />
+  </article>
+) : Component === 'section' ? (
+  <section class={combinedClasses} id={id} {...rest}>
+    <slot />
+  </section>
+) : Component === 'aside' ? (
+  <aside class={combinedClasses} id={id} {...rest}>
+    <slot />
+  </aside>
+) : (
+  <div class={combinedClasses} id={id} {...rest}>
+    <slot />
+  </div>
+)}

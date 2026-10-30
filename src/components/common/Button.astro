@@ -1,0 +1,71 @@
+---
+import type { HTMLAttributes } from 'astro/types';
+
+export interface Props extends HTMLAttributes<'button'> {
+  variant?: 'primary' | 'accent' | 'forest' | 'secondary' | 'ghost' | 'danger';
+  size?: 'sm' | 'md' | 'lg';
+  href?: string;
+  target?: string;
+  rel?: string;
+  class?: string;
+  id?: string;
+  type?: 'button' | 'submit' | 'reset';
+  disabled?: boolean;
+}
+
+const {
+  variant = 'primary',
+  size = 'md',
+  href,
+  target,
+  rel,
+  class: className = '',
+  id,
+  type = 'button',
+  disabled = false,
+  ...rest
+} = Astro.props;
+
+// Editorial style variants
+const variantClasses: Record<string, string> = {
+  primary: 'bg-[#E4572E] hover:bg-[#CF4821] text-white border border-[#E4572E] shadow-sm',
+  accent: 'bg-[#F2B134] hover:bg-[#DF9F24] text-[#1F1B16] font-bold border border-[#F2B134] shadow-sm',
+  forest: 'bg-[#2F4B3A] hover:bg-[#253C2E] text-white border border-[#2F4B3A] shadow-sm',
+  secondary: 'bg-white dark:bg-[#181818] hover:bg-neutral-100 dark:hover:bg-[#222222] text-[#1F1B16] dark:text-[#FAF6F0] border border-[#E5DFD5] dark:border-[#282828] hover:border-[#E4572E]/50 dark:hover:border-[#E4572E]/50 shadow-sm',
+  ghost: 'bg-transparent text-neutral-600 dark:text-neutral-400 hover:text-[#1F1B16] dark:hover:text-[#FAF6F0] hover:bg-neutral-200/50 dark:hover:bg-neutral-800/50 border border-transparent',
+  danger: 'bg-red-600 hover:bg-red-700 text-white border border-red-700 shadow-sm',
+};
+
+const sizeClasses: Record<string, string> = {
+  sm: 'px-3 py-1.5 text-xs rounded-xl gap-1.5',
+  md: 'px-4 py-2 text-xs font-semibold rounded-xl gap-2',
+  lg: 'px-5 py-2.5 text-xs sm:text-sm font-bold uppercase tracking-wider rounded-xl gap-2',
+};
+
+const baseClasses = 'inline-flex items-center justify-center transition-all cursor-pointer select-none disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none active:translate-y-0.5';
+const combinedClasses = `${baseClasses} ${variantClasses[variant] || variantClasses.primary} ${sizeClasses[size] || sizeClasses.md} ${className}`.trim();
+---
+
+{href ? (
+  <a
+    href={disabled ? undefined : href}
+    target={target}
+    rel={target === '_blank' ? (rel || 'noopener noreferrer') : rel}
+    class={combinedClasses}
+    id={id}
+    aria-disabled={disabled}
+    {...rest as any}
+  >
+    <slot />
+  </a>
+) : (
+  <button
+    type={type}
+    disabled={disabled}
+    class={combinedClasses}
+    id={id}
+    {...rest}
+  >
+    <slot />
+  </button>
+)}

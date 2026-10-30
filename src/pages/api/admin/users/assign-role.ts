@@ -1,12 +1,27 @@
 import type { APIRoute } from 'astro';
 import { supabaseAdmin } from '../../../../lib/supabase';
+import { isUserAdminOrHasAccess } from '../../../../lib/auth';
 
 export const prerender = false;
 
 /**
  * POST: Asignar o cambiar el rol de un usuario
  */
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, locals }) => {
+  if (!locals.user) {
+    return new Response(JSON.stringify({ success: false, message: 'No autenticado.' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  if (!isUserAdminOrHasAccess(locals.role, locals.permissions)) {
+    return new Response(JSON.stringify({ success: false, message: 'Acceso denegado: Privilegios de administrador requeridos.' }), {
+      status: 403,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
   try {
     const body = await request.json();
     const { userId, roleId } = body;

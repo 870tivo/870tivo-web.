@@ -1,0 +1,500 @@
+---
+/**
+ * UploadMediaModal.astro
+ * Modal de carga / creación de obras para la Galería de Arte & Proyectos.
+ * Incluye Drag & Drop, validación de archivos (tipo y peso), inputs de título,
+ * descripción, categoría y estado (Publicado / Borrador).
+ */
+import { GALLERY_CATEGORIES } from '../../types/gallery';
+---
+
+<div 
+  id="uploadMediaModal" 
+  class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-300"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="uploadMediaModalTitle"
+>
+  <div 
+    id="uploadMediaModalCard"
+    class="relative w-full max-w-2xl my-8 rounded-2xl bg-[#FAF6F0] dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] p-6 sm:p-8 shadow-xl transform scale-95 transition-all duration-300 max-h-[90vh] overflow-y-auto custom-scrollbar text-[#1F1B16] dark:text-[#FAF6F0]"
+  >
+    <!-- Modal Close Button -->
+    <button 
+      type="button" 
+      id="closeUploadModalBtn"
+      class="absolute top-6 right-6 p-2 text-neutral-400 hover:text-[#1F1B16] dark:hover:text-white rounded-xl hover:bg-neutral-200/60 dark:hover:bg-slate-800 transition-colors z-10"
+      aria-label="Cerrar ventana de carga"
+    >
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
+
+    <!-- Modal Header -->
+    <div class="mb-6">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-[#B47C08] dark:text-amber-300 text-[11px] font-bold mb-2.5">
+        <svg class="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+        <span>Supabase Storage</span>
+      </div>
+      <h3 id="uploadMediaModalTitle" class="text-xl sm:text-2xl font-bold text-[#1F1B16] dark:text-white tracking-tight">
+        Nueva Obra / Proyecto
+      </h3>
+      <p class="text-xs sm:text-sm text-neutral-600 dark:text-slate-400 mt-1">
+        Sube una imagen de la obra y completa su ficha técnica para incorporarla al catálogo de la galería.
+      </p>
+    </div>
+
+    <!-- Error Banner (hidden by default) -->
+    <div 
+      id="uploadModalError" 
+      class="hidden mb-5 p-3.5 rounded-2xl bg-red-500/15 border border-red-500/30 text-red-600 dark:text-red-300 text-xs flex items-start gap-2.5"
+    >
+      <svg class="w-4 h-4 shrink-0 text-red-500 dark:text-red-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+      </svg>
+      <span id="uploadModalErrorMsg" class="font-medium">Error al procesar la solicitud.</span>
+    </div>
+
+    <!-- Success Banner (hidden by default) -->
+    <div 
+      id="uploadModalSuccess" 
+      class="hidden mb-5 p-3.5 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-[#2F4B3A] dark:text-emerald-300 text-xs flex items-start gap-2.5"
+    >
+      <svg class="w-4 h-4 shrink-0 text-[#2F4B3A] dark:text-emerald-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      <span id="uploadModalSuccessMsg" class="font-medium">Obra registrada exitosamente.</span>
+    </div>
+
+    <!-- Upload Form -->
+    <form id="uploadMediaForm" class="space-y-5" novalidate>
+
+      <!-- Drag & Drop File Area -->
+      <div>
+        <label class="block text-xs font-bold text-neutral-700 dark:text-slate-200 uppercase tracking-wider mb-1.5">
+          Imagen de la Obra *
+        </label>
+        <div 
+          id="uploadDropZone"
+          class="relative border-2 border-dashed border-[#E5DFD5] dark:border-slate-700 hover:border-amber-500 dark:hover:border-amber-400/60 rounded-2xl p-8 text-center cursor-pointer transition-all duration-300 bg-white dark:bg-slate-950/50 hover:bg-neutral-50 dark:hover:bg-slate-900/60 group"
+        >
+          <input 
+            type="file" 
+            id="uploadFileInput" 
+            name="file" 
+            accept="image/jpeg,image/png,image/webp,image/gif,image/avif" 
+            class="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10" 
+            required 
+          />
+
+          <!-- Default Upload Prompt -->
+          <div id="uploadDropZoneContent" class="pointer-events-none space-y-3">
+            <div class="w-14 h-14 mx-auto rounded-2xl bg-[#FAF6F0] dark:bg-slate-800/80 border border-[#E5DFD5] dark:border-slate-700/60 flex items-center justify-center text-amber-500 dark:text-amber-400 group-hover:scale-110 group-hover:bg-amber-500/10 group-hover:border-amber-500/30 transition-all duration-300">
+              <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+              </svg>
+            </div>
+            <div>
+              <p class="text-sm font-medium text-neutral-700 dark:text-slate-200">
+                Arrastra tu imagen aquí o <span class="text-amber-600 dark:text-amber-400 underline underline-offset-2">examina archivos</span>
+              </p>
+              <p class="text-xs text-neutral-500 dark:text-slate-500 mt-1">
+                PNG, JPG, WEBP, GIF, AVIF — Máximo 10 MB
+              </p>
+            </div>
+          </div>
+
+          <!-- Preview Container (hidden by default) -->
+          <div id="uploadPreviewContainer" class="hidden pointer-events-none">
+            <img 
+              id="uploadImagePreview" 
+              src="" 
+              alt="Vista previa de la obra" 
+              class="max-h-52 mx-auto rounded-xl object-contain shadow-lg border border-[#E5DFD5] dark:border-slate-700/60" 
+            />
+            <div class="mt-3 flex items-center justify-center gap-3">
+              <p id="uploadFileNameDisplay" class="text-xs text-neutral-500 dark:text-slate-400 truncate max-w-xs"></p>
+              <button 
+                type="button" 
+                id="uploadRemoveFileBtn" 
+                class="text-xs text-red-500 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300 underline underline-offset-2 pointer-events-auto shrink-0 cursor-pointer"
+              >
+                Cambiar
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Title & Category Row -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <!-- Título -->
+        <div>
+          <label for="uploadMediaTitle" class="block text-xs font-bold text-neutral-700 dark:text-slate-200 uppercase tracking-wider mb-1.5">
+            Título *
+          </label>
+          <input 
+            type="text" 
+            id="uploadMediaTitle" 
+            name="title" 
+            required
+            placeholder="Ej. Abstracción Cósmica" 
+            class="w-full px-4 py-2.5 bg-white dark:bg-slate-950/80 border border-[#E5DFD5] dark:border-slate-700/80 focus:border-amber-500 dark:focus:border-amber-400 rounded-xl text-xs text-[#1F1B16] dark:text-white placeholder-neutral-400 dark:placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:focus:ring-amber-400 transition-all"
+          />
+        </div>
+
+        <!-- Categoría -->
+        <div>
+          <label for="uploadMediaCategory" class="block text-xs font-bold text-neutral-700 dark:text-slate-200 uppercase tracking-wider mb-1.5">
+            Categoría
+          </label>
+          <div class="relative">
+            <select 
+              id="uploadMediaCategory" 
+              name="category" 
+              class="w-full px-4 py-2.5 bg-white dark:bg-slate-950/80 border border-[#E5DFD5] dark:border-slate-700/80 focus:border-amber-500 dark:focus:border-amber-400 rounded-xl text-xs font-medium text-[#1F1B16] dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:focus:ring-amber-400 cursor-pointer transition-all appearance-none pr-9"
+            >
+              <option value="general" class="bg-white dark:bg-slate-900 text-neutral-500 dark:text-slate-400">General</option>
+              {GALLERY_CATEGORIES.map((cat) => (
+                <option value={cat.toLowerCase()} class="bg-white dark:bg-slate-900 text-[#1F1B16] dark:text-white">
+                  {cat}
+                </option>
+              ))}
+            </select>
+            <svg class="w-4 h-4 text-neutral-400 dark:text-slate-400 absolute right-3.5 top-3 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Descripción -->
+      <div>
+        <label for="uploadMediaDescription" class="block text-xs font-bold text-neutral-700 dark:text-slate-200 uppercase tracking-wider mb-1.5">
+          Descripción Corta
+        </label>
+        <textarea 
+          id="uploadMediaDescription" 
+          name="description" 
+          rows="3" 
+          placeholder="Breve ficha técnica o contexto de la obra..." 
+          class="w-full px-4 py-2.5 bg-white dark:bg-slate-950/80 border border-[#E5DFD5] dark:border-slate-700/80 focus:border-amber-500 dark:focus:border-amber-400 rounded-xl text-xs text-[#1F1B16] dark:text-white placeholder-neutral-400 dark:placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:focus:ring-amber-400 transition-all resize-none"
+        ></textarea>
+      </div>
+
+      <!-- Estado -->
+      <div>
+        <label for="uploadMediaStatus" class="block text-xs font-bold text-neutral-700 dark:text-slate-200 uppercase tracking-wider mb-1.5">
+          Estado de Publicación
+        </label>
+        <div class="flex items-center gap-3">
+          <label class="relative flex items-center gap-2.5 px-4 py-2.5 rounded-xl border border-[#E5DFD5] dark:border-[#282828] bg-white dark:bg-[#141414] cursor-pointer transition-all upload-status-option" data-status="borrador">
+            <input type="radio" name="status" value="borrador" checked class="sr-only peer" />
+            <span class="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-sm shadow-amber-400/40"></span>
+            <span class="text-xs font-semibold text-neutral-600 dark:text-slate-300 peer-checked:text-[#1F1B16] dark:peer-checked:text-white">Borrador</span>
+          </label>
+          <label class="relative flex items-center gap-2.5 px-4 py-2.5 rounded-xl border border-[#E5DFD5] dark:border-[#282828] bg-white dark:bg-[#141414] cursor-pointer transition-all upload-status-option" data-status="publicado">
+            <input type="radio" name="status" value="publicado" class="sr-only peer" />
+            <span class="w-2.5 h-2.5 rounded-full bg-[#2F4B3A] shadow-sm shadow-[#2F4B3A]/40"></span>
+            <span class="text-xs font-semibold text-neutral-600 dark:text-neutral-300 peer-checked:text-[#1F1B16] dark:peer-checked:text-white">Publicado</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Info Callout -->
+      <div class="p-3.5 rounded-2xl bg-[#2F4B3A]/10 border border-[#2F4B3A]/20 text-[#2F4B3A] dark:text-[#A7C7B3] text-xs flex items-start gap-2.5">
+        <svg class="w-4 h-4 text-[#2F4B3A] shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <div class="text-[11px] leading-relaxed">
+          La imagen se almacenará en <strong>Supabase Storage</strong> (bucket <code class="bg-[#FAF6F0] dark:bg-[#181818] px-1 py-0.5 rounded text-[#E4572E] border border-[#E5DFD5] dark:border-[#282828]">gallery-media</code>). 
+          Las obras en <span class="font-semibold">Publicado</span> serán visibles en el portal público.
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex items-center justify-end gap-3 pt-3 border-t border-[#E5DFD5] dark:border-slate-800/80">
+        <button 
+          type="button" 
+          id="cancelUploadBtn"
+          class="px-4 py-2.5 rounded-xl border border-[#E5DFD5] dark:border-[#282828] bg-white hover:bg-neutral-100 dark:bg-[#222222] dark:hover:bg-[#2a2a2a] text-neutral-700 dark:text-neutral-300 hover:text-[#1F1B16] dark:hover:text-white text-xs font-semibold cursor-pointer transition-colors"
+        >
+          Cancelar
+        </button>
+        <button 
+          type="submit" 
+          id="submitUploadBtn"
+          class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#E4572E] hover:bg-[#CF4821] text-white font-bold text-xs uppercase tracking-wider shadow-sm cursor-pointer transition-all disabled:opacity-50 disabled:pointer-events-none active:translate-y-0.5"
+        >
+          <!-- Normal Icon -->
+          <svg id="uploadBtnIcon" class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+          </svg>
+          <!-- Loading Spinner -->
+          <span id="uploadBtnSpinner" class="hidden w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+          <span id="uploadBtnText">Subir Obra</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<style>
+  /* Status option radio styling */
+  .upload-status-option {
+    border-color: rgba(51, 65, 85, 0.8);
+    background-color: rgba(2, 6, 23, 0.5);
+  }
+  .upload-status-option:has(input:checked) {
+    border-color: rgba(6, 182, 212, 0.4);
+    background-color: rgba(6, 182, 212, 0.08);
+  }
+  .upload-status-option:hover {
+    background-color: rgba(51, 65, 85, 0.3);
+  }
+
+  /* Drag-over visual state */
+  #uploadDropZone.drag-over {
+    border-color: rgba(245, 158, 11, 0.7);
+    background-color: rgba(245, 158, 11, 0.05);
+  }
+  #uploadDropZone.drag-over .group-hover\:scale-110 {
+    transform: scale(1.1);
+  }
+</style>
+
+<script>
+  // ─── DOM References ───────────────────────────────────────────────────
+  const modal = document.getElementById('uploadMediaModal') as HTMLElement;
+  const modalCard = document.getElementById('uploadMediaModalCard') as HTMLElement;
+  const form = document.getElementById('uploadMediaForm') as HTMLFormElement;
+  const fileInput = document.getElementById('uploadFileInput') as HTMLInputElement;
+  const dropZone = document.getElementById('uploadDropZone') as HTMLElement;
+  const dropZoneContent = document.getElementById('uploadDropZoneContent') as HTMLElement;
+  const previewContainer = document.getElementById('uploadPreviewContainer') as HTMLElement;
+  const imagePreview = document.getElementById('uploadImagePreview') as HTMLImageElement;
+  const fileNameDisplay = document.getElementById('uploadFileNameDisplay') as HTMLElement;
+  const removeFileBtn = document.getElementById('uploadRemoveFileBtn') as HTMLButtonElement;
+  const errorBanner = document.getElementById('uploadModalError') as HTMLElement;
+  const errorMsg = document.getElementById('uploadModalErrorMsg') as HTMLElement;
+  const successBanner = document.getElementById('uploadModalSuccess') as HTMLElement;
+  const successMsg = document.getElementById('uploadModalSuccessMsg') as HTMLElement;
+  const submitBtn = document.getElementById('submitUploadBtn') as HTMLButtonElement;
+  const submitBtnIcon = document.getElementById('uploadBtnIcon') as HTMLElement;
+  const submitBtnSpinner = document.getElementById('uploadBtnSpinner') as HTMLElement;
+  const submitBtnText = document.getElementById('uploadBtnText') as HTMLElement;
+  const closeBtn = document.getElementById('closeUploadModalBtn') as HTMLButtonElement;
+  const cancelBtn = document.getElementById('cancelUploadBtn') as HTMLButtonElement;
+
+  // ─── Allowed types & size ─────────────────────────────────────────────
+  const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'];
+  const MAX_SIZE = 10 * 1024 * 1024; // 10MB
+
+  // ─── Modal Open / Close ───────────────────────────────────────────────
+  function openUploadModal() {
+    modal.classList.remove('pointer-events-none', 'opacity-0');
+    modal.classList.add('opacity-100');
+    modalCard.classList.remove('scale-95');
+    modalCard.classList.add('scale-100');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeUploadModal() {
+    modal.classList.add('opacity-0', 'pointer-events-none');
+    modal.classList.remove('opacity-100');
+    modalCard.classList.add('scale-95');
+    modalCard.classList.remove('scale-100');
+    document.body.style.overflow = '';
+    resetForm();
+  }
+
+  function resetForm() {
+    form.reset();
+    fileInput.value = '';
+    imagePreview.src = '';
+    previewContainer.classList.add('hidden');
+    dropZoneContent.classList.remove('hidden');
+    hideError();
+    hideSuccess();
+    submitBtn.disabled = false;
+    submitBtnIcon.classList.remove('hidden');
+    submitBtnSpinner.classList.add('hidden');
+    submitBtnText.textContent = 'Subir Obra';
+  }
+
+  // Expose globally for the page's "+ Nueva Obra" button
+  (window as any).__openUploadMediaModal = openUploadModal;
+
+  closeBtn?.addEventListener('click', closeUploadModal);
+  cancelBtn?.addEventListener('click', closeUploadModal);
+
+  // Close on backdrop click
+  modal?.addEventListener('click', (e) => {
+    if (e.target === modal) closeUploadModal();
+  });
+
+  // Close on Escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !modal.classList.contains('pointer-events-none')) {
+      closeUploadModal();
+    }
+  });
+
+  // ─── Drag & Drop ─────────────────────────────────────────────────────
+  ['dragenter', 'dragover'].forEach(evtName => {
+    dropZone?.addEventListener(evtName, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dropZone.classList.add('drag-over');
+    });
+  });
+
+  ['dragleave', 'drop'].forEach(evtName => {
+    dropZone?.addEventListener(evtName, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dropZone.classList.remove('drag-over');
+    });
+  });
+
+  dropZone?.addEventListener('drop', (e) => {
+    const files = (e as DragEvent).dataTransfer?.files;
+    if (files && files.length > 0) {
+      // Set the file input's files
+      const dataTransfer = new DataTransfer();
+      dataTransfer.items.add(files[0]);
+      fileInput.files = dataTransfer.files;
+      validateAndPreview(files[0]);
+    }
+  });
+
+  // ─── File Input Change ────────────────────────────────────────────────
+  fileInput?.addEventListener('change', () => {
+    const file = fileInput.files?.[0];
+    if (file) validateAndPreview(file);
+  });
+
+  function validateAndPreview(file: File) {
+    hideError();
+
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      showError(`Formato no permitido (${file.type}). Usa: JPG, PNG, WEBP, GIF o AVIF.`);
+      fileInput.value = '';
+      return;
+    }
+
+    if (file.size > MAX_SIZE) {
+      showError(`El archivo pesa ${(file.size / (1024 * 1024)).toFixed(1)} MB. El límite es 10 MB.`);
+      fileInput.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      if (ev.target?.result) {
+        imagePreview.src = ev.target.result as string;
+      }
+      fileNameDisplay.textContent = `${file.name} (${(file.size / (1024 * 1024)).toFixed(2)} MB)`;
+      dropZoneContent.classList.add('hidden');
+      previewContainer.classList.remove('hidden');
+    };
+    reader.readAsDataURL(file);
+  }
+
+  removeFileBtn?.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    fileInput.value = '';
+    imagePreview.src = '';
+    previewContainer.classList.add('hidden');
+    dropZoneContent.classList.remove('hidden');
+  });
+
+  // ─── Form Submit ──────────────────────────────────────────────────────
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    hideError();
+    hideSuccess();
+
+    const file = fileInput.files?.[0];
+    if (!file) {
+      showError('Por favor selecciona una imagen.');
+      return;
+    }
+
+    const title = (form.querySelector('[name="title"]') as HTMLInputElement)?.value?.trim();
+    if (!title) {
+      showError('El título de la obra es obligatorio.');
+      return;
+    }
+
+    // Build FormData
+    const formData = new FormData(form);
+
+    try {
+      setLoading(true);
+
+      const res = await fetch('/api/admin/gallery', {
+        method: 'POST',
+        body: formData,
+        credentials: 'same-origin',
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || 'Error al guardar la obra.');
+      }
+
+      showSuccess(data.message || 'Obra registrada exitosamente.');
+      
+      // Reload the page after a brief delay to show the success message
+      setTimeout(() => {
+        window.location.reload();
+      }, 1200);
+
+    } catch (err: any) {
+      showError(err.message || 'Error inesperado al procesar la solicitud.');
+      setLoading(false);
+    }
+  });
+
+  // ─── Helpers ──────────────────────────────────────────────────────────
+  function showError(msg: string) {
+    errorMsg.textContent = msg;
+    errorBanner.classList.remove('hidden');
+    successBanner.classList.add('hidden');
+  }
+
+  function hideError() {
+    errorBanner.classList.add('hidden');
+    errorMsg.textContent = '';
+  }
+
+  function showSuccess(msg: string) {
+    successMsg.textContent = msg;
+    successBanner.classList.remove('hidden');
+    errorBanner.classList.add('hidden');
+  }
+
+  function hideSuccess() {
+    successBanner.classList.add('hidden');
+    successMsg.textContent = '';
+  }
+
+  function setLoading(loading: boolean) {
+    submitBtn.disabled = loading;
+    if (loading) {
+      submitBtnIcon.classList.add('hidden');
+      submitBtnSpinner.classList.remove('hidden');
+      submitBtnText.textContent = 'Subiendo...';
+    } else {
+      submitBtnIcon.classList.remove('hidden');
+      submitBtnSpinner.classList.add('hidden');
+      submitBtnText.textContent = 'Subir Obra';
+    }
+  }
+</script>

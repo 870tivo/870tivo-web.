@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { setPostVisibility, getVisibilityMap } from '../../../lib/postVisibility';
+import { supabaseAdmin } from '../../../lib/supabase';
 
 export const prerender = false;
 
@@ -24,6 +25,17 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     const updated = setPostVisibility(slug, isPublished);
+
+    // Sincronizar en Supabase
+    try {
+      const newStatus = isPublished ? 'publicado' : 'borrador';
+      await supabaseAdmin
+        .from('posts')
+        .update({ status: newStatus, updated_at: new Date().toISOString() })
+        .eq('slug', slug);
+    } catch (sbErr) {
+      console.error('Error al actualizar visibilidad en Supabase:', sbErr);
+    }
 
     return new Response(
       JSON.stringify({

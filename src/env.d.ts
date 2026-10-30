@@ -14,5 +14,8 @@ interface ImportMeta {
 declare namespace App {
     interface Locals {
         user?: import('@supabase/supabase-js').User | null;
+        role?: import('./types/roles').Role | null;
+        permissions?: import('./types/roles').RolePermissions | null;
+        isSuperAdmin?: boolean;
     }
 }

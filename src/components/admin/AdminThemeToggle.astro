@@ -1,0 +1,106 @@
+---
+interface Props {
+  class?: string;
+  size?: 'sm' | 'md';
+  variant?: 'icon' | 'pill';
+}
+
+const { 
+  class: className = '', 
+  size = 'md',
+  variant = 'icon'
+} = Astro.props;
+
+const sizeClasses = variant === 'icon' 
+  ? 'w-9 h-9 p-0 justify-center'
+  : {
+      sm: 'px-2.5 py-1 text-xs',
+      md: 'px-3 py-1.5 text-xs',
+    }[size];
+---
+
+<button
+  type="button"
+  id="adminThemeToggleBtn"
+  class={`admin-theme-toggle group relative inline-flex items-center rounded-xl border transition-all duration-200 cursor-pointer select-none bg-white dark:bg-[#181818] border-[#E5DFD5] dark:border-[#282828] text-[#1F1B16] dark:text-[#FAF6F0] hover:text-[#E4572E] dark:hover:text-[#F2B134] hover:border-[#E4572E]/40 dark:hover:border-[#F2B134]/40 hover:bg-[#F5EFE6] dark:hover:bg-[#222222] shadow-sm ${sizeClasses} ${className}`}
+  aria-label="Alternar tema claro/oscuro"
+  title="Cambiar a modo claro / oscuro"
+>
+  <!-- Sun Icon (visible in dark mode: clicking switches to light mode) -->
+  <svg 
+    class="w-4 h-4 hidden dark:block text-[#F2B134] transition-transform duration-300 group-hover:rotate-45" 
+    fill="none" 
+    stroke="currentColor" 
+    viewBox="0 0 24 24"
+  >
+    <circle cx="12" cy="12" r="4" stroke-width="2"></circle>
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>
+  </svg>
+
+  <!-- Moon Icon (visible in light mode: clicking switches to dark mode) -->
+  <svg 
+    class="w-4 h-4 block dark:hidden text-[#1F1B16] transition-transform duration-300 group-hover:-rotate-12" 
+    fill="none" 
+    stroke="currentColor" 
+    viewBox="0 0 24 24"
+  >
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+  </svg>
+
+  {variant === 'pill' && (
+    <span class="text-xs font-semibold tracking-tight hidden sm:inline-block">
+      <span class="dark:hidden">Modo Claro</span>
+      <span class="hidden dark:inline">Modo Oscuro</span>
+    </span>
+  )}
+</button>
+
+<script>
+  function initAdminThemeToggle() {
+    const btn = document.getElementById('adminThemeToggleBtn');
+    if (!btn) return;
+
+    function refreshTooltip(isDark: boolean) {
+      if (!btn) return;
+      btn.setAttribute(
+        'title',
+        isDark ? 'Cambiar a modo claro (editorial crema)' : 'Cambiar a modo oscuro (mate profundo)'
+      );
+      btn.setAttribute(
+        'aria-label',
+        isDark ? 'Activar tema editorial claro' : 'Activar tema oscuro mate'
+      );
+    }
+
+    const isInitiallyDark = document.documentElement.classList.contains('dark');
+    refreshTooltip(isInitiallyDark);
+
+    // Prevent duplicate event listeners
+    if (btn.dataset.initialized === 'true') return;
+    btn.dataset.initialized = 'true';
+
+    btn.addEventListener('click', () => {
+      const isDark = document.documentElement.classList.contains('dark');
+      const nextTheme = isDark ? 'light' : 'dark';
+
+      if (nextTheme === 'dark') {
+        document.documentElement.classList.add('dark');
+        document.documentElement.setAttribute('data-theme', 'dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+        document.documentElement.setAttribute('data-theme', 'light');
+      }
+
+      localStorage.setItem('theme', nextTheme);
+      refreshTooltip(nextTheme === 'dark');
+
+      // Dispatch global event for any listening reactive components
+      window.dispatchEvent(new CustomEvent('theme-change', { detail: { theme: nextTheme } }));
+    });
+  }
+
+  // Run on initial load and view transitions
+  initAdminThemeToggle();
+  document.addEventListener('astro:after-swap', initAdminThemeToggle);
+  document.addEventListener('astro:page-load', initAdminThemeToggle);
+</script>

@@ -4,43 +4,64 @@
 
 @layer base {
   :root {
-    --color-bg: #F0D264;
-    --color-ink: #10201A;
-    --color-card: #D3D3BF;
-    --color-orange: #EE8A4C;
-    --color-turquoise: #18B5B8;
-    --color-muted: #8A8D85;
+    --color-bg: #FAF6F0;
+    --color-ink: #1F1B16;
+    --color-card: #FFFFFF;
+    --color-orange: #E4572E;
+    --color-turquoise: #2F4B3A;
+    --color-forest: #2F4B3A;
+    --color-accent: #F2B134;
+    --color-muted: #78716A;
+    --color-border: #E5DFD5;
 
-    /* Admin panel tokens */
+    /* Admin editorial panel tokens - Light mode default */
+    --admin-bg: #FAF6F0;
+    --admin-surface: #FFFFFF;
+    --admin-surface-subtle: #F5EFE6;
+    --admin-border: #E5DFD5;
+    --admin-accent: #E4572E;
+    --admin-accent-hover: #CF4821;
+    --admin-mustard: #F2B134;
+    --admin-forest: #2F4B3A;
+    --admin-ink: #1F1B16;
+    --admin-muted: #78716A;
     --admin-duration-fast: 120ms;
     --admin-duration-base: 180ms;
     --admin-duration-slow: 300ms;
     --admin-ease: cubic-bezier(0.16, 1, 0.3, 1);
-    --admin-shadow-elevated: 0 8px 32px -4px rgba(0,0,0,0.45), 0 4px 12px -2px rgba(0,0,0,0.25);
-    --admin-shadow-cyan: 0 4px 24px -4px rgba(6,182,212,0.15);
-    --admin-shadow-red: 0 4px 24px -4px rgba(239,68,68,0.12);
   }
 
   html.dark, html[data-theme="dark"] {
-    --color-bg: #10201A;
-    --color-ink: #F0E6C0;
-    --color-card: #1c2f27;
+    --color-bg: #111111;
+    --color-ink: #FAF6F0;
+    --color-card: #181818;
+    --color-border: #282828;
+
+    /* Admin editorial panel tokens - Dark mode */
+    --admin-bg: #111111;
+    --admin-surface: #181818;
+    --admin-surface-subtle: #222222;
+    --admin-border: #282828;
+    --admin-accent: #E4572E;
+    --admin-accent-hover: #CF4821;
+    --admin-mustard: #F2B134;
+    --admin-forest: #2F4B3A;
+    --admin-ink: #FAF6F0;
+    --admin-muted: #9B948A;
   }
 
   body {
-    @apply bg-brand-bg text-brand-ink dark:bg-brand-ink dark:text-brand-darkInk font-sans antialiased selection:bg-brand-orange selection:text-white transition-colors duration-200;
+    @apply bg-brand-bg text-brand-ink dark:bg-brand-darkBg dark:text-brand-darkInk font-sans antialiased selection:bg-brand-primary selection:text-white transition-colors duration-200;
   }
 }
 
 @layer utilities {
   /* ── Admin row hover ── */
   .admin-row-hover {
-    transition: background-color 150ms ease, box-shadow 150ms ease;
+    transition: background-color var(--admin-duration-fast) var(--admin-ease);
   }
   .admin-row-hover:hover {
-    background-color: rgba(30, 41, 59, 0.4);
-    box-shadow: inset 0 1px 0 0 rgba(148, 163, 184, 0.05),
-                inset 0 -1px 0 0 rgba(148, 163, 184, 0.05);
+    background-color: rgba(255, 255, 255, 0.03);
   }
 
   /* ── Admin avatar scale on row hover ── */
@@ -48,8 +69,8 @@
     transition: transform 150ms ease, box-shadow 150ms ease;
   }
   .admin-row-hover:hover .admin-avatar {
-    transform: scale(1.08);
-    box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.3);
+    transform: scale(1.05);
+    box-shadow: 0 0 0 2px #E4572E;
   }
 
   /* ── Admin button press effect ── */
@@ -57,10 +78,22 @@
     transition: all 150ms ease;
   }
   .admin-btn:hover {
-    transform: scale(1.02);
+    transform: translateY(-1px);
   }
   .admin-btn:active {
-    transform: scale(0.98);
+    transform: translateY(0);
+  }
+
+  .admin-btn-scale {
+    transition: transform var(--admin-duration-fast) var(--admin-ease),
+                background-color var(--admin-duration-fast) var(--admin-ease),
+                border-color var(--admin-duration-fast) var(--admin-ease);
+  }
+  .admin-btn-scale:hover {
+    transform: translateY(-1px);
+  }
+  .admin-btn-scale:active {
+    transform: translateY(0);
   }
 
   /* ── Permission check/cross icon ── */
@@ -70,53 +103,23 @@
     justify-content: center;
     width: 1.625rem;
     height: 1.625rem;
-    border-radius: 0.5rem;
+    border-radius: 0.375rem;
     font-size: 0.6875rem;
     font-weight: 700;
   }
 
   /* ── Metric card hover ── */
   .metric-card {
-    transition: border-color 200ms ease, box-shadow 200ms ease;
+    transition: border-color 200ms ease;
   }
   .metric-card:hover {
-    border-color: rgba(100, 116, 139, 0.4);
-    box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.3);
+    border-color: rgba(228, 87, 46, 0.4);
   }
 
   /* ── Role select modified indicator ── */
   .role-select.modified {
-    box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.4) !important;
-    border-color: rgba(251, 191, 36, 0.5) !important;
+    box-shadow: 0 0 0 2px rgba(242, 177, 52, 0.4) !important;
+    border-color: rgba(242, 177, 52, 0.6) !important;
   }
 }
 
-/* Admin row/card hover transitions */
-@layer utilities {
-  .admin-row-hover {
-    transition: background-color var(--admin-duration-fast) var(--admin-ease),
-                box-shadow var(--admin-duration-base) var(--admin-ease);
-  }
-  .admin-row-hover:hover {
-    background-color: rgba(30, 41, 59, 0.4);
-    box-shadow: inset 0 1px 0 rgba(148,163,184,0.06), inset 0 -1px 0 rgba(148,163,184,0.06);
-  }
-  .admin-btn-scale {
-    transition: transform var(--admin-duration-fast) var(--admin-ease),
-                box-shadow var(--admin-duration-base) var(--admin-ease),
-                background-color var(--admin-duration-fast) var(--admin-ease);
-  }
-  .admin-btn-scale:hover {
-    transform: scale(1.02);
-  }
-  .admin-btn-scale:active {
-    transform: scale(0.98);
-  }
-  .admin-avatar-hover {
-    transition: transform var(--admin-duration-base) var(--admin-ease),
-                box-shadow var(--admin-duration-base) var(--admin-ease);
-  }
-  .admin-badge-glow {
-    transition: filter var(--admin-duration-base) var(--admin-ease);
-  }
-}

@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
 import { supabaseAdmin } from '../../../../lib/supabase';
-import { getAllRoles } from '../../../../lib/auth';
+import { getAllRoles, isUserAdminOrHasAccess } from '../../../../lib/auth';
 import type { RoleFormInput } from '../../../../types/roles';
 
 export const prerender = false;
@@ -8,7 +8,21 @@ export const prerender = false;
 /**
  * GET: Obtener listado de roles con número de usuarios asociados
  */
-export const GET: APIRoute = async () => {
+export const GET: APIRoute = async ({ locals }) => {
+  if (!locals.user) {
+    return new Response(JSON.stringify({ success: false, message: 'No autenticado.' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  if (!isUserAdminOrHasAccess(locals.role, locals.permissions)) {
+    return new Response(JSON.stringify({ success: false, message: 'Acceso denegado: Privilegios de administrador requeridos.' }), {
+      status: 403,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
   try {
     const roles = await getAllRoles();
     return new Response(JSON.stringify({ success: true, roles }), {
@@ -26,7 +40,21 @@ export const GET: APIRoute = async () => {
 /**
  * POST: Crear un nuevo rol
  */
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, locals }) => {
+  if (!locals.user) {
+    return new Response(JSON.stringify({ success: false, message: 'No autenticado.' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  if (!isUserAdminOrHasAccess(locals.role, locals.permissions)) {
+    return new Response(JSON.stringify({ success: false, message: 'Acceso denegado: Privilegios de administrador requeridos.' }), {
+      status: 403,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
   try {
     const body: RoleFormInput = await request.json();
     const { name, description, permissions } = body;
@@ -82,7 +110,21 @@ export const POST: APIRoute = async ({ request }) => {
 /**
  * PUT: Actualizar un rol existente
  */
-export const PUT: APIRoute = async ({ request }) => {
+export const PUT: APIRoute = async ({ request, locals }) => {
+  if (!locals.user) {
+    return new Response(JSON.stringify({ success: false, message: 'No autenticado.' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  if (!isUserAdminOrHasAccess(locals.role, locals.permissions)) {
+    return new Response(JSON.stringify({ success: false, message: 'Acceso denegado: Privilegios de administrador requeridos.' }), {
+      status: 403,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
   try {
     const body = await request.json();
     const { id, name, description, permissions } = body;
@@ -160,7 +202,21 @@ export const PUT: APIRoute = async ({ request }) => {
 /**
  * DELETE: Eliminar un rol
  */
-export const DELETE: APIRoute = async ({ request }) => {
+export const DELETE: APIRoute = async ({ request, locals }) => {
+  if (!locals.user) {
+    return new Response(JSON.stringify({ success: false, message: 'No autenticado.' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  if (!isUserAdminOrHasAccess(locals.role, locals.permissions)) {
+    return new Response(JSON.stringify({ success: false, message: 'Acceso denegado: Privilegios de administrador requeridos.' }), {
+      status: 403,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
   try {
     const url = new URL(request.url);
     const id = url.searchParams.get('id');

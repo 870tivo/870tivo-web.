@@ -6,6 +6,41 @@ import type {
   Role 
 } from '../types/roles';
 export { hasModulePermission } from '../types/roles';
+import { hasModulePermission } from '../types/roles';
+
+/**
+ * Valida si un usuario posee privilegios administrativos plenos (Super Administrador, Administrador, Admin
+ * o permisos de lectura sobre el módulo de usuarios) para acceder a rutas críticas como /admin/roles y /admin/usuarios.
+ */
+export function isUserAdminOrHasAccess(
+  role: Role | null | undefined,
+  permissions: RolePermissions | null | undefined
+): boolean {
+  if (!role && !permissions) return false;
+
+  // 1. Verificación por nombre de rol
+  if (role?.name) {
+    const normalized = role.name.trim().toLowerCase();
+    if (
+      normalized === 'super administrador' ||
+      normalized === 'superadmin' ||
+      normalized === 'administrador' ||
+      normalized === 'admin'
+    ) {
+      return true;
+    }
+  }
+
+  // 2. Verificación por matriz de permisos granular (módulo 'usuarios')
+  if (permissions) {
+    if (hasModulePermission(permissions, 'usuarios', 'read')) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 
 /**
  * Matriz de permisos con acceso total para Super Administradores
