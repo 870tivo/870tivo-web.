@@ -8,12 +8,17 @@
     "preview": "astro preview",
     "astro": "astro",
     "check": "astro check",
-    "test:security": "node scripts/test-e2e-security.mjs"
+    "test:security": "node scripts/test-e2e-security.mjs",
+    "postbuild": "node -e \"import('node:fs').then(fs => { const base = '.vercel/output/functions'; if (fs.existsSync(base)) { for (const dir of fs.readdirSync(base)) { const p = base + '/' + dir + '/.vc-config.json'; if (fs.existsSync(p)) { const c = JSON.parse(fs.readFileSync(p, 'utf8')); if (c.runtime !== 'nodejs22.x') { c.runtime = 'nodejs22.x'; fs.writeFileSync(p, JSON.stringify(c, null, 2)); console.log('[postbuild] Patched ' + dir + ' runtime to nodejs22.x'); } } } } })\""
+  },
+  "engines": {
+    "node": ">=22.0.0"
   },
   "dependencies": {
     "@astrojs/node": "^8.3.4",
     "@astrojs/react": "^3.6.3",
     "@astrojs/tailwind": "^5.1.0",
+    "@astrojs/vercel": "^7.8.2",
     "@sanity/client": "^8.8.0",
     "@supabase/supabase-js": "^2.117.2",
     "@tailwindcss/typography": "^0.5.20",
