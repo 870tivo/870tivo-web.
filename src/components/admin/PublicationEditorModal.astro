@@ -1,0 +1,1213 @@
+---
+/**
+ * src/components/admin/PublicationEditorModal.astro
+ * Modal Editorial («Tierra y Energía» / Papel & Tinta) para 870tivo Control Studio.
+ * Autores se cargan dinámicamente desde la API (tabla authors / fallback posts).
+ * El botón "+ Crear Autor" abre CreateAuthorModal (modal independiente, fuera del form).
+ */
+import Button from '../common/Button.astro';
+---
+
+<!-- MODAL OVERLAY -->
+<div 
+  id="publicationEditorModal" 
+  class="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/80 backdrop-blur-sm opacity-0 pointer-events-none transition-all duration-300"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="editorModalTitle"
+>
+  <!-- MODAL CARD / CANVAS EDITORIAL -->
+  <div 
+    id="publicationEditorModalCard"
+    class="relative w-full max-w-5xl max-h-[92vh] flex flex-col rounded-3xl bg-[#FAF6F0] dark:bg-[#141414] border border-[#E5DFD5] dark:border-[#282828] shadow-2xl transform scale-95 transition-all duration-300 overflow-hidden text-[#1F1B16] dark:text-[#FAF6F0]"
+  >
+    <!-- MODAL HEADER -->
+    <div class="px-6 sm:px-8 py-5 border-b border-[#E5DFD5] dark:border-[#282828] bg-white dark:bg-[#141414] flex items-center justify-between gap-4 shrink-0 transition-colors">
+      <div class="min-w-0">
+        <div class="flex items-center gap-2.5 mb-1.5 flex-wrap">
+          <span class="text-[11px] uppercase tracking-widest font-serif font-bold text-[#78716A] dark:text-neutral-400">
+            Revista 870tivo &bull; Redacción
+          </span>
+          <span class="text-[10px] px-2 py-0.5 rounded-full bg-[#2F4B3A]/10 dark:bg-[#2F4B3A]/20 border border-[#2F4B3A]/30 text-[#2F4B3A] dark:text-[#A7C7B3] font-mono">
+            bucket: blog-media
+          </span>
+          <span id="editorModalModeBadge" class="text-[10px] px-2.5 py-0.5 rounded-full font-bold bg-[#E4572E]/10 dark:bg-[#E4572E]/20 text-[#E4572E] border border-[#E4572E]/30">
+            Nueva Publicación
+          </span>
+        </div>
+        <h3 id="editorModalTitle" class="text-xl sm:text-2xl font-serif font-bold text-[#1F1B16] dark:text-white tracking-tight truncate">
+          Redacción & Edición Editorial
+        </h3>
+        <p class="text-xs text-[#78716A] dark:text-neutral-400 mt-0.5 truncate hidden sm:block">
+          Curaduría de textos, ensayos críticos y crónicas visuales para la galería pública.
+        </p>
+      </div>
+
+      <!-- Close Button -->
+      <button 
+        type="button" 
+        id="closePublicationModalBtn"
+        class="p-2 text-[#78716A] hover:text-[#1F1B16] dark:text-neutral-400 dark:hover:text-white rounded-xl bg-white hover:bg-[#FAF6F0] dark:bg-[#181818] dark:hover:bg-[#222222] border border-[#E5DFD5] dark:border-[#282828] transition-colors shrink-0 cursor-pointer shadow-xs"
+        aria-label="Cerrar modal de redacción"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- MODAL BODY (Scrollable Editorial Canvas) -->
+    <div class="p-6 sm:p-8 space-y-6 overflow-y-auto custom-scrollbar flex-1 bg-[#FAF6F0] dark:bg-[#111111] transition-colors">
+
+      <!-- Error / Alert Banner -->
+      <div 
+        id="editorModalAlert" 
+        class="hidden p-3.5 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-700 dark:text-red-300 text-xs flex items-start gap-2.5 transition-all"
+      >
+        <svg class="w-4 h-4 shrink-0 text-red-500 dark:text-red-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+        <span id="editorModalAlertMsg" class="font-medium">Error al procesar los datos.</span>
+      </div>
+
+      <!-- Form Container -->
+      <form id="publicationEditorForm" class="space-y-6" novalidate>
+
+        <!-- 1. TÍTULO Y SLUG -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <label for="postTitleInput" class="block text-xs font-bold text-[#1F1B16] dark:text-neutral-200 uppercase tracking-wider">
+              Título del Artículo / Ensayo <span class="text-[#E4572E]">*</span>
+            </label>
+            <div class="text-[11px] text-[#78716A] dark:text-neutral-400 flex items-center gap-1.5 font-mono">
+              <span>URL:</span>
+              <span id="slugPreviewDisplay" class="text-[#E4572E] font-semibold truncate max-w-[200px] sm:max-w-xs">/blog/nuevo-articulo</span>
+              <button 
+                type="button" 
+                id="toggleSlugEditBtn" 
+                class="text-xs text-[#78716A] hover:text-[#E4572E] dark:hover:text-[#F2B134] underline underline-offset-2 ml-1 cursor-pointer transition-colors"
+              >
+                Editar
+              </button>
+            </div>
+          </div>
+
+          <input 
+            type="text" 
+            id="postTitleInput" 
+            name="title" 
+            required 
+            placeholder="Ej: «El Cine Inmaterial y la Memoria Urbana»" 
+            class="w-full px-4 py-3 bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] focus:border-[#E4572E] dark:focus:border-[#E4572E] rounded-2xl text-sm sm:text-base font-semibold text-[#1F1B16] dark:text-white placeholder-[#A8A29E] dark:placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-[#E4572E] transition-all shadow-xs"
+          />
+
+          <!-- Slug manual input (hidden by default) -->
+          <div id="manualSlugContainer" class="hidden pt-1">
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-[#78716A] dark:text-neutral-400 font-mono">/blog/</span>
+              <input 
+                type="text" 
+                id="postSlugInput" 
+                name="slug" 
+                placeholder="mi-articulo-personalizado" 
+                class="flex-1 px-3 py-1.5 bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] focus:border-[#E4572E] rounded-xl text-xs font-mono text-[#E4572E] focus:outline-none transition-all"
+              />
+              <button 
+                type="button" 
+                id="resetAutoSlugBtn" 
+                class="text-[11px] px-2.5 py-1.5 rounded-lg bg-neutral-100 hover:bg-neutral-200 dark:bg-[#222222] dark:hover:bg-[#2a2a2a] text-[#78716A] dark:text-neutral-300 transition-colors cursor-pointer"
+                title="Regenerar a partir del título"
+              >
+                Auto
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. AUTORÍA DINÁMICA Y METADATA FLEXIBLE -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          
+          <!-- Selector de Autor con opción + Crear Autor (abre modal externo) -->
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <label for="postAuthorSelect" class="block text-xs font-bold text-[#1F1B16] dark:text-neutral-200 uppercase tracking-wider">
+                Autor / Redactor <span class="text-[#E4572E]">*</span>
+              </label>
+              <button 
+                type="button" 
+                id="openCreateAuthorFromEditorBtn" 
+                class="text-xs font-semibold text-[#E4572E] hover:text-[#CF4821] flex items-center gap-1 cursor-pointer transition-colors"
+                title="Abre un formulario separado para crear un nuevo autor"
+              >
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+                </svg>
+                <span>Crear Autor</span>
+              </button>
+            </div>
+
+            <!-- Campo oculto donde reside el valor final del autor que viaja en el POST -->
+            <input type="hidden" id="postAuthorInput" name="author" value="" />
+
+            <!-- Selector Select dinámico de autores (cargado por JS desde la API) -->
+            <div class="relative">
+              <select 
+                id="postAuthorSelect" 
+                class="w-full pl-9 pr-9 py-2.5 bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] focus:border-[#E4572E] dark:focus:border-[#E4572E] rounded-xl text-xs text-[#1F1B16] dark:text-white focus:outline-none focus:ring-1 focus:ring-[#E4572E] transition-all cursor-pointer appearance-none shadow-xs"
+              >
+                <option value="" disabled selected>Cargando autores...</option>
+              </select>
+              <svg class="w-4 h-4 text-[#78716A] dark:text-neutral-400 absolute left-3 top-3 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              <svg class="w-4 h-4 text-[#78716A] dark:text-neutral-400 absolute right-3 top-3 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+
+            <span class="text-[10px] text-[#78716A] dark:text-neutral-400 mt-1 block">
+              Selecciona o crea un autor para este artículo.
+            </span>
+          </div>
+
+          <!-- Enlace Social del Autor -->
+          <div>
+            <label for="postAuthorSocialInput" class="block text-xs font-bold text-[#1F1B16] dark:text-neutral-200 uppercase tracking-wider mb-1.5">
+              Enlace Social del Autor <span class="text-[#78716A] dark:text-neutral-400 font-normal">(Opcional)</span>
+            </label>
+            <div class="relative">
+              <input 
+                type="text" 
+                id="postAuthorSocialInput" 
+                name="authorSocial" 
+                placeholder="Ej: https://instagram.com/870tivo" 
+                class="w-full pl-9 pr-3.5 py-2.5 bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] focus:border-[#E4572E] dark:focus:border-[#E4572E] rounded-xl text-xs text-[#1F1B16] dark:text-white placeholder-[#A8A29E] dark:placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-[#E4572E] transition-all shadow-xs"
+              />
+              <svg class="w-4 h-4 text-[#78716A] dark:text-neutral-400 absolute left-3 top-3 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+              </svg>
+            </div>
+            <span class="text-[10px] text-[#78716A] dark:text-neutral-400 mt-1 block">Se sincroniza automáticamente con el autor seleccionado.</span>
+          </div>
+
+          <!-- Categoría / Etiqueta -->
+          <div class="sm:col-span-2 lg:col-span-1">
+            <label for="postCategoryInput" class="block text-xs font-bold text-[#1F1B16] dark:text-neutral-200 uppercase tracking-wider mb-1.5">
+              Categoría / Sección
+            </label>
+            <input 
+              type="text" 
+              id="postCategoryInput" 
+              name="badge" 
+              list="categorySuggestions"
+              placeholder="Ej: ENSAYO DE PORTADA" 
+              class="w-full px-3.5 py-2.5 bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] focus:border-[#E4572E] dark:focus:border-[#E4572E] rounded-xl text-xs text-[#1F1B16] dark:text-white placeholder-[#A8A29E] dark:placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-[#E4572E] transition-all uppercase shadow-xs"
+            />
+            <datalist id="categorySuggestions">
+              <option value="ENSAYO DE PORTADA"></option>
+              <option value="FOTOGRAFÍA & ARQUITECTURA"></option>
+              <option value="PAISAJE SONORO"></option>
+              <option value="CRÍTICA DE CINE"></option>
+              <option value="RESEÑA EDITORIAL"></option>
+              <option value="INSTALACIÓN VISUAL"></option>
+            </datalist>
+            <div class="flex items-center gap-1.5 mt-1.5 overflow-x-auto pb-1 text-[10px]">
+              <span class="text-[#78716A] dark:text-neutral-400 shrink-0">Sugerencias:</span>
+              <button type="button" class="category-chip text-[#E4572E] hover:text-[#CF4821] bg-[#E4572E]/10 border border-[#E4572E]/25 px-1.5 py-0.5 rounded cursor-pointer whitespace-nowrap" data-cat="ENSAYO DE PORTADA">Ensayo</button>
+              <button type="button" class="category-chip text-[#2F4B3A] dark:text-[#A7C7B3] hover:opacity-80 bg-[#2F4B3A]/10 border border-[#2F4B3A]/25 px-1.5 py-0.5 rounded cursor-pointer whitespace-nowrap" data-cat="FOTOGRAFÍA & ARQUITECTURA">Fotografía</button>
+              <button type="button" class="category-chip text-[#966B0D] dark:text-[#F2B134] hover:opacity-80 bg-[#F2B134]/15 border border-[#F2B134]/30 px-1.5 py-0.5 rounded cursor-pointer whitespace-nowrap" data-cat="PAISAJE SONORO">Sonoro</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. SUBTÍTULO / RESUMEN -->
+        <div>
+          <label for="postSubtitleInput" class="block text-xs font-bold text-[#1F1B16] dark:text-neutral-200 uppercase tracking-wider mb-1.5">
+            Subtítulo / Bajada o Resumen Editorial
+          </label>
+          <textarea 
+            id="postSubtitleInput" 
+            name="subtitle" 
+            rows="2" 
+            placeholder="Breve reflexión que introduce el artículo y engancha al lector en la landing page..." 
+            class="w-full px-4 py-2.5 bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] focus:border-[#E4572E] dark:focus:border-[#E4572E] rounded-xl text-xs sm:text-sm text-[#1F1B16] dark:text-neutral-200 placeholder-[#A8A29E] dark:placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-[#E4572E] transition-all resize-none shadow-xs"
+          ></textarea>
+        </div>
+
+        <!-- 4. GESTIÓN DE IMAGEN DE PORTADA PRINCIPAL (DRAG & DROP A SUPABASE STORAGE 'blog-media') -->
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="block text-xs font-bold text-[#1F1B16] dark:text-neutral-200 uppercase tracking-wider">
+              Imagen de Portada Principal <span class="text-[#78716A] dark:text-neutral-400 font-normal">(Supabase Storage: blog-media)</span>
+            </label>
+            <button 
+              type="button" 
+              id="toggleManualHeroUrlBtn" 
+              class="text-xs text-[#E4572E] hover:text-[#CF4821] underline underline-offset-2 cursor-pointer transition-colors"
+            >
+              Usar URL existente
+            </button>
+          </div>
+
+          <!-- Hidden storage field with final image URL -->
+          <input type="hidden" id="postHeroImageUrl" name="heroImage" value="" />
+
+          <!-- Drag & Drop Container -->
+          <div 
+            id="heroDropZone"
+            class="relative border-2 border-dashed border-[#E5DFD5] dark:border-[#282828] hover:border-[#E4572E] dark:hover:border-[#E4572E]/70 rounded-2xl p-6 sm:p-8 text-center cursor-pointer transition-all duration-300 bg-white/70 dark:bg-[#141414] hover:bg-white dark:hover:bg-[#181818] group shadow-xs"
+          >
+            <!-- Hidden File Input -->
+            <input 
+              type="file" 
+              id="heroFileInput" 
+              accept="image/jpeg,image/png,image/webp,image/gif,image/avif" 
+              class="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10" 
+            />
+
+            <!-- Empty / Prompt State -->
+            <div id="heroDropPrompt" class="pointer-events-none space-y-2.5">
+              <div class="w-12 h-12 mx-auto rounded-2xl bg-[#FAF6F0] dark:bg-[#1E1E1E] border border-[#E5DFD5] dark:border-[#282828] flex items-center justify-center text-[#E4572E] group-hover:scale-110 group-hover:bg-[#E4572E]/10 group-hover:border-[#E4572E]/30 transition-all duration-300 shadow-xs">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <div>
+                <p class="text-xs sm:text-sm font-semibold text-[#1F1B16] dark:text-neutral-200">
+                  Arrastra tu imagen de portada aquí o <span class="text-[#E4572E] underline underline-offset-2">examina tus archivos</span>
+                </p>
+                <p class="text-[11px] text-[#78716A] dark:text-neutral-400 mt-1">
+                  Se subirá automáticamente al bucket <strong class="text-[#E4572E]">blog-media</strong> (JPG, PNG, WEBP, AVIF &mdash; máx 12 MB)
+                </p>
+              </div>
+            </div>
+
+            <!-- Uploading Spinner State (hidden by default) -->
+            <div id="heroDropUploading" class="hidden pointer-events-none py-4 space-y-2">
+              <div class="w-8 h-8 mx-auto border-3 border-[#E4572E] border-t-transparent rounded-full animate-spin"></div>
+              <p class="text-xs font-semibold text-[#E4572E]">Subiendo portada a Supabase Storage...</p>
+            </div>
+
+            <!-- Preview State (hidden by default) -->
+            <div id="heroDropPreview" class="hidden pointer-events-none">
+              <div class="relative inline-block max-w-full">
+                <img 
+                  id="heroPreviewImg" 
+                  src="" 
+                  alt="Vista previa de portada" 
+                  class="max-h-56 mx-auto rounded-xl object-contain shadow-md border border-[#E5DFD5] dark:border-[#282828] bg-[#FAF6F0] dark:bg-[#181818]" 
+                />
+                <span class="absolute top-2 left-2 px-2.5 py-1 rounded-lg bg-white/90 dark:bg-[#141414]/90 backdrop-blur-sm border border-[#2F4B3A]/40 text-[#2F4B3A] dark:text-[#A7C7B3] font-mono text-[10px] flex items-center gap-1.5 shadow-xs">
+                  <span class="w-1.5 h-1.5 rounded-full bg-[#2F4B3A] animate-pulse"></span>
+                  Portada Lista
+                </span>
+              </div>
+              <div class="mt-3 flex items-center justify-center gap-4">
+                <p id="heroFileNameDisplay" class="text-xs text-[#78716A] dark:text-neutral-300 font-mono truncate max-w-xs"></p>
+                <button 
+                  type="button" 
+                  id="heroRemoveBtn" 
+                  class="text-xs text-red-500 hover:text-red-600 dark:hover:text-red-400 underline underline-offset-2 pointer-events-auto shrink-0 font-medium cursor-pointer"
+                >
+                  Eliminar / Cambiar
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Fallback URL manual input (hidden by default) -->
+          <div id="manualHeroUrlContainer" class="hidden mt-2">
+            <input 
+              type="text" 
+              id="manualHeroUrlInput" 
+              placeholder="https://ejemplo.com/imagen.jpg o /assets/images/pajaro-muerto.jpeg" 
+              class="w-full px-3.5 py-2 bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] rounded-xl text-xs text-[#1F1B16] dark:text-white placeholder-[#A8A29E] dark:placeholder-neutral-500 focus:outline-none focus:border-[#E4572E] transition-colors"
+            />
+          </div>
+        </div>
+
+        <!-- 5. EDITOR DE CONTENIDO AMPLIO (MARKDOWN / HTML / IFRAME Y BOTÓN IMAGEN SECUNDARIA) -->
+        <div class="space-y-2">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <label for="postContentInput" class="block text-xs font-bold text-[#1F1B16] dark:text-neutral-200 uppercase tracking-wider">
+                Cuerpo del Ensayo / Contenido Enriquecido
+              </label>
+              <span class="text-[11px] text-[#78716A] dark:text-neutral-400">
+                Compatible con Markdown, formato editorial y etiquetas <code>&lt;iframe&gt;</code> para videos.
+              </span>
+            </div>
+
+            <!-- Tab Switch: Editor / Vista Previa -->
+            <div class="inline-flex rounded-xl bg-white dark:bg-[#181818] p-1 border border-[#E5DFD5] dark:border-[#282828] shrink-0 shadow-xs">
+              <button 
+                type="button" 
+                id="tabEditorBtn" 
+                class="px-3 py-1 rounded-lg text-xs font-bold bg-[#FAF6F0] dark:bg-[#282828] text-[#1F1B16] dark:text-white shadow-xs transition-all cursor-pointer"
+              >
+                Editor
+              </button>
+              <button 
+                type="button" 
+                id="tabPreviewBtn" 
+                class="px-3 py-1 rounded-lg text-xs font-medium text-[#78716A] hover:text-[#1F1B16] dark:text-neutral-400 dark:hover:text-white transition-all cursor-pointer"
+              >
+                Vista Previa en Vivo
+              </button>
+            </div>
+          </div>
+
+          <!-- RICH FORMATTING TOOLBAR CON TONOS CÁLIDOS -->
+          <div id="editorToolbar" class="flex flex-wrap items-center gap-1.5 p-2 rounded-2xl bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] text-xs shadow-xs">
+            <!-- Negrita -->
+            <button type="button" data-action="bold" title="Negrita (**texto**)" class="toolbar-btn px-2.5 py-1.5 rounded-lg bg-[#FAF6F0] hover:bg-[#F5EFE6] dark:bg-[#141414] dark:hover:bg-[#222222] text-[#1F1B16] dark:text-neutral-300 border border-[#E5DFD5] dark:border-[#282828] font-bold cursor-pointer">
+              B
+            </button>
+            <!-- Cursiva -->
+            <button type="button" data-action="italic" title="Cursiva (*texto*)" class="toolbar-btn px-2.5 py-1.5 rounded-lg bg-[#FAF6F0] hover:bg-[#F5EFE6] dark:bg-[#141414] dark:hover:bg-[#222222] text-[#1F1B16] dark:text-neutral-300 border border-[#E5DFD5] dark:border-[#282828] italic font-serif cursor-pointer">
+              I
+            </button>
+            <!-- Título H2 -->
+            <button type="button" data-action="h2" title="Encabezado H2" class="toolbar-btn px-2.5 py-1.5 rounded-lg bg-[#FAF6F0] hover:bg-[#F5EFE6] dark:bg-[#141414] dark:hover:bg-[#222222] text-[#1F1B16] dark:text-neutral-300 border border-[#E5DFD5] dark:border-[#282828] font-semibold cursor-pointer">
+              H2
+            </button>
+            <!-- Título H3 -->
+            <button type="button" data-action="h3" title="Subtítulo H3" class="toolbar-btn px-2.5 py-1.5 rounded-lg bg-[#FAF6F0] hover:bg-[#F5EFE6] dark:bg-[#141414] dark:hover:bg-[#222222] text-[#1F1B16] dark:text-neutral-300 border border-[#E5DFD5] dark:border-[#282828] font-semibold cursor-pointer">
+              H3
+            </button>
+            <!-- Cita Editorial -->
+            <button type="button" data-action="quote" title="Cita reflexiva (> ...)" class="toolbar-btn px-2.5 py-1.5 rounded-lg bg-[#F2B134]/15 hover:bg-[#F2B134]/25 text-[#966B0D] dark:text-[#F2B134] border border-[#F2B134]/30 font-serif cursor-pointer">
+              « » Cita
+            </button>
+            <!-- Lista -->
+            <button type="button" data-action="list" title="Lista con viñetas" class="toolbar-btn px-2.5 py-1.5 rounded-lg bg-[#FAF6F0] hover:bg-[#F5EFE6] dark:bg-[#141414] dark:hover:bg-[#222222] text-[#1F1B16] dark:text-neutral-300 border border-[#E5DFD5] dark:border-[#282828] cursor-pointer">
+              &bull; Lista
+            </button>
+            <!-- Enlace -->
+            <button type="button" data-action="link" title="Insertar enlace" class="toolbar-btn px-2.5 py-1.5 rounded-lg bg-[#FAF6F0] hover:bg-[#F5EFE6] dark:bg-[#141414] dark:hover:bg-[#222222] text-[#1F1B16] dark:text-neutral-300 border border-[#E5DFD5] dark:border-[#282828] cursor-pointer">
+              🔗 Enlace
+            </button>
+
+            <span class="w-px h-5 bg-[#E5DFD5] dark:bg-[#282828] mx-1"></span>
+
+            <!-- BOTÓN DESTACADO: INSERTAR IMAGEN SECUNDARIA (SUBIDA A BLOG-MEDIA) -->
+            <button 
+              type="button" 
+              id="insertSecondaryImageBtn" 
+              class="toolbar-special-btn inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#E4572E]/10 hover:bg-[#E4572E]/20 text-[#E4572E] border border-[#E4572E]/30 font-semibold text-xs transition-all cursor-pointer shadow-xs"
+              title="Sube una imagen adicional al bucket 'blog-media' e inserta su etiqueta en el texto"
+            >
+              <svg class="w-3.5 h-3.5 text-[#E4572E]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <span>+ Imagen Secundaria</span>
+            </button>
+
+            <!-- Hidden input for secondary image upload -->
+            <input 
+              type="file" 
+              id="secondaryImageFileInput" 
+              accept="image/jpeg,image/png,image/webp,image/gif,image/avif" 
+              class="hidden" 
+            />
+
+            <!-- BOTÓN INSERTAR VIDEO / IFRAME -->
+            <button 
+              type="button" 
+              id="insertVideoIframeBtn" 
+              class="toolbar-special-btn inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#2F4B3A]/10 hover:bg-[#2F4B3A]/20 dark:bg-[#2F4B3A]/20 text-[#2F4B3A] dark:text-[#A7C7B3] border border-[#2F4B3A]/30 font-semibold text-xs transition-all cursor-pointer shadow-xs"
+              title="Inserta un contenedor responsive de YouTube / Vimeo con código <iframe>"
+            >
+              <svg class="w-3.5 h-3.5 text-[#2F4B3A] dark:text-[#A7C7B3]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>+ Video &lt;iframe&gt;</span>
+            </button>
+          </div>
+
+          <!-- Editor Textarea Area -->
+          <div id="editorInputArea" class="relative">
+            <textarea 
+              id="postContentInput" 
+              name="content" 
+              rows="14" 
+              placeholder="Escribe aquí el cuerpo del artículo o ensayo...
+
+## I. Introducción estética
+El asfalto húmedo refracta las luces mortecinas del atardecer...
+
+> «La memoria inmaterial no busca catalogar certezas, sino registrar la fragilidad.»
+
+Puedes insertar código <iframe> para videos de YouTube, listas y subtítulos." 
+              class="w-full p-4 sm:p-5 bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] focus:border-[#E4572E] dark:focus:border-[#E4572E] rounded-2xl text-xs sm:text-sm font-mono text-[#1F1B16] dark:text-neutral-200 placeholder-[#A8A29E] dark:placeholder-neutral-600 focus:outline-none focus:ring-1 focus:ring-[#E4572E] transition-all resize-y leading-relaxed custom-scrollbar shadow-inner"
+            ></textarea>
+
+            <!-- Loading overlay when secondary image is uploading -->
+            <div id="secondaryImageUploadingOverlay" class="hidden absolute inset-0 bg-[#FAF6F0]/85 dark:bg-[#111111]/85 backdrop-blur-xs rounded-2xl flex items-center justify-center gap-3 text-[#E4572E] text-xs font-semibold">
+              <span class="w-5 h-5 border-2 border-[#E4572E] border-t-transparent rounded-full animate-spin"></span>
+              <span>Subiendo imagen secundaria a Supabase (blog-media)...</span>
+            </div>
+          </div>
+
+          <!-- Live Preview Container (hidden by default) -->
+          <div 
+            id="editorPreviewArea" 
+            class="hidden p-6 sm:p-8 bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] rounded-2xl min-h-[320px] max-h-[500px] overflow-y-auto custom-scrollbar text-[#1F1B16] dark:text-neutral-200 leading-relaxed space-y-4 shadow-xs"
+          >
+            <!-- Injected via JS preview generator -->
+            <div id="livePreviewContent" class="prose dark:prose-invert max-w-none"></div>
+          </div>
+        </div>
+
+      </form>
+
+    </div>
+
+    <!-- MODAL FOOTER (Acciones con Button.astro) -->
+    <div class="px-6 sm:px-8 py-4 bg-white dark:bg-[#141414] border-t border-[#E5DFD5] dark:border-[#282828] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0 transition-colors">
+      <!-- Status Hint -->
+      <div class="flex items-center gap-2 text-xs text-[#78716A] dark:text-neutral-400">
+        <span class="w-2 h-2 rounded-full bg-[#2F4B3A]"></span>
+        <span id="footerStatusHint">Elige guardar como borrador o publicar directamente en el sitio.</span>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex items-center justify-end gap-3">
+        <!-- Cancelar -->
+        <Button 
+          variant="ghost" 
+          id="editorCancelBtn"
+          size="md"
+        >
+          Cancelar
+        </Button>
+
+        <!-- Guardar Borrador (Editorial Neutro / Secundario) -->
+        <Button 
+          variant="secondary" 
+          id="saveDraftBtn"
+          size="md"
+        >
+          <svg class="w-4 h-4 text-[#78716A] dark:text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+          </svg>
+          <span class="btn-text">Guardar Borrador</span>
+        </Button>
+
+        <!-- Publicar Ahora (Naranja Quemado Primario) -->
+        <Button 
+          variant="primary" 
+          id="publishNowBtn"
+          size="md"
+        >
+          <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+          </svg>
+          <span class="btn-text">Publicar Ahora</span>
+        </Button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ─── Referencias DOM ──────────────────────────────────────────────────────────
+  const modal = document.getElementById('publicationEditorModal') as HTMLElement;
+  const modalCard = document.getElementById('publicationEditorModalCard') as HTMLElement;
+  const modalTitle = document.getElementById('editorModalTitle') as HTMLElement;
+  const modalModeBadge = document.getElementById('editorModalModeBadge') as HTMLElement;
+  const closeBtn = document.getElementById('closePublicationModalBtn') as HTMLButtonElement;
+  const cancelBtn = document.getElementById('editorCancelBtn') as HTMLButtonElement;
+  const alertBox = document.getElementById('editorModalAlert') as HTMLElement;
+  const alertMsg = document.getElementById('editorModalAlertMsg') as HTMLElement;
+
+  // Form Fields
+  const form = document.getElementById('publicationEditorForm') as HTMLFormElement;
+  const titleInput = document.getElementById('postTitleInput') as HTMLInputElement;
+  const slugInput = document.getElementById('postSlugInput') as HTMLInputElement;
+  const slugPreviewDisplay = document.getElementById('slugPreviewDisplay') as HTMLElement;
+  const toggleSlugEditBtn = document.getElementById('toggleSlugEditBtn') as HTMLButtonElement;
+  const manualSlugContainer = document.getElementById('manualSlugContainer') as HTMLElement;
+  const resetAutoSlugBtn = document.getElementById('resetAutoSlugBtn') as HTMLButtonElement;
+
+  // Autoría Dinámica
+  const authorInput = document.getElementById('postAuthorInput') as HTMLInputElement;
+  const authorSelect = document.getElementById('postAuthorSelect') as HTMLSelectElement;
+  const authorSocialInput = document.getElementById('postAuthorSocialInput') as HTMLInputElement;
+  const openCreateAuthorBtn = document.getElementById('openCreateAuthorFromEditorBtn') as HTMLButtonElement;
+
+  const categoryInput = document.getElementById('postCategoryInput') as HTMLInputElement;
+  const subtitleInput = document.getElementById('postSubtitleInput') as HTMLTextAreaElement;
+  const contentInput = document.getElementById('postContentInput') as HTMLTextAreaElement;
+
+  // Hero Drop Zone
+  const heroDropZone = document.getElementById('heroDropZone') as HTMLElement;
+  const heroFileInput = document.getElementById('heroFileInput') as HTMLInputElement;
+  const heroDropPrompt = document.getElementById('heroDropPrompt') as HTMLElement;
+  const heroDropUploading = document.getElementById('heroDropUploading') as HTMLElement;
+  const heroDropPreview = document.getElementById('heroDropPreview') as HTMLElement;
+  const heroPreviewImg = document.getElementById('heroPreviewImg') as HTMLImageElement;
+  const heroFileNameDisplay = document.getElementById('heroFileNameDisplay') as HTMLElement;
+  const heroRemoveBtn = document.getElementById('heroRemoveBtn') as HTMLButtonElement;
+  const heroImageUrlHidden = document.getElementById('postHeroImageUrl') as HTMLInputElement;
+  const toggleManualHeroUrlBtn = document.getElementById('toggleManualHeroUrlBtn') as HTMLButtonElement;
+  const manualHeroUrlContainer = document.getElementById('manualHeroUrlContainer') as HTMLElement;
+  const manualHeroUrlInput = document.getElementById('manualHeroUrlInput') as HTMLInputElement;
+
+  // Secondary Image & Video
+  const insertSecondaryImageBtn = document.getElementById('insertSecondaryImageBtn') as HTMLButtonElement;
+  const secondaryImageFileInput = document.getElementById('secondaryImageFileInput') as HTMLInputElement;
+  const secondaryImageUploadingOverlay = document.getElementById('secondaryImageUploadingOverlay') as HTMLElement;
+  const insertVideoIframeBtn = document.getElementById('insertVideoIframeBtn') as HTMLButtonElement;
+
+  // Tabs & Preview
+  const tabEditorBtn = document.getElementById('tabEditorBtn') as HTMLButtonElement;
+  const tabPreviewBtn = document.getElementById('tabPreviewBtn') as HTMLButtonElement;
+  const editorInputArea = document.getElementById('editorInputArea') as HTMLElement;
+  const editorPreviewArea = document.getElementById('editorPreviewArea') as HTMLElement;
+  const livePreviewContent = document.getElementById('livePreviewContent') as HTMLElement;
+  const editorToolbar = document.getElementById('editorToolbar') as HTMLElement;
+
+  // Category Chips
+  const categoryChips = document.querySelectorAll('.category-chip') as NodeListOf<HTMLButtonElement>;
+
+  // Action Buttons
+  const saveDraftBtn = document.getElementById('saveDraftBtn') as HTMLButtonElement;
+  const publishNowBtn = document.getElementById('publishNowBtn') as HTMLButtonElement;
+
+  let isAutoSlug = true;
+  let currentEditingSlug: string | null = null;
+
+  // ─── Generador de Slug ────────────────────────────────────────────────────────
+  function slugify(text: string): string {
+    return text
+      .toString()
+      .toLowerCase()
+      .trim()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
+  }
+
+  titleInput?.addEventListener('input', () => {
+    if (isAutoSlug) {
+      const generated = slugify(titleInput.value) || 'nuevo-articulo';
+      slugInput.value = generated;
+      if (slugPreviewDisplay) slugPreviewDisplay.textContent = `/blog/${generated}`;
+    }
+  });
+
+  slugInput?.addEventListener('input', () => {
+    isAutoSlug = false;
+    const clean = slugify(slugInput.value);
+    if (slugPreviewDisplay) slugPreviewDisplay.textContent = `/blog/${clean || 'nuevo-articulo'}`;
+  });
+
+  toggleSlugEditBtn?.addEventListener('click', () => {
+    manualSlugContainer?.classList.toggle('hidden');
+    if (!manualSlugContainer?.classList.contains('hidden')) {
+      slugInput.focus();
+    }
+  });
+
+  resetAutoSlugBtn?.addEventListener('click', () => {
+    isAutoSlug = true;
+    const generated = slugify(titleInput.value) || 'nuevo-articulo';
+    slugInput.value = generated;
+    if (slugPreviewDisplay) slugPreviewDisplay.textContent = `/blog/${generated}`;
+  });
+
+  // ─── Gestión de Autores (API Dinámica) ───────────────────────────────────────
+  let loadedAuthors: Array<{ name: string; socialUrl?: string }> = [];
+
+  async function fetchAuthors(preferredAuthorName?: string) {
+    if (!authorSelect) return;
+    try {
+      const res = await fetch('/api/admin/posts/authors');
+      const data = await res.json();
+      if (data.success && Array.isArray(data.authors)) {
+        loadedAuthors = data.authors;
+        authorSelect.innerHTML = '';
+
+        if (loadedAuthors.length === 0) {
+          const emptyOpt = document.createElement('option');
+          emptyOpt.value = '';
+          emptyOpt.textContent = 'Sin autores (crea uno)';
+          authorSelect.appendChild(emptyOpt);
+        } else {
+          for (const a of loadedAuthors) {
+            const opt = document.createElement('option');
+            opt.value = a.name;
+            opt.textContent = a.name;
+            if (a.socialUrl) opt.setAttribute('data-social', a.socialUrl);
+            authorSelect.appendChild(opt);
+          }
+        }
+
+        // Si se especificó un autor preferido, seleccionarlo o añadirlo temporalmente
+        if (preferredAuthorName) {
+          let found = false;
+          for (let i = 0; i < authorSelect.options.length; i++) {
+            if (authorSelect.options[i].value.toLowerCase() === preferredAuthorName.toLowerCase()) {
+              authorSelect.selectedIndex = i;
+              found = true;
+              break;
+            }
+          }
+          if (!found) {
+            const opt = document.createElement('option');
+            opt.value = preferredAuthorName;
+            opt.textContent = preferredAuthorName;
+            authorSelect.appendChild(opt);
+            authorSelect.value = preferredAuthorName;
+          }
+        } else if (authorSelect.options.length > 0) {
+          authorSelect.selectedIndex = 0;
+        }
+
+        syncAuthorSelection();
+      }
+    } catch (err) {
+      console.warn('Error al cargar autores:', err);
+    }
+  }
+
+  // Sincronizar selección de autor con inputs correspondientes
+  authorSelect?.addEventListener('change', () => {
+    syncAuthorSelection();
+  });
+
+  function syncAuthorSelection() {
+    if (!authorSelect) return;
+    const selectedOption = authorSelect.options[authorSelect.selectedIndex];
+    if (selectedOption && selectedOption.value) {
+      const authorName = selectedOption.value;
+      const authorSocial = selectedOption.getAttribute('data-social') || '';
+      if (authorInput) authorInput.value = authorName;
+      if (authorSocialInput) authorSocialInput.value = authorSocial;
+    } else {
+      if (authorInput) authorInput.value = '';
+      if (authorSocialInput) authorSocialInput.value = '';
+    }
+  }
+
+  // Abrir Modal Externo de Crear Autor
+  openCreateAuthorBtn?.addEventListener('click', (e) => {
+    e.preventDefault();
+    if (typeof (window as any).__openCreateAuthorModal === 'function') {
+      (window as any).__openCreateAuthorModal();
+    }
+  });
+
+  // Escuchar cuando se crea un autor desde el modal externo
+  window.addEventListener('author-created', (e: any) => {
+    const created = e.detail;
+    if (created && created.name) {
+      fetchAuthors(created.name);
+    }
+  });
+
+  // ─── Category Chips ───────────────────────────────────────────────────────────
+  categoryChips.forEach((chip) => {
+    chip.addEventListener('click', () => {
+      const cat = chip.getAttribute('data-cat') || '';
+      if (categoryInput) categoryInput.value = cat;
+    });
+  });
+
+  // ─── Modal Open / Close ───────────────────────────────────────────────────────
+  function openModal(postData?: {
+    slug?: string;
+    title?: string;
+    subtitle?: string;
+    badge?: string;
+    author?: string;
+    authorSocial?: string;
+    heroImage?: string;
+    content?: string;
+    status?: 'published' | 'draft' | string;
+  }) {
+    showAlert(''); // Limpiar alertas previas
+    switchTab('editor');
+
+    if (postData && postData.title) {
+      // MODO EDICIÓN
+      currentEditingSlug = postData.slug || null;
+      isAutoSlug = false;
+      modalTitle.textContent = `Editar Ensayo: «${postData.title}»`;
+      modalModeBadge.textContent = 'Editando Publicación';
+      modalModeBadge.className = 'text-[10px] px-2.5 py-0.5 rounded-full font-bold bg-[#E4572E]/10 dark:bg-[#E4572E]/20 text-[#E4572E] border border-[#E4572E]/30';
+
+      titleInput.value = postData.title || '';
+      slugInput.value = postData.slug || '';
+      if (slugPreviewDisplay) slugPreviewDisplay.textContent = `/blog/${postData.slug || ''}`;
+
+      // Configurar autor en selector desde API
+      const incomingAuthor = postData.author?.trim() || '';
+      fetchAuthors(incomingAuthor);
+      if (authorInput) authorInput.value = incomingAuthor;
+      if (authorSocialInput) authorSocialInput.value = postData.authorSocial || '';
+
+      categoryInput.value = postData.badge || 'EDITORIAL';
+      subtitleInput.value = postData.subtitle || '';
+      contentInput.value = postData.content || '';
+
+      if (postData.heroImage) {
+        setHeroImagePreview(postData.heroImage, 'Imagen de portada actual');
+      } else {
+        resetHeroImage();
+      }
+    } else {
+      // MODO NUEVA PUBLICACIÓN
+      currentEditingSlug = null;
+      isAutoSlug = true;
+      modalTitle.textContent = 'Nueva Publicación Editorial';
+      modalModeBadge.textContent = 'Borrador Nuevo';
+      modalModeBadge.className = 'text-[10px] px-2.5 py-0.5 rounded-full font-bold bg-[#F2B134]/15 text-[#966B0D] dark:text-[#F2B134] border border-[#F2B134]/30';
+
+      form.reset();
+      slugInput.value = '';
+      if (slugPreviewDisplay) slugPreviewDisplay.textContent = '/blog/nuevo-articulo';
+      categoryInput.value = 'ENSAYO DE PORTADA';
+
+      fetchAuthors();
+      resetHeroImage();
+    }
+
+    modal.classList.remove('opacity-0', 'pointer-events-none');
+    modal.classList.add('opacity-100');
+    modalCard.classList.remove('scale-95');
+    modalCard.classList.add('scale-100');
+    document.body.style.overflow = 'hidden';
+
+    setTimeout(() => {
+      titleInput?.focus();
+    }, 150);
+  }
+
+  function closeModal() {
+    modal.classList.add('opacity-0', 'pointer-events-none');
+    modal.classList.remove('opacity-100');
+    modalCard.classList.add('scale-95');
+    modalCard.classList.remove('scale-100');
+    document.body.style.overflow = '';
+  }
+
+  closeBtn?.addEventListener('click', closeModal);
+  cancelBtn?.addEventListener('click', closeModal);
+
+  modal?.addEventListener('click', (e) => {
+    if (e.target === modal) closeModal();
+  });
+
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !modal.classList.contains('pointer-events-none')) {
+      closeModal();
+    }
+  });
+
+  // Exponer función global para abrir desde la tabla de publicaciones o cabecera
+  (window as any).__openPublicationEditor = openModal;
+
+  // ─── Portada Drag & Drop y Subida a Supabase Storage ───────────────────────────
+  ['dragenter', 'dragover'].forEach((evt) => {
+    heroDropZone?.addEventListener(evt, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      heroDropZone.classList.add('border-[#E4572E]', 'bg-[#E4572E]/5');
+    });
+  });
+
+  ['dragleave', 'drop'].forEach((evt) => {
+    heroDropZone?.addEventListener(evt, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      heroDropZone.classList.remove('border-[#E4572E]', 'bg-[#E4572E]/5');
+    });
+  });
+
+  heroDropZone?.addEventListener('drop', (e) => {
+    const files = (e as DragEvent).dataTransfer?.files;
+    if (files && files.length > 0) {
+      handleHeroFileUpload(files[0]);
+    }
+  });
+
+  heroFileInput?.addEventListener('change', () => {
+    const file = heroFileInput.files?.[0];
+    if (file) {
+      handleHeroFileUpload(file);
+    }
+  });
+
+  async function handleHeroFileUpload(file: File) {
+    showAlert('');
+
+    // Validar tipo y peso
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'];
+    if (!validTypes.includes(file.type)) {
+      showAlert(`Formato no válido (${file.type}). Por favor selecciona JPG, PNG, WEBP o AVIF.`);
+      return;
+    }
+
+    if (file.size > 12 * 1024 * 1024) {
+      showAlert(`El archivo pesa ${(file.size / (1024 * 1024)).toFixed(1)} MB. El límite es 12 MB.`);
+      return;
+    }
+
+    // Estado visual subiendo
+    heroDropPrompt.classList.add('hidden');
+    heroDropPreview.classList.add('hidden');
+    heroDropUploading.classList.remove('hidden');
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch('/api/admin/posts/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'Error al subir imagen a Supabase Storage.');
+      }
+
+      setHeroImagePreview(data.url, file.name);
+
+    } catch (err: any) {
+      console.error('Error subiendo portada:', err);
+      showAlert(err.message || 'No se pudo subir la portada al bucket blog-media.');
+      resetHeroImage();
+    } finally {
+      heroDropUploading.classList.add('hidden');
+    }
+  }
+
+  function setHeroImagePreview(url: string, name?: string) {
+    heroImageUrlHidden.value = url;
+    heroPreviewImg.src = url;
+    heroFileNameDisplay.textContent = name || url.split('/').pop() || 'portada.jpg';
+    heroDropPrompt.classList.add('hidden');
+    heroDropUploading.classList.add('hidden');
+    heroDropPreview.classList.remove('hidden');
+  }
+
+  function resetHeroImage() {
+    heroImageUrlHidden.value = '';
+    heroFileInput.value = '';
+    heroPreviewImg.src = '';
+    heroDropPreview.classList.add('hidden');
+    heroDropUploading.classList.add('hidden');
+    heroDropPrompt.classList.remove('hidden');
+  }
+
+  heroRemoveBtn?.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    resetHeroImage();
+  });
+
+  // Alternar URL manual
+  toggleManualHeroUrlBtn?.addEventListener('click', () => {
+    manualHeroUrlContainer?.classList.toggle('hidden');
+    if (!manualHeroUrlContainer?.classList.contains('hidden')) {
+      manualHeroUrlInput?.focus();
+    }
+  });
+
+  manualHeroUrlInput?.addEventListener('change', () => {
+    const val = manualHeroUrlInput.value.trim();
+    if (val) {
+      setHeroImagePreview(val, 'URL manual');
+    }
+  });
+
+  // ─── Toolbar y Botón "Insertar Imagen Secundaria" ──────────────────────────────
+  const toolbarButtons = document.querySelectorAll('.toolbar-btn') as NodeListOf<HTMLButtonElement>;
+
+  toolbarButtons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const action = btn.getAttribute('data-action');
+      if (!action) return;
+      insertFormatting(action);
+    });
+  });
+
+  function insertFormatting(action: string) {
+    const textarea = contentInput;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = textarea.value;
+    const selection = text.substring(start, end);
+
+    let replacement = '';
+    let cursorOffset = 0;
+
+    switch (action) {
+      case 'bold':
+        replacement = `**${selection || 'texto en negrita'}**`;
+        cursorOffset = 2;
+        break;
+      case 'italic':
+        replacement = `*${selection || 'texto en cursiva'}*`;
+        cursorOffset = 1;
+        break;
+      case 'h2':
+        replacement = `\n\n## ${selection || 'Subtítulo del Ensayo'}\n\n`;
+        cursorOffset = 5;
+        break;
+      case 'h3':
+        replacement = `\n\n### ${selection || 'Sección Secundaria'}\n\n`;
+        cursorOffset = 6;
+        break;
+      case 'quote':
+        replacement = `\n\n> «${selection || 'Cita reflexiva o testimonio del autor...'}»\n\n`;
+        cursorOffset = 5;
+        break;
+      case 'list':
+        replacement = `\n- ${selection || 'Primer punto de la lista'}\n- Segundo punto\n`;
+        cursorOffset = 3;
+        break;
+      case 'link':
+        const url = prompt('Introduce la URL del enlace:', 'https://');
+        if (url) {
+          replacement = `[${selection || 'Texto del enlace'}](${url})`;
+        } else {
+          return;
+        }
+        break;
+    }
+
+    textarea.value = text.substring(0, start) + replacement + text.substring(end);
+    textarea.focus();
+    textarea.setSelectionRange(start + cursorOffset, start + replacement.length - cursorOffset);
+  }
+
+  // Insertar Imagen Secundaria con subida a Supabase 'blog-media'
+  insertSecondaryImageBtn?.addEventListener('click', () => {
+    secondaryImageFileInput.click();
+  });
+
+  secondaryImageFileInput?.addEventListener('change', async () => {
+    const file = secondaryImageFileInput.files?.[0];
+    if (!file) return;
+
+    showAlert('');
+    secondaryImageUploadingOverlay?.classList.remove('hidden');
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch('/api/admin/posts/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'Error al subir la imagen secundaria.');
+      }
+
+      // Insertar etiqueta en el textarea
+      const altText = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
+      const markdownTag = `\n\n![${altText}](${data.url})\n*Fotografía: Archivo 870tivo (Colección Inmaterial)*\n\n`;
+
+      const start = contentInput.selectionStart || contentInput.value.length;
+      const end = contentInput.selectionEnd || contentInput.value.length;
+      const current = contentInput.value;
+
+      contentInput.value = current.substring(0, start) + markdownTag + current.substring(end);
+      contentInput.focus();
+
+      // Feedback
+      showToast('Imagen secundaria integrada con éxito');
+
+    } catch (err: any) {
+      console.error('Error insertando imagen secundaria:', err);
+      showAlert(err.message || 'No se pudo subir la imagen secundaria al bucket blog-media.');
+    } finally {
+      secondaryImageUploadingOverlay?.classList.add('hidden');
+      secondaryImageFileInput.value = '';
+    }
+  });
+
+  // Insertar Video / iframe
+  insertVideoIframeBtn?.addEventListener('click', () => {
+    const defaultUrl = 'https://www.youtube.com/embed/dQw4w9WgXcQ';
+    const videoUrl = prompt('Ingresa el enlace "Embed" del video (YouTube/Vimeo):', defaultUrl) || defaultUrl;
+
+    const iframeHtml = `\n\n<!-- Video Embed Responsive -->\n<div class="aspect-video my-8 rounded-2xl overflow-hidden shadow-md border border-[#E5DFD5] dark:border-[#282828] bg-black">\n  <iframe class="w-full h-full" src="${videoUrl}" title="Video 870tivo" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>\n</div>\n\n`;
+
+    const start = contentInput.selectionStart || contentInput.value.length;
+    const end = contentInput.selectionEnd || contentInput.value.length;
+    const current = contentInput.value;
+
+    contentInput.value = current.substring(0, start) + iframeHtml + current.substring(end);
+    contentInput.focus();
+  });
+
+  // ─── Tabs de Editor vs Vista Previa en Vivo ───────────────────────────────────
+  tabEditorBtn?.addEventListener('click', () => switchTab('editor'));
+  tabPreviewBtn?.addEventListener('click', () => switchTab('preview'));
+
+  function switchTab(mode: 'editor' | 'preview') {
+    if (mode === 'editor') {
+      tabEditorBtn.className = 'px-3 py-1 rounded-lg text-xs font-bold bg-[#FAF6F0] dark:bg-[#282828] text-[#1F1B16] dark:text-white shadow-xs transition-all cursor-pointer';
+      tabPreviewBtn.className = 'px-3 py-1 rounded-lg text-xs font-medium text-[#78716A] hover:text-[#1F1B16] dark:text-neutral-400 dark:hover:text-white transition-all cursor-pointer';
+      editorInputArea.classList.remove('hidden');
+      editorToolbar.classList.remove('hidden');
+      editorPreviewArea.classList.add('hidden');
+    } else {
+      tabPreviewBtn.className = 'px-3 py-1 rounded-lg text-xs font-bold bg-[#FAF6F0] dark:bg-[#282828] text-[#1F1B16] dark:text-white shadow-xs transition-all cursor-pointer';
+      tabEditorBtn.className = 'px-3 py-1 rounded-lg text-xs font-medium text-[#78716A] hover:text-[#1F1B16] dark:text-neutral-400 dark:hover:text-white transition-all cursor-pointer';
+      editorInputArea.classList.add('hidden');
+      editorToolbar.classList.add('hidden');
+      editorPreviewArea.classList.remove('hidden');
+      renderLivePreview();
+    }
+  }
+
+  function renderLivePreview() {
+    const raw = contentInput.value || '*Aún no has redactado contenido para este ensayo.*';
+    
+    // Markdown parser editorial
+    let html = raw
+      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+      .replace(/^##\s+(.*$)/gim, '<h2 class="text-xl sm:text-2xl font-serif font-bold text-[#1F1B16] dark:text-white mt-6 mb-3 flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-[#E4572E]"></span>$1</h2>')
+      .replace(/^###\s+(.*$)/gim, '<h3 class="text-lg font-serif font-semibold text-[#966B0D] dark:text-[#F2B134] mt-5 mb-2">$1</h3>')
+      .replace(/^\>\s+(.*$)/gim, '<blockquote class="border-l-3 border-[#E4572E] pl-4 py-2 my-4 font-serif italic text-[#1F1B16]/90 dark:text-white/90 bg-[#FAF6F0] dark:bg-[#181818] rounded-r-lg">$1</blockquote>')
+      .replace(/!\[(.*?)\]\((.*?)\)/gim, '<div class="my-6 text-center"><img src="$2" alt="$1" class="max-h-96 mx-auto rounded-2xl shadow-md border border-[#E5DFD5] dark:border-[#282828] object-cover" /><p class="text-[11px] text-[#78716A] dark:text-neutral-400 font-serif italic mt-2">$1</p></div>')
+      .replace(/\[(.*?)\]\((.*?)\)/gim, '<a href="$2" target="_blank" class="text-[#E4572E] underline hover:text-[#CF4821] font-medium">$1</a>')
+      .replace(/\*\*(.*?)\*\*/gim, '<strong class="font-bold text-[#1F1B16] dark:text-white">$1</strong>')
+      .replace(/\*(.*?)\*/gim, '<em class="italic text-[#78716A] dark:text-neutral-300 font-serif">$1</em>')
+      .split('\n\n')
+      .map(p => {
+        p = p.trim();
+        if (!p) return '';
+        if (p.startsWith('<h') || p.startsWith('<blockquote') || p.startsWith('<div') || p.startsWith('<!--')) {
+          return p;
+        }
+        return `<p class="mb-4 text-xs sm:text-sm text-[#1F1B16] dark:text-neutral-200 leading-relaxed font-sans">${p}</p>`;
+      })
+      .join('\n');
+
+    livePreviewContent.innerHTML = html;
+  }
+
+  // ─── Guardar Borrador / Publicar Ahora ─────────────────────────────────────────
+  saveDraftBtn?.addEventListener('click', () => submitForm('borrador'));
+  publishNowBtn?.addEventListener('click', () => submitForm('publicado'));
+
+  async function submitForm(targetStatus: 'publicado' | 'borrador') {
+    showAlert('');
+
+    const title = titleInput.value.trim();
+    if (!title) {
+      showAlert('El título del artículo es obligatorio.');
+      titleInput.focus();
+      return;
+    }
+
+    const slug = slugInput.value.trim() || currentEditingSlug || slugify(title);
+    const author = authorInput.value.trim() || authorSelect.value.trim();
+    if (!author) {
+      showAlert('Por favor selecciona o crea un autor para esta publicación.');
+      return;
+    }
+    const authorSocial = authorSocialInput.value.trim();
+    const badge = categoryInput.value.trim() || 'EDITORIAL';
+    const subtitle = subtitleInput.value.trim();
+    const heroImage = heroImageUrlHidden.value.trim();
+    const content = contentInput.value;
+
+    const payload = {
+      slug,
+      title,
+      subtitle,
+      badge,
+      author,
+      authorSocial,
+      heroImage,
+      content,
+      status: targetStatus,
+    };
+
+    // Loading button states
+    setButtonsLoading(true, targetStatus);
+
+    try {
+      const res = await fetch('/api/admin/posts/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'Error al guardar la publicación.');
+      }
+
+      showToast(data.message || (targetStatus === 'publicado' ? 'Publicado con éxito' : 'Borrador guardado'));
+      closeModal();
+
+      // Recargar para refrescar la tabla
+      setTimeout(() => {
+        window.location.reload();
+      }, 900);
+
+    } catch (err: any) {
+      console.error('Error al guardar publicación:', err);
+      showAlert(err.message || 'Error inesperado al conectar con el servidor.');
+      setButtonsLoading(false, targetStatus);
+    }
+  }
+
+  function setButtonsLoading(isLoading: boolean, activeBtn?: 'publicado' | 'borrador') {
+    if (saveDraftBtn) saveDraftBtn.disabled = isLoading;
+    if (publishNowBtn) publishNowBtn.disabled = isLoading;
+
+    const draftText = saveDraftBtn?.querySelector('.btn-text');
+    const pubText = publishNowBtn?.querySelector('.btn-text');
+
+    if (isLoading) {
+      if (activeBtn === 'borrador' && draftText) draftText.textContent = 'Guardando...';
+      if (activeBtn === 'publicado' && pubText) pubText.textContent = 'Publicando...';
+    } else {
+      if (draftText) draftText.textContent = 'Guardar Borrador';
+      if (pubText) pubText.textContent = 'Publicar Ahora';
+    }
+  }
+
+  function showAlert(msg: string) {
+    if (!msg) {
+      alertBox?.classList.add('hidden');
+      if (alertMsg) alertMsg.textContent = '';
+      return;
+    }
+    alertBox?.classList.remove('hidden');
+    if (alertMsg) alertMsg.textContent = msg;
+  }
+
+  function showToast(msg: string) {
+    const toast = document.getElementById('toastNotification');
+    const text = document.getElementById('toastMessage');
+    if (toast && text) {
+      text.textContent = msg;
+      toast.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-10');
+      toast.classList.add('opacity-100', 'translate-y-0');
+      setTimeout(() => {
+        toast.classList.remove('opacity-100', 'translate-y-0');
+        toast.classList.add('opacity-0', 'pointer-events-none', 'translate-y-10');
+      }, 3500);
+    }
+  }
+</script>

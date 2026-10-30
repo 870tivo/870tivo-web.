@@ -1,0 +1,842 @@
+---
+/**
+ * src/pages/admin/galeria/index.astro
+ * Módulo de Gestión de Galería de Arte & Proyectos (870tivo Control Studio).
+ * Incluye visualización grid, filtros y búsqueda server-side con Supabase (.ilike()),
+ * paginación de 5 registros por página (?page=1&limit=5),
+ * acciones rápidas (toggle visibilidad, eliminar con borrado en Supabase Storage),
+ * y modal de carga UploadMediaModal.
+ */
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import UploadMediaModal from '../../../components/admin/UploadMediaModal.astro';
+import Card from '../../../components/common/Card.astro';
+import Button from '../../../components/common/Button.astro';
+import Pagination from '../../../components/common/Pagination.astro';
+import SearchInput from '../../../components/common/SearchInput.astro';
+import { supabaseAdmin } from '../../../lib/supabase';
+import { hasPermission } from '../../../lib/auth';
+import { GALLERY_CATEGORIES, type GalleryItem } from '../../../types/gallery';
+
+// 1. Verificar sesión de usuario SSR
+const user = Astro.locals.user;
+if (!user?.id) {
+  return Astro.redirect('/admin/login?redirect=/admin/galeria');
+}
+
+// 2. Verificar permisos granulares del módulo 'galeria'
+const canRead = await hasPermission(user.id, 'galeria', 'read');
+const canCreate = await hasPermission(user.id, 'galeria', 'create');
+const canDelete = await hasPermission(user.id, 'galeria', 'delete');
+const canUpdate = await hasPermission(user.id, 'galeria', 'update');
+const canToggle = await hasPermission(user.id, 'galeria', 'toggle_visibility');
+
+// 3. Parámetros de paginación y búsqueda Server-Side (5 Ítems por Página)
+const PAGE_SIZE = 5;
+const pageParam = Math.max(1, parseInt(Astro.url.searchParams.get('page') || '1', 10));
+const searchQuery = (Astro.url.searchParams.get('search') || Astro.url.searchParams.get('q') || '').trim();
+const statusFilter = (Astro.url.searchParams.get('status') || 'all').trim();
+const categoryFilter = (Astro.url.searchParams.get('category') || 'all').trim().toLowerCase();
+
+// 4. Estadísticas globales del módulo
+let totalCount = 0;
+let publishedCount = 0;
+let draftCount = 0;
+
+if (canRead) {
+  const { count: totalRaw } = await supabaseAdmin.from('gallery').select('*', { count: 'exact', head: true });
+  const { count: pubRaw } = await supabaseAdmin.from('gallery').select('*', { count: 'exact', head: true }).eq('status', 'publicado');
+  const { count: drfRaw } = await supabaseAdmin.from('gallery').select('*', { count: 'exact', head: true }).eq('status', 'borrador');
+  
+  totalCount = totalRaw || 0;
+  publishedCount = pubRaw || 0;
+  draftCount = drfRaw || 0;
+}
+
+// 5. Query server-side filtrada y paginada en Supabase
+let items: GalleryItem[] = [];
+let dbError: string | null = null;
+let totalFiltered = 0;
+let totalPages = 1;
+let currentPage = 1;
+const from = (pageParam - 1) * PAGE_SIZE;
+const to = from + PAGE_SIZE - 1;
+
+if (canRead) {
+  try {
+    let dbQuery = supabaseAdmin
+      .from('gallery')
+      .select('*', { count: 'exact' });
+
+    if (searchQuery) {
+      // Consulta directa a Supabase con .ilike()
+      dbQuery = dbQuery.ilike('title', `%${searchQuery}%`);
+    }
+
+    if (statusFilter !== 'all') {
+      dbQuery = dbQuery.eq('status', statusFilter);
+    }
+
+    if (categoryFilter !== 'all') {
+      dbQuery = dbQuery.ilike('category', categoryFilter);
+    }
+
+    const { data, count, error } = await dbQuery
+      .order('created_at', { ascending: false })
+      .range(from, to);
+
+    if (error) {
+      dbError = error.message;
+    } else {
+      items = (data as GalleryItem[]) || [];
+      totalFiltered = count || 0;
+      totalPages = Math.max(1, Math.ceil(totalFiltered / PAGE_SIZE));
+      currentPage = Math.min(pageParam, totalPages);
+    }
+  } catch (err: any) {
+    dbError = err?.message || 'Error al conectar con la base de datos.';
+  }
+}
+
+// Helper para URLs de paginación preservando filtros
+function getPageUrl(p: number) {
+  const params = new URLSearchParams();
+  params.set('page', String(p));
+  params.set('limit', String(PAGE_SIZE));
+  if (searchQuery) params.set('search', searchQuery);
+  if (statusFilter !== 'all') params.set('status', statusFilter);
+  if (categoryFilter !== 'all') params.set('category', categoryFilter);
+  return `?${params.toString()}`;
+}
+
+// Formateador de fechas en español
+function formatDate(dateStr: string) {
+  try {
+    const date = new Date(dateStr);
+    return new Intl.DateTimeFormat('es-CO', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    }).format(date);
+  } catch {
+    return dateStr;
+  }
+}
+---
+
+<AdminLayout 
+  title="Gestión de Galería de Arte & Proyectos | 870tivo Control Studio" 
+  headerTitle="Galería de Arte & Proyectos"
+  activeModule="galeria"
+>
+  {/* Restricción de lectura si no tiene permiso */}
+  {!canRead ? (
+    <div class="rounded-3xl bg-slate-900/60 border border-red-500/30 p-8 text-center max-w-xl mx-auto my-12">
+      <div class="w-14 h-14 mx-auto rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 mb-4">
+        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+        </svg>
+      </div>
+      <h3 class="text-xl font-bold text-white mb-2">Acceso Restringido</h3>
+      <p class="text-sm text-slate-400 mb-6">
+        No tienes los permisos necesarios para visualizar el catálogo de la galería de arte. Contacta a un administrador para solicitar el permiso <code class="text-amber-400 bg-slate-800 px-1.5 py-0.5 rounded">galeria.read</code>.
+      </p>
+      <a 
+        href="/admin/dashboard" 
+        class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors"
+      >
+        Volver al Panel Principal
+      </a>
+    </div>
+  ) : (
+    <div class="space-y-6">
+
+      {/* Header Principal con Acciones */}
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div class="flex items-center gap-2 mb-1.5">
+            <span class="text-xs uppercase font-bold tracking-widest text-[#E4572E]">Curaduría & Obras</span>
+            <span class="text-xs px-2.5 py-0.5 rounded-full bg-white dark:bg-slate-800 border border-[#E5DFD5] dark:border-slate-700/60 text-[#1F1B16] dark:text-slate-300 font-semibold">
+              {totalCount} Obras Registradas
+            </span>
+            <span class="text-xs px-2 py-0.5 rounded-full bg-[#E4572E]/10 border border-[#E4572E]/20 text-[#E4572E] font-medium">
+              Bucket: gallery-media
+            </span>
+          </div>
+          <h2 class="text-2xl sm:text-3xl font-extrabold text-[#1F1B16] dark:text-white tracking-tight">
+            Galería de Arte & Proyectos
+          </h2>
+          <p class="text-xs sm:text-sm text-[#78716A] dark:text-slate-400 mt-1 max-w-2xl leading-relaxed">
+            Administra el catálogo visual de obras, sube imágenes en alta resolución a Supabase Storage y controla qué piezas se exhiben públicamente en el portal de Galería 870tivo.
+          </p>
+        </div>
+
+        {/* Botón de Carga / Nueva Obra */}
+        <div class="flex items-center gap-3 shrink-0">
+          <a 
+            href="/galeria" 
+            target="_blank"
+            class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white dark:bg-slate-900 hover:bg-[#FAF6F0] dark:hover:bg-slate-800 text-[#1F1B16] dark:text-slate-300 hover:text-[#E4572E] dark:hover:text-white border border-[#E5DFD5] dark:border-slate-800 hover:border-[#E4572E]/40 text-xs font-medium transition-all"
+          >
+            <span>Ver Portal Público</span>
+            <svg class="w-3.5 h-3.5 text-[#78716A] dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
+          </a>
+
+          {canCreate && (
+            <Button 
+              variant="primary" 
+              id="openUploadModalBtn"
+              size="md"
+            >
+              <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+              </svg>
+              <span>+ Nueva Obra</span>
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Banner Informativo si hay error en Supabase */}
+      {dbError && (
+        <div class="p-4 sm:p-5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-200 text-xs sm:text-sm">
+          <div class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-amber-500 dark:text-amber-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <div class="space-y-1 flex-1">
+              <h4 class="font-bold text-[#1F1B16] dark:text-white text-sm">Aviso de Base de Datos</h4>
+              <p class="text-xs text-[#78716A] dark:text-amber-200/90 leading-relaxed">
+                Mensaje de Supabase: <code class="bg-[#FAF6F0] dark:bg-[#181818] px-2 py-0.5 rounded text-[#E4572E] dark:text-amber-300">{dbError}</code>
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tarjetas de Métricas Rápidas */}
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Total */}
+        <Card variant="default" padding="sm" class="metric-card flex items-center justify-between">
+          <div>
+            <span class="text-[11px] font-medium text-[#78716A] dark:text-neutral-400 uppercase tracking-wider block">Total Obras</span>
+            <span class="text-2xl font-bold text-[#1F1B16] dark:text-white mt-1 block">{totalCount}</span>
+            <span class="text-[11px] text-[#78716A] dark:text-neutral-500 mt-0.5 block">En catálogo</span>
+          </div>
+          <div class="w-11 h-11 rounded-xl bg-[#E4572E]/10 border border-[#E4572E]/20 flex items-center justify-center text-[#E4572E]">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </div>
+        </Card>
+
+        {/* Publicadas */}
+        <Card variant="default" padding="sm" class="metric-card flex items-center justify-between">
+          <div>
+            <span class="text-[11px] font-medium text-[#2F4B3A] dark:text-[#A7C7B3] uppercase tracking-wider block">Publicadas</span>
+            <span class="text-2xl font-bold text-[#2F4B3A] dark:text-[#A7C7B3] mt-1 block">{publishedCount}</span>
+            <span class="text-[11px] text-[#78716A] dark:text-neutral-400 mt-0.5 block">Visibles en web</span>
+          </div>
+          <div class="w-11 h-11 rounded-xl bg-[#2F4B3A]/10 dark:bg-[#2F4B3A]/20 border border-[#2F4B3A]/25 flex items-center justify-center text-[#2F4B3A] dark:text-[#A7C7B3]">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+          </div>
+        </Card>
+
+        {/* Borradores */}
+        <Card variant="default" padding="sm" class="metric-card flex items-center justify-between">
+          <div>
+            <span class="text-[11px] font-medium text-[#966B0D] dark:text-[#F2B134] uppercase tracking-wider block">Borradores</span>
+            <span class="text-2xl font-bold text-[#966B0D] dark:text-[#F2B134] mt-1 block">{draftCount}</span>
+            <span class="text-[11px] text-[#78716A] dark:text-neutral-400 mt-0.5 block">En curaduría</span>
+          </div>
+          <div class="w-11 h-11 rounded-xl bg-[#F2B134]/15 border border-[#F2B134]/25 flex items-center justify-center text-[#966B0D] dark:text-[#F2B134]">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
+            </svg>
+          </div>
+        </Card>
+
+        {/* Storage Bucket */}
+        <Card variant="default" padding="sm" class="metric-card flex items-center justify-between">
+          <div>
+            <span class="text-[11px] font-medium text-[#78716A] dark:text-neutral-400 uppercase tracking-wider block">Almacenamiento</span>
+            <span class="text-sm font-bold text-[#1F1B16] dark:text-neutral-200 mt-1.5 block truncate max-w-[140px] font-mono">gallery-media</span>
+            <span class="text-[11px] text-[#2F4B3A] dark:text-[#A7C7B3] mt-0.5 block">Supabase Storage</span>
+          </div>
+          <div class="w-11 h-11 rounded-xl bg-[#2F4B3A]/10 dark:bg-[#2F4B3A]/20 border border-[#2F4B3A]/25 flex items-center justify-center text-[#2F4B3A] dark:text-[#A7C7B3]">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2 1.5 3 3.5 3h9c2 0 3.5-1 3.5-3V7M4 7c0-2 1.5-3 3.5-3h9c2 0 3.5 1 3.5 3M4 7h16m-8 4v6m-3-3h6" />
+            </svg>
+          </div>
+        </Card>
+      </div>
+
+      {/* Barra de Filtros, Búsqueda y Pestañas Server-Side */}
+      <Card variant="subtle" padding="sm" class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        
+        {/* Pestañas de Estado */}
+        <div class="flex items-center gap-1.5 overflow-x-auto pb-2 md:pb-0" id="filterStatusTabs">
+          <button 
+            type="button"
+            data-filter-status="all" 
+            class={`gallery-tab-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap cursor-pointer transition-all ${
+              statusFilter === 'all'
+                ? 'active bg-[#E4572E]/15 border border-[#E4572E]/30 text-[#E4572E] shadow-sm'
+                : 'border border-transparent text-neutral-400 hover:text-white hover:bg-white/5'
+            }`}
+          >
+            Todas ({totalCount})
+          </button>
+          <button 
+            type="button"
+            data-filter-status="publicado" 
+            class={`gallery-tab-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap cursor-pointer transition-all ${
+              statusFilter === 'publicado'
+                ? 'active bg-[#2F4B3A]/20 border border-[#2F4B3A]/30 text-[#A7C7B3] shadow-sm'
+                : 'border border-transparent text-neutral-400 hover:text-white hover:bg-white/5'
+            }`}
+          >
+            Publicadas ({publishedCount})
+          </button>
+          <button 
+            type="button"
+            data-filter-status="borrador" 
+            class={`gallery-tab-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap cursor-pointer transition-all ${
+              statusFilter === 'borrador'
+                ? 'active bg-[#F2B134]/15 border border-[#F2B134]/30 text-[#F2B134] shadow-sm'
+                : 'border border-transparent text-neutral-400 hover:text-white hover:bg-white/5'
+            }`}
+          >
+            Borradores ({draftCount})
+          </button>
+        </div>
+
+        {/* Buscador Server-Side y Filtro de Categoría */}
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          
+          {/* Selector de Categoría */}
+          <div class="relative min-w-[160px]">
+            <select 
+              id="categoryFilterSelect" 
+              class="w-full px-3 py-2 bg-[#141414] border border-[#282828] rounded-xl text-xs text-neutral-200 focus:outline-none focus:border-[#E4572E] focus:ring-1 focus:ring-[#E4572E] cursor-pointer appearance-none pr-8 transition-colors"
+            >
+              <option value="all" selected={categoryFilter === 'all'}>Todas las Categorías</option>
+              {GALLERY_CATEGORIES.map((cat) => (
+                <option value={cat.toLowerCase()} selected={categoryFilter === cat.toLowerCase()}>{cat}</option>
+              ))}
+            </select>
+            <svg class="w-3.5 h-3.5 text-neutral-400 absolute right-3 top-3 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+
+          {/* Formulario de Búsqueda Server-Side */}
+          <form id="gallerySearchForm" class="min-w-[240px]">
+            <SearchInput 
+              id="gallerySearchInput"
+              name="search"
+              value={searchQuery}
+              placeholder="Buscar por título..." 
+              showSubmitButton={true}
+              submitText="Buscar"
+            />
+          </form>
+
+        </div>
+      </Card>
+
+      {/* Grid de Obras / Cards */}
+      <div 
+        id="galleryGrid"
+        class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5"
+      >
+        {items.map((item) => (
+          <div 
+            class="gallery-item-card group relative rounded-2xl bg-white dark:bg-[#141414] border border-[#E5DFD5] dark:border-[#282828] hover:border-[#E4572E]/40 dark:hover:border-[#383838] hover:shadow-md dark:hover:shadow-xl transition-all duration-300 flex flex-col overflow-hidden"
+            data-id={item.id}
+            data-title={item.title.toLowerCase()}
+            data-category={item.category.toLowerCase()}
+            data-status={item.status}
+          >
+            {/* Contenedor de Imagen con Overlay y Badges */}
+            <div class="relative aspect-[4/3] bg-slate-950 overflow-hidden cursor-pointer preview-trigger" data-img-url={item.image_url} data-img-title={item.title}>
+              <img 
+                src={item.image_url} 
+                alt={item.title} 
+                loading="lazy"
+                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              />
+              
+              {/* Gradiente sutil */}
+              <div class="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-black/30 pointer-events-none"></div>
+
+              {/* Badges superiores */}
+              <div class="absolute top-3 inset-x-3 flex items-center justify-between gap-2 pointer-events-none">
+                {/* Badge de Categoría */}
+                <span class="px-2.5 py-0.5 rounded-lg bg-[#111111]/80 border border-[#E4572E]/30 text-[#E4572E] font-semibold text-[10px] uppercase tracking-wider shadow-sm">
+                  {item.category}
+                </span>
+
+                {/* Badge de Estado */}
+                <span class={`status-badge px-2.5 py-0.5 rounded-lg font-bold text-[10px] tracking-wide flex items-center gap-1.5 shadow-sm ${
+                  item.status === 'publicado'
+                    ? 'bg-[#2F4B3A]/80 border border-[#2F4B3A]/40 text-[#A7C7B3]'
+                    : 'bg-[#F2B134]/20 border border-[#F2B134]/40 text-[#F2B134]'
+                }`}>
+                  <span class={`w-1.5 h-1.5 rounded-full ${item.status === 'publicado' ? 'bg-[#2F4B3A] animate-pulse' : 'bg-[#F2B134]'}`}></span>
+                  <span class="status-badge-text capitalize">{item.status}</span>
+                </span>
+              </div>
+
+              {/* Botón Flotante de Zoom / Preview */}
+              <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+                <span class="px-3 py-1.5 rounded-xl bg-slate-950/85 backdrop-blur-md border border-white/20 text-white text-xs font-medium flex items-center gap-1.5 shadow-lg">
+                  <svg class="w-3.5 h-3.5 text-[#F2B134]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                  </svg>
+                  Ver Obra
+                </span>
+              </div>
+            </div>
+
+            {/* Contenido de la Ficha Técnica */}
+            <div class="p-4 flex-1 flex flex-col justify-between">
+              <div>
+                <h3 class="text-sm font-bold text-[#1F1B16] dark:text-white group-hover:text-[#E4572E] dark:group-hover:text-amber-300 transition-colors line-clamp-1" title={item.title}>
+                  {item.title}
+                </h3>
+                {item.description ? (
+                  <p class="text-xs text-[#78716A] dark:text-slate-400 mt-1 line-clamp-2 leading-relaxed" title={item.description}>
+                    {item.description}
+                  </p>
+                ) : (
+                  <p class="text-xs text-neutral-400 dark:text-slate-600 mt-1 italic">Sin descripción registrada.</p>
+                )}
+              </div>
+
+              {/* Barra inferior: Fecha y Acciones */}
+              <div class="pt-3 mt-3 border-t border-[#E5DFD5] dark:border-slate-800/80 flex items-center justify-between gap-2">
+                <span class="text-[11px] text-[#78716A] dark:text-slate-500 font-medium">
+                  {formatDate(item.created_at)}
+                </span>
+
+                <div class="flex items-center gap-1.5">
+                  {/* Switch rápido de estado (Publicar / Despublicar) */}
+                  {(canToggle || canUpdate) && (
+                    <button 
+                      type="button" 
+                      class="toggle-status-btn p-1.5 rounded-lg text-[#78716A] dark:text-slate-400 hover:text-[#E4572E] dark:hover:text-amber-400 hover:bg-[#FAF6F0] dark:hover:bg-slate-800/70 transition-colors cursor-pointer"
+                      title={item.status === 'publicado' ? 'Cambiar a Borrador' : 'Publicar Obra'}
+                      data-id={item.id}
+                      data-current-status={item.status}
+                    >
+                      {item.status === 'publicado' ? (
+                        <svg class="w-4 h-4 text-[#2F4B3A] dark:text-emerald-400 hover:text-[#E4572E]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                      ) : (
+                        <svg class="w-4 h-4 text-[#78716A] dark:text-slate-400 hover:text-[#2F4B3A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
+                        </svg>
+                      )}
+                    </button>
+                  )}
+
+                  {/* Botón de Eliminación */}
+                  {canDelete && (
+                    <button 
+                      type="button" 
+                      class="delete-item-btn p-1.5 rounded-lg text-[#78716A] dark:text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors cursor-pointer"
+                      title="Eliminar Obra y Archivo"
+                      data-id={item.id}
+                      data-title={item.title}
+                    >
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Estado Vacío: Sin resultados */}
+      {items.length === 0 && (
+        <div id="emptyFilterState" class="rounded-3xl bg-slate-900/40 border border-slate-800/60 p-12 text-center max-w-md mx-auto">
+          <div class="w-12 h-12 mx-auto rounded-xl bg-slate-800/80 border border-slate-700/60 flex items-center justify-center text-slate-400 mb-3">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+          <h4 class="text-sm font-bold text-white mb-1">Sin resultados encontrados</h4>
+          <p class="text-xs text-slate-400 mb-4">
+            {searchQuery 
+              ? `No hay obras que coincidan con la búsqueda «${searchQuery}».` 
+              : 'No hay obras que coincidan con los filtros aplicados.'}
+          </p>
+          <a 
+            href="/admin/galeria" 
+            class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#181818] hover:bg-[#222222] text-[#E4572E] text-xs font-semibold transition-colors border border-[#282828]"
+          >
+            <span>Restablecer Filtros</span>
+          </a>
+        </div>
+      )}
+
+      {/* CONTROLES INFERIORES DE PAGINACIÓN (SERVER-SIDE 5 POR PÁGINA) */}
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={totalFiltered}
+        pageSize={PAGE_SIZE}
+        itemLabelSingular="obra"
+        itemLabelPlural="obras"
+        searchQuery={searchQuery}
+        getPageUrl={getPageUrl}
+      />
+
+    </div>
+  )}
+
+  {/* Modal de Carga de Obras (UploadMediaModal) */}
+  <UploadMediaModal />
+
+  {/* Modal de Visualización Ampliada (Lightbox) */}
+  <div 
+    id="lightboxModal" 
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-300"
+    role="dialog"
+    aria-modal="true"
+  >
+    <div class="relative max-w-4xl max-h-[90vh] flex flex-col items-center">
+      <button 
+        type="button" 
+        id="closeLightboxBtn"
+        class="absolute -top-12 right-0 p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition-colors"
+        aria-label="Cerrar vista previa"
+      >
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+
+      <img 
+        id="lightboxImage" 
+        src="" 
+        alt="Obra ampliada" 
+        class="max-w-full max-h-[75vh] object-contain rounded-2xl shadow-2xl border border-slate-800"
+      />
+
+      <div class="mt-4 text-center">
+        <h4 id="lightboxTitle" class="text-lg font-bold text-white"></h4>
+        <a 
+          id="lightboxExternalLink" 
+          href="" 
+          target="_blank" 
+          class="inline-flex items-center gap-1.5 text-xs text-amber-400 hover:text-amber-300 underline underline-offset-2 mt-1"
+        >
+          <span>Abrir imagen en alta resolución</span>
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+          </svg>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  {/* Modal de Confirmación de Eliminación */}
+  <div 
+    id="deleteConfirmModal" 
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-300"
+    role="dialog"
+    aria-modal="true"
+  >
+    <div class="relative w-full max-w-md rounded-3xl bg-slate-900 border border-red-500/30 p-6 shadow-2xl shadow-red-950/30">
+      <div class="w-12 h-12 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 mb-4">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+        </svg>
+      </div>
+
+      <h3 class="text-xl font-bold text-white mb-2">¿Eliminar esta obra?</h3>
+      <p class="text-xs text-slate-300 leading-relaxed mb-4">
+        Estás a punto de eliminar permanentemente la obra <strong id="deleteTargetTitle" class="text-white"></strong>. Esta acción removerá el registro de la base de datos y eliminará el archivo del bucket de <strong>Supabase Storage</strong>.
+      </p>
+
+      <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+        <button 
+          type="button" 
+          id="cancelDeleteBtn"
+          class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-white text-xs font-semibold transition-colors cursor-pointer"
+        >
+          Cancelar
+        </button>
+        <button 
+          type="button" 
+          id="confirmDeleteBtn"
+          class="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold text-xs uppercase tracking-wider shadow-lg shadow-red-500/20 transition-all cursor-pointer"
+        >
+          <span id="confirmDeleteSpinner" class="hidden w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+          <span id="confirmDeleteText">Eliminar Definitivamente</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  {/* Toast Container para notificaciones */}
+  <div id="galleryToast" class="fixed bottom-6 right-6 z-50 transform translate-y-10 opacity-0 pointer-events-none transition-all duration-300 flex items-center gap-3 px-4 py-3 rounded-2xl shadow-2xl text-xs font-semibold">
+    <span id="galleryToastMsg"></span>
+  </div>
+</AdminLayout>
+
+<script>
+  // ─── Referencias DOM ──────────────────────────────────────────────────
+  const searchForm = document.getElementById('gallerySearchForm') as HTMLFormElement | null;
+  const searchInput = document.getElementById('gallerySearchInput') as HTMLInputElement | null;
+  const categoryFilter = document.getElementById('categoryFilterSelect') as HTMLSelectElement | null;
+  const statusTabs = document.querySelectorAll('.gallery-tab-btn');
+  const openUploadBtn = document.getElementById('openUploadModalBtn');
+
+  // Lightbox Modal
+  const lightboxModal = document.getElementById('lightboxModal') as HTMLElement;
+  const lightboxImage = document.getElementById('lightboxImage') as HTMLImageElement;
+  const lightboxTitle = document.getElementById('lightboxTitle') as HTMLElement;
+  const lightboxExternalLink = document.getElementById('lightboxExternalLink') as HTMLAnchorElement;
+  const closeLightboxBtn = document.getElementById('closeLightboxBtn');
+
+  // Delete Confirm Modal
+  const deleteModal = document.getElementById('deleteConfirmModal') as HTMLElement;
+  const deleteTargetTitle = document.getElementById('deleteTargetTitle') as HTMLElement;
+  const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
+  const confirmDeleteBtn = document.getElementById('confirmDeleteBtn') as HTMLButtonElement;
+  const confirmDeleteSpinner = document.getElementById('confirmDeleteSpinner') as HTMLElement;
+  const confirmDeleteText = document.getElementById('confirmDeleteText') as HTMLElement;
+
+  // Toast
+  const toast = document.getElementById('galleryToast') as HTMLElement;
+  const toastMsg = document.getElementById('galleryToastMsg') as HTMLElement;
+
+  let activeDeleteId: string | null = null;
+
+  // ─── Apertura de UploadMediaModal ─────────────────────────────────────
+  function triggerUploadModal() {
+    if ((window as any).__openUploadMediaModal) {
+      (window as any).__openUploadMediaModal();
+    }
+  }
+
+  openUploadBtn?.addEventListener('click', triggerUploadModal);
+
+  // ─── Navegación Server-Side al Cambiar Filtros ──────────────────────────
+  function navigateWithFilters(overrides: { search?: string; status?: string; category?: string; page?: string }) {
+    const url = new URL(window.location.href);
+    url.searchParams.set('page', overrides.page || '1');
+    url.searchParams.set('limit', '5');
+
+    if (overrides.search !== undefined) {
+      if (overrides.search) url.searchParams.set('search', overrides.search);
+      else url.searchParams.delete('search');
+    }
+
+    if (overrides.status !== undefined) {
+      if (overrides.status && overrides.status !== 'all') url.searchParams.set('status', overrides.status);
+      else url.searchParams.delete('status');
+    }
+
+    if (overrides.category !== undefined) {
+      if (overrides.category && overrides.category !== 'all') url.searchParams.set('category', overrides.category);
+      else url.searchParams.delete('category');
+    }
+
+    window.location.href = url.toString();
+  }
+
+  // Búsqueda Server-Side al presionar Enter o submit
+  searchForm?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    navigateWithFilters({ search: searchInput?.value.trim() || '' });
+  });
+
+  // Selector de categoría Server-Side al cambiar opción
+  categoryFilter?.addEventListener('change', () => {
+    navigateWithFilters({ category: categoryFilter.value });
+  });
+
+  // Pestañas de estado Server-Side al hacer click
+  statusTabs.forEach((tab) => {
+    tab.addEventListener('click', () => {
+      const status = tab.getAttribute('data-filter-status') || 'all';
+      navigateWithFilters({ status });
+    });
+  });
+
+  // ─── Lightbox Preview ─────────────────────────────────────────────────
+  document.querySelectorAll('.preview-trigger').forEach((el) => {
+    el.addEventListener('click', () => {
+      const url = el.getAttribute('data-img-url') || '';
+      const title = el.getAttribute('data-img-title') || '';
+
+      if (url) {
+        lightboxImage.src = url;
+        lightboxTitle.textContent = title;
+        lightboxExternalLink.href = url;
+
+        lightboxModal.classList.remove('opacity-0', 'pointer-events-none');
+        lightboxModal.classList.add('opacity-100');
+      }
+    });
+  });
+
+  function closeLightbox() {
+    lightboxModal.classList.add('opacity-0', 'pointer-events-none');
+    lightboxModal.classList.remove('opacity-100');
+    lightboxImage.src = '';
+  }
+
+  closeLightboxBtn?.addEventListener('click', closeLightbox);
+  lightboxModal?.addEventListener('click', (e) => {
+    if (e.target === lightboxModal) closeLightbox();
+  });
+
+  // ─── Toggle Status Rápido (Publicado <-> Borrador) ─────────────────────
+  document.querySelectorAll('.toggle-status-btn').forEach((btn) => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const id = btn.getAttribute('data-id');
+      const currentStatus = btn.getAttribute('data-current-status');
+      if (!id || !currentStatus) return;
+
+      const newStatus = currentStatus === 'publicado' ? 'borrador' : 'publicado';
+
+      try {
+        btn.classList.add('animate-pulse', 'pointer-events-none');
+
+        const res = await fetch('/api/admin/gallery', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, status: newStatus }),
+          credentials: 'same-origin',
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Error al actualizar estado.');
+
+        // Actualizar tarjeta en el DOM
+        const card = btn.closest('.gallery-item-card') as HTMLElement;
+        if (card) {
+          card.setAttribute('data-status', newStatus);
+          btn.setAttribute('data-current-status', newStatus);
+          
+          const badge = card.querySelector('.status-badge');
+          const badgeText = card.querySelector('.status-badge-text');
+
+          if (badge && badgeText) {
+            badgeText.textContent = newStatus;
+            if (newStatus === 'publicado') {
+              badge.className = 'status-badge px-2.5 py-0.5 rounded-lg backdrop-blur-md font-bold text-[10px] tracking-wide flex items-center gap-1.5 shadow-sm bg-emerald-950/80 border border-emerald-500/40 text-emerald-300';
+              btn.setAttribute('title', 'Cambiar a Borrador');
+            } else {
+              badge.className = 'status-badge px-2.5 py-0.5 rounded-lg backdrop-blur-md font-bold text-[10px] tracking-wide flex items-center gap-1.5 shadow-sm bg-amber-950/80 border border-amber-500/40 text-amber-300';
+              btn.setAttribute('title', 'Publicar Obra');
+            }
+          }
+        }
+
+        showToast(`Obra marcada como ${newStatus}.`, 'success');
+
+      } catch (err: any) {
+        showToast(err.message || 'Error al modificar estado.', 'error');
+      } finally {
+        btn.classList.remove('animate-pulse', 'pointer-events-none');
+      }
+    });
+  });
+
+  // ─── Eliminación de Obras ─────────────────────────────────────────────
+  document.querySelectorAll('.delete-item-btn').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      activeDeleteId = btn.getAttribute('data-id');
+      const title = btn.getAttribute('data-title') || 'esta obra';
+
+      deleteTargetTitle.textContent = `"${title}"`;
+      deleteModal.classList.remove('opacity-0', 'pointer-events-none');
+      deleteModal.classList.add('opacity-100');
+    });
+  });
+
+  function closeDeleteModal() {
+    deleteModal.classList.add('opacity-0', 'pointer-events-none');
+    deleteModal.classList.remove('opacity-100');
+    activeDeleteId = null;
+    confirmDeleteBtn.disabled = false;
+    confirmDeleteSpinner.classList.add('hidden');
+    confirmDeleteText.textContent = 'Eliminar Definitivamente';
+  }
+
+  cancelDeleteBtn?.addEventListener('click', closeDeleteModal);
+  deleteModal?.addEventListener('click', (e) => {
+    if (e.target === deleteModal) closeDeleteModal();
+  });
+
+  confirmDeleteBtn?.addEventListener('click', async () => {
+    if (!activeDeleteId) return;
+
+    try {
+      confirmDeleteBtn.disabled = true;
+      confirmDeleteSpinner.classList.remove('hidden');
+      confirmDeleteText.textContent = 'Eliminando...';
+
+      const res = await fetch(`/api/admin/gallery?id=${encodeURIComponent(activeDeleteId)}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id: activeDeleteId }),
+        credentials: 'same-origin',
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Error al eliminar la obra.');
+
+      closeDeleteModal();
+      showToast('Obra eliminada exitosamente.', 'success');
+      
+      // Recargar para sincronizar paginación y conteos del servidor
+      setTimeout(() => {
+        window.location.reload();
+      }, 700);
+
+    } catch (err: any) {
+      showToast(err.message || 'Error al eliminar obra.', 'error');
+      confirmDeleteBtn.disabled = false;
+      confirmDeleteSpinner.classList.add('hidden');
+      confirmDeleteText.textContent = 'Eliminar Definitivamente';
+    }
+  });
+
+  // ─── Helpers de Notificación Toast ────────────────────────────────────
+  function showToast(msg: string, type: 'success' | 'error' = 'success') {
+    if (!toast || !toastMsg) return;
+    toastMsg.textContent = msg;
+
+    if (type === 'success') {
+      toast.className = 'fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-2xl shadow-2xl text-xs font-semibold bg-slate-900 border border-emerald-500/40 text-emerald-300 transition-all duration-300 translate-y-0 opacity-100';
+    } else {
+      toast.className = 'fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-2xl shadow-2xl text-xs font-semibold bg-slate-900 border border-red-500/40 text-red-300 transition-all duration-300 translate-y-0 opacity-100';
+    }
+
+    setTimeout(() => {
+      toast.classList.remove('opacity-100', 'translate-y-0');
+      toast.classList.add('opacity-0', 'translate-y-10', 'pointer-events-none');
+    }, 3500);
+  }
+</script>

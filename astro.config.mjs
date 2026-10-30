@@ -9,4 +9,11 @@ export default defineConfig({
     mode: 'standalone',
   }),
   integrations: [tailwind(), react()],
-});
+  vite: {
+    server: {
+      watch: {
+        ignored: ['**/skills/**'],
+      },
+    },
+  },
+});

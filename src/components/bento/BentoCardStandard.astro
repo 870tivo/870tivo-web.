@@ -4,10 +4,12 @@ interface Props {
   category: string;
   author: string;
   isWide?: boolean;
+  link?: string;
 }
-const { title, category, author, isWide = false } = Astro.props;
+const { title, category, author, isWide = false, link } = Astro.props;
+const Tag = link ? 'a' : 'article';
 ---
-<article class={`relative rounded-xl overflow-hidden group bg-brand-card dark:bg-brand-darkCard flex flex-col justify-end p-6 md:p-8 border border-brand-ink/10 dark:border-white/5 shadow-lg ${isWide ? 'lg:col-span-2' : ''}`}>
+<Tag href={link} class={`relative rounded-xl overflow-hidden group bg-brand-card dark:bg-brand-darkCard flex flex-col justify-end p-6 md:p-8 border border-brand-ink/10 dark:border-white/5 shadow-lg ${isWide ? 'lg:col-span-2' : ''} ${link ? 'cursor-pointer' : ''}`}>
   <div class="absolute inset-0 bg-brand-card/40 dark:bg-neutral-900 transition-transform duration-700 group-hover:scale-105">
     <div class="absolute inset-0 bg-gradient-to-t from-brand-card dark:from-brand-ink via-brand-card/70 dark:via-brand-ink/50 to-transparent z-10"></div>
     {isWide && (
@@ -30,4 +32,4 @@ const { title, category, author, isWide = false } = Astro.props;
       </button>
     )}
   </div>
-</article>
+</Tag>

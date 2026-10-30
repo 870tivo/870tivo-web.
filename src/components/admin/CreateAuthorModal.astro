@@ -1,0 +1,246 @@
+---
+/**
+ * src/components/admin/CreateAuthorModal.astro
+ * Modal independiente para crear un nuevo autor/redactor.
+ * Se abre fuera del formulario de publicación para evitar conflictos de <form> anidados.
+ * Emite un evento personalizado 'author-created' al guardar con éxito.
+ */
+---
+
+<!-- MODAL OVERLAY (FUERA de cualquier otro formulario) -->
+<div 
+  id="createAuthorModal" 
+  class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm opacity-0 pointer-events-none transition-all duration-300"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="createAuthorModalTitle"
+>
+  <div 
+    id="createAuthorModalCard"
+    class="relative w-full max-w-md flex flex-col rounded-2xl bg-[#FAF6F0] dark:bg-[#141414] border border-[#E5DFD5] dark:border-[#282828] shadow-2xl transform scale-95 transition-all duration-300 overflow-hidden text-[#1F1B16] dark:text-[#FAF6F0]"
+  >
+    <!-- Header -->
+    <div class="px-6 py-4 border-b border-[#E5DFD5] dark:border-[#282828] bg-white dark:bg-[#141414] flex items-center justify-between gap-3 shrink-0">
+      <div class="flex items-center gap-2.5 min-w-0">
+        <div class="w-8 h-8 rounded-lg bg-[#E4572E]/10 border border-[#E4572E]/25 flex items-center justify-center shrink-0">
+          <svg class="w-4 h-4 text-[#E4572E]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+          </svg>
+        </div>
+        <div>
+          <h3 id="createAuthorModalTitle" class="text-base font-serif font-bold text-[#1F1B16] dark:text-white tracking-tight">
+            Nuevo Autor
+          </h3>
+          <p class="text-[10px] text-[#78716A] dark:text-neutral-400 font-medium">
+            Se añadirá a la base de datos editorial
+          </p>
+        </div>
+      </div>
+      <button 
+        type="button" 
+        id="closeCreateAuthorModalBtn"
+        class="p-1.5 text-[#78716A] hover:text-[#1F1B16] dark:text-neutral-400 dark:hover:text-white rounded-lg hover:bg-[#FAF6F0] dark:hover:bg-[#222222] transition-colors cursor-pointer"
+        aria-label="Cerrar"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- Body -->
+    <div class="px-6 py-5 space-y-4">
+      <!-- Alert -->
+      <div id="createAuthorAlert" class="hidden p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-700 dark:text-red-300 text-xs flex items-start gap-2">
+        <svg class="w-4 h-4 shrink-0 text-red-500 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+        <span id="createAuthorAlertMsg" class="font-medium"></span>
+      </div>
+
+      <!-- ID oculto si estamos editando -->
+      <input type="hidden" id="createAuthorIdInput" value="" />
+
+      <!-- Nombre -->
+      <div>
+        <label for="createAuthorNameInput" class="block text-xs font-bold text-[#1F1B16] dark:text-neutral-200 uppercase tracking-wider mb-1.5">
+          Nombre Completo <span class="text-[#E4572E]">*</span>
+        </label>
+        <input 
+          type="text" 
+          id="createAuthorNameInput" 
+          placeholder="Ej: Valeria Domínguez" 
+          class="w-full px-3.5 py-2.5 bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] focus:border-[#E4572E] rounded-xl text-sm text-[#1F1B16] dark:text-white placeholder-[#A8A29E] dark:placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-[#E4572E] transition-all shadow-xs"
+        />
+      </div>
+
+      <!-- Enlace Social -->
+      <div>
+        <label for="createAuthorSocialInput" class="block text-xs font-bold text-[#1F1B16] dark:text-neutral-200 uppercase tracking-wider mb-1.5">
+          Enlace Social / Perfil <span class="text-[#78716A] dark:text-neutral-400 font-normal">(Opcional)</span>
+        </label>
+        <div class="relative">
+          <input 
+            type="text" 
+            id="createAuthorSocialInput" 
+            placeholder="https://instagram.com/valeria" 
+            class="w-full pl-9 pr-3.5 py-2.5 bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] focus:border-[#E4572E] rounded-xl text-sm text-[#1F1B16] dark:text-white placeholder-[#A8A29E] dark:placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-[#E4572E] transition-all shadow-xs"
+          />
+          <svg class="w-4 h-4 text-[#78716A] dark:text-neutral-400 absolute left-3 top-3 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="px-6 py-4 border-t border-[#E5DFD5] dark:border-[#282828] bg-white dark:bg-[#141414] flex items-center justify-end gap-3 shrink-0">
+      <button 
+        type="button" 
+        id="cancelCreateAuthorBtn"
+        class="px-4 py-2 text-xs font-semibold text-[#78716A] hover:text-[#1F1B16] dark:text-neutral-400 dark:hover:text-white rounded-xl transition-colors cursor-pointer"
+      >
+        Cancelar
+      </button>
+      <button 
+        type="button" 
+        id="saveCreateAuthorBtn"
+        class="inline-flex items-center gap-2 px-5 py-2 bg-[#E4572E] hover:bg-[#CF4821] text-white font-bold text-xs rounded-xl shadow-sm transition-all cursor-pointer active:translate-y-0.5 disabled:opacity-50"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+        </svg>
+        <span class="btn-text">Guardar Autor</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const authorModal = document.getElementById('createAuthorModal') as HTMLElement;
+  const authorModalCard = document.getElementById('createAuthorModalCard') as HTMLElement;
+  const authorModalTitle = document.getElementById('createAuthorModalTitle') as HTMLElement;
+  const closeAuthorModalBtn = document.getElementById('closeCreateAuthorModalBtn') as HTMLButtonElement;
+  const cancelAuthorBtn = document.getElementById('cancelCreateAuthorBtn') as HTMLButtonElement;
+  const saveAuthorBtn = document.getElementById('saveCreateAuthorBtn') as HTMLButtonElement;
+  const authorIdInput = document.getElementById('createAuthorIdInput') as HTMLInputElement;
+  const authorNameInput = document.getElementById('createAuthorNameInput') as HTMLInputElement;
+  const authorSocialInput = document.getElementById('createAuthorSocialInput') as HTMLInputElement;
+  const authorAlert = document.getElementById('createAuthorAlert') as HTMLElement;
+  const authorAlertMsg = document.getElementById('createAuthorAlertMsg') as HTMLElement;
+
+  function openCreateAuthorModal(authorData?: { id?: string; name?: string; socialUrl?: string }) {
+    showAuthorAlert('');
+
+    if (authorData && (authorData.id || authorData.name)) {
+      if (authorIdInput) authorIdInput.value = authorData.id || '';
+      if (authorNameInput) authorNameInput.value = authorData.name || '';
+      if (authorSocialInput) authorSocialInput.value = authorData.socialUrl || '';
+      if (authorModalTitle) authorModalTitle.textContent = authorData.id ? 'Editar Autor' : 'Nuevo Autor';
+      const btnText = saveAuthorBtn?.querySelector('.btn-text');
+      if (btnText) btnText.textContent = authorData.id ? 'Actualizar Autor' : 'Guardar Autor';
+    } else {
+      if (authorIdInput) authorIdInput.value = '';
+      if (authorNameInput) authorNameInput.value = '';
+      if (authorSocialInput) authorSocialInput.value = '';
+      if (authorModalTitle) authorModalTitle.textContent = 'Nuevo Autor';
+      const btnText = saveAuthorBtn?.querySelector('.btn-text');
+      if (btnText) btnText.textContent = 'Guardar Autor';
+    }
+
+    authorModal.classList.remove('opacity-0', 'pointer-events-none');
+    authorModal.classList.add('opacity-100');
+    authorModalCard.classList.remove('scale-95');
+    authorModalCard.classList.add('scale-100');
+
+    setTimeout(() => authorNameInput?.focus(), 150);
+  }
+
+  function closeCreateAuthorModal() {
+    authorModal.classList.add('opacity-0', 'pointer-events-none');
+    authorModal.classList.remove('opacity-100');
+    authorModalCard.classList.add('scale-95');
+    authorModalCard.classList.remove('scale-100');
+  }
+
+  function showAuthorAlert(msg: string) {
+    if (!msg) {
+      authorAlert?.classList.add('hidden');
+      if (authorAlertMsg) authorAlertMsg.textContent = '';
+      return;
+    }
+    authorAlert?.classList.remove('hidden');
+    if (authorAlertMsg) authorAlertMsg.textContent = msg;
+  }
+
+  closeAuthorModalBtn?.addEventListener('click', closeCreateAuthorModal);
+  cancelAuthorBtn?.addEventListener('click', closeCreateAuthorModal);
+
+  authorModal?.addEventListener('click', (e) => {
+    if (e.target === authorModal) closeCreateAuthorModal();
+  });
+
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !authorModal.classList.contains('pointer-events-none')) {
+      closeCreateAuthorModal();
+    }
+  });
+
+  saveAuthorBtn?.addEventListener('click', async () => {
+    const name = authorNameInput.value.trim();
+    if (!name) {
+      showAuthorAlert('El nombre del autor es obligatorio.');
+      authorNameInput.focus();
+      return;
+    }
+
+    const socialUrl = authorSocialInput.value.trim() || null;
+
+    saveAuthorBtn.disabled = true;
+    const btnText = saveAuthorBtn.querySelector('.btn-text');
+    if (btnText) btnText.textContent = 'Guardando...';
+
+    try {
+      const id = authorIdInput?.value.trim() || undefined;
+      const res = await fetch('/api/admin/authors/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, name, socialUrl }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'Error al guardar el autor.');
+      }
+
+      // Emitir evento personalizado para que otros componentes se enteren
+      window.dispatchEvent(new CustomEvent('author-created', {
+        detail: { id: data.author?.id, name, socialUrl },
+      }));
+
+      closeCreateAuthorModal();
+
+      // Mostrar toast si existe
+      const toast = document.getElementById('toastNotification');
+      const toastText = document.getElementById('toastMessage');
+      if (toast && toastText) {
+        toastText.textContent = `Autor «${name}» creado exitosamente`;
+        toast.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-10');
+        toast.classList.add('opacity-100', 'translate-y-0');
+        setTimeout(() => {
+          toast.classList.remove('opacity-100', 'translate-y-0');
+          toast.classList.add('opacity-0', 'pointer-events-none', 'translate-y-10');
+        }, 3500);
+      }
+    } catch (err: any) {
+      showAuthorAlert(err.message || 'Error inesperado al guardar el autor.');
+    } finally {
+      saveAuthorBtn.disabled = false;
+      if (btnText) btnText.textContent = 'Guardar Autor';
+    }
+  });
+
+  // Exponer función global
+  (window as any).__openCreateAuthorModal = openCreateAuthorModal;
+</script>

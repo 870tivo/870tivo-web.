@@ -1,0 +1,151 @@
+---
+import type { Role } from '../../types/roles';
+import Modal from '../common/Modal.astro';
+import Button from '../common/Button.astro';
+
+interface Props {
+  roles: Role[];
+}
+
+const { roles = [] } = Astro.props;
+
+// Determine default role with lowest privileges
+function getRolePrivilegeScore(r: Role): number {
+  if (r.name === 'Super Administrador') return 999;
+  let score = 0;
+  if (r.permissions) {
+    for (const modKey of Object.keys(r.permissions)) {
+      const mod = r.permissions[modKey] as unknown as Record<string, boolean>;
+      if (mod && typeof mod === 'object') {
+        for (const act of Object.values(mod)) {
+          if (act === true) score++;
+        }
+      }
+    }
+  }
+  return score;
+}
+
+const sortedRoles = [...roles].sort((a, b) => getRolePrivilegeScore(a) - getRolePrivilegeScore(b));
+const viewerRole = sortedRoles.find(r => /viewer|lector|invitado|visualizador/i.test(r.name));
+const defaultRoleId = viewerRole ? viewerRole.id : '';
+---
+
+<Modal
+  id="inviteUserModal"
+  cardId="inviteUserModalCard"
+  closeBtnId="closeInviteModalBtn"
+  title="Invitar Nuevo Usuario"
+  description="Envía un correo de invitación para que el nuevo colaborador cree su clave y acceda con el rol asignado."
+  badgeText="Supabase Auth Admin"
+  maxWidth="lg"
+>
+  <!-- Error Banner (hidden by default) -->
+  <div 
+    id="inviteModalError" 
+    class="hidden mb-5 p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 text-xs flex items-start gap-2.5"
+  >
+    <svg class="w-4 h-4 shrink-0 text-red-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+    </svg>
+    <span id="inviteModalErrorMsg" class="font-medium">Ocurrió un error al enviar la invitación.</span>
+  </div>
+
+  <!-- Invite Form -->
+  <form id="inviteUserForm" class="space-y-5" novalidate>
+    <!-- Email Field -->
+    <div>
+      <label for="inviteEmailInput" class="block text-xs font-bold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider mb-1.5">
+        Correo Electrónico *
+      </label>
+      <div class="relative">
+        <input 
+          type="email" 
+          id="inviteEmailInput" 
+          name="email" 
+          required
+          autocomplete="email"
+          placeholder="ejemplo@870tivo.com" 
+          class="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-[#141414] border border-[#E5DFD5] dark:border-[#282828] focus:border-[#E4572E] rounded-xl text-xs text-[#1F1B16] dark:text-white placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-[#E4572E] transition-all"
+        />
+        <svg class="w-4 h-4 text-neutral-400 absolute left-3.5 top-3 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+        </svg>
+      </div>
+      <p class="text-[11px] text-neutral-500 dark:text-neutral-400 mt-1">
+        A este buzón llegará la invitación con el enlace de acceso inicial.
+      </p>
+    </div>
+
+    <!-- Initial Role Field -->
+    <div>
+      <label for="inviteRoleSelect" class="block text-xs font-bold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider mb-1.5">
+        Rol Inicial Asignado
+      </label>
+      <div class="relative">
+        <select 
+          id="inviteRoleSelect" 
+          name="roleId" 
+          class="w-full pl-10 pr-9 py-2.5 bg-white dark:bg-[#141414] border border-[#E5DFD5] dark:border-[#282828] focus:border-[#E4572E] rounded-xl text-xs font-medium text-[#1F1B16] dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-[#E4572E] cursor-pointer transition-all appearance-none"
+        >
+          <option value="" selected={!defaultRoleId} class="bg-white dark:bg-[#181818] text-neutral-500 dark:text-neutral-400">
+            Sin Rol / Viewer (Sin privilegios administrativos)
+          </option>
+          {sortedRoles.map((role) => (
+            <option 
+              value={role.id} 
+              selected={role.id === defaultRoleId}
+              class="bg-white dark:bg-[#181818] text-[#1F1B16] dark:text-white"
+            >
+              {role.name} {role.name === 'Super Administrador' ? '★ (Acceso Total)' : ''}
+            </option>
+          ))}
+        </select>
+        <svg class="w-4 h-4 text-neutral-400 absolute left-3.5 top-3 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+        </svg>
+        <svg class="w-4 h-4 text-neutral-400 absolute right-3.5 top-3 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+        </svg>
+      </div>
+      <p class="text-[11px] text-neutral-500 dark:text-neutral-400 mt-1">
+        Por defecto se recomienda asignar el rol de menor privilegio. Puedes modificarlo posteriormente en la tabla.
+      </p>
+    </div>
+
+    <!-- Information Callout -->
+    <div class="p-3.5 rounded-xl bg-[#2F4B3A]/10 border border-[#2F4B3A]/20 text-[#2F4B3A] dark:text-[#A7C7B3] text-xs flex items-start gap-2.5">
+      <svg class="w-4 h-4 text-[#2F4B3A] shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      <div class="text-[11px] leading-relaxed">
+        Al enviar la invitación, Supabase Auth generará un usuario y le enviará un correo con un token único para completar su registro en el portal.
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="flex items-center justify-end gap-3 pt-3 border-t border-[#E5DFD5] dark:border-[#282828]">
+      <Button
+        type="button" 
+        id="cancelInviteBtn"
+        variant="secondary"
+        size="md"
+      >
+        Cancelar
+      </Button>
+      <button 
+        type="submit" 
+        id="submitInviteBtn"
+        class="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#E4572E] hover:bg-[#CF4821] text-white font-bold text-xs uppercase tracking-wider shadow-sm transition-all cursor-pointer disabled:opacity-50 disabled:pointer-events-none active:translate-y-0.5"
+      >
+        <!-- Normal Icon -->
+        <svg id="inviteBtnIcon" class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+        </svg>
+        <!-- Loading Spinner -->
+        <span id="inviteBtnSpinner" class="hidden w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+        <span id="inviteBtnText">Enviar Invitación</span>
+      </button>
+    </div>
+  </form>
+</Modal>

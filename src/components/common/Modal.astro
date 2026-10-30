@@ -1,0 +1,93 @@
+---
+export interface Props {
+  id: string;
+  cardId?: string;
+  closeBtnId?: string;
+  title?: string;
+  titleId?: string;
+  description?: string;
+  badgeText?: string;
+  maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl';
+  class?: string;
+}
+
+const {
+  id,
+  cardId = `${id}Card`,
+  closeBtnId = `close${id.charAt(0).toUpperCase() + id.slice(1)}Btn`,
+  title,
+  description,
+  badgeText,
+  maxWidth = 'lg',
+  class: className = '',
+} = Astro.props;
+
+const maxWidthClasses: Record<string, string> = {
+  sm: 'max-w-sm',
+  md: 'max-w-md',
+  lg: 'max-w-lg',
+  xl: 'max-w-xl',
+  '2xl': 'max-w-2xl',
+  '3xl': 'max-w-3xl',
+  '4xl': 'max-w-4xl',
+  '5xl': 'max-w-5xl',
+};
+---
+
+<div
+  id={id}
+  class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#111111]/80 backdrop-blur-sm opacity-0 pointer-events-none transition-all duration-200 overflow-y-auto"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby={title ? `${id}Title` : undefined}
+>
+  <div
+    id={cardId}
+    class={`relative w-full ${maxWidthClasses[maxWidth] || maxWidthClasses.lg} my-8 rounded-2xl bg-[#FAF6F0] dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] p-6 sm:p-8 shadow-xl transform scale-95 transition-all duration-200 max-h-[90vh] overflow-y-auto custom-scrollbar text-[#1F1B16] dark:text-[#FAF6F0] ${className}`.trim()}
+  >
+    <!-- Modal Close Button -->
+    <button
+      type="button"
+      id={closeBtnId}
+      class="absolute top-5 right-5 p-2 text-neutral-400 hover:text-[#1F1B16] dark:hover:text-white rounded-xl hover:bg-neutral-200/60 dark:hover:bg-[#252525] transition-colors cursor-pointer"
+      aria-label="Cerrar modal"
+    >
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
+
+    <!-- Header slot or default header -->
+    <slot name="header">
+      {(badgeText || title || description) && (
+        <div class="mb-6 pr-8">
+          {badgeText && (
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#2F4B3A]/10 border border-[#2F4B3A]/20 text-[#2F4B3A] dark:text-[#A7C7B3] text-[11px] font-bold mb-2.5">
+              <span>{badgeText}</span>
+            </div>
+          )}
+          {title && (
+            <h3 id={`${id}Title`} class="text-xl sm:text-2xl font-bold font-serif text-[#1F1B16] dark:text-white tracking-tight">
+              {title}
+            </h3>
+          )}
+          {description && (
+            <p class="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 mt-1 leading-relaxed">
+              {description}
+            </p>
+          )}
+        </div>
+      )}
+    </slot>
+
+    <!-- Body slot -->
+    <slot />
+
+    <!-- Footer slot -->
+    {Astro.slots.has('footer') && (
+      <div class="mt-6 pt-4 border-t border-[#E5DFD5] dark:border-[#282828] flex items-center justify-end gap-3">
+        <slot name="footer" />
+      </div>
+    )}
+  </div>
+</div>

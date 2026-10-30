@@ -11,30 +11,57 @@ export default {
         serif: ['Playfair Display', 'serif'],
       },
       colors: {
+        // Paleta Editorial Oficial: «Tierra y energía» / Papel y Tinta
+        editorial: {
+          bg: '#FAF6F0',          // Fondo Crema/Hueso
+          darkBg: '#111111',      // Fondo oscuro mate profundo
+          ink: '#1F1B16',         // Texto Principal (Casi negro cálido)
+          text: '#1F1B16',
+          primary: '#E4572E',     // Primario (Naranja quemado)
+          accent: '#F2B134',      // Acento (Mostaza)
+          mustard: '#F2B134',
+          forest: '#2F4B3A',      // Apoyo (Verde bosque)
+          card: '#FFFFFF',        // Tarjeta plana en fondo claro
+          darkCard: '#181818',    // Tarjeta plana en fondo oscuro mate
+          border: '#E5DFD5',      // Borde editorial sutil
+          darkBorder: '#282828',  // Borde editorial sutil oscuro
+          muted: '#78716A',       // Texto secundario cálido
+          darkMuted: '#9B948A',
+        },
         brand: {
-          bg: '#F0D264',        // Mustard Yellow (Background/Highlight)
-          yellow: '#F0D264',    // Brand Yellow alias
-          ink: '#10201A',       // Dark Green / Ink (Typography, borders, dark theme bg)
-          card: '#D3D3BF',      // Cream / Bone (Cards & light elements)
-          bone: '#D3D3BF',      // Bone / Cream
-          orange: '#EE8A4C',    // Accent Orange (CTAs, buttons, tags)
-          turquoise: '#18B5B8', // Accent Turquoise (Active states, highlights)
-          muted: '#8A8D85',     // Muted Gray (Secondary text/textures)
-          // Dark mode specific background mapping
-          darkCard: '#1c2f27',  // Deep dark green card
-          darkInk: '#F0E6C0',   // Light cream text for dark mode
+          bg: '#FAF6F0',          // Crema / Hueso
+          darkBg: '#111111',      // Fondo oscuro mate profundo
+          ink: '#1F1B16',         // Casi negro cálido
+          text: '#1F1B16',
+          orange: '#E4572E',      // Naranja quemado (Primario)
+          primary: '#E4572E',
+          yellow: '#F2B134',      // Mostaza (Acento)
+          accent: '#F2B134',
+          mustard: '#F2B134',
+          forest: '#2F4B3A',      // Verde bosque (Apoyo)
+          turquoise: '#2F4B3A',   // Aliased to forest green for editorial consistency
+          card: '#F5EFE6',        // Tarjeta hueso suave
+          bone: '#FAF6F0',        // Crema / Hueso
+          border: '#E5DFD5',      // Borde editorial sutil
+          muted: '#78716A',       // Gris cálido editorial
+          darkCard: '#181818',    // Superficie mate profunda
+          darkInk: '#FAF6F0',     // Texto claro sobre fondo oscuro mate
+          darkBorder: '#282828',
+          darkMuted: '#9B948A',
         },
         tivo: {
-          bg: '#10201A',
-          card: '#1c2f27',
-          yellow: '#F0D264',
-          gold: '#EE8A4C',
-          turquoise: '#18B5B8',
-          text: '#F0E6C0',
-          muted: '#8A8D85',
+          bg: '#111111',
+          card: '#181818',
+          yellow: '#F2B134',
+          gold: '#E4572E',
+          forest: '#2F4B3A',
+          turquoise: '#2F4B3A',
+          text: '#FAF6F0',
+          muted: '#9B948A',
         }
       },
     },
   },
   plugins: [typography],
 };
+

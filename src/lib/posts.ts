@@ -17,10 +17,12 @@ export interface BlogPost {
   author: string;
   authorInitials: string;
   authorHandle: string;
+  authorSocial?: string;
   date: string;
   readingTime: string;
   heroImage: string;
   heroCaption: string;
+  content?: string;
   recommended: RecommendedPost[];
 }
 
@@ -132,18 +134,39 @@ export const posts: BlogPost[] = [
   }
 ];
 
+import fs from 'node:fs';
+import path from 'node:path';
 import { getVisibilityMap, isPostPublished } from './postVisibility';
 
 export { isPostPublished, getVisibilityMap };
 
+export function getAllPosts(): BlogPost[] {
+  try {
+    const file = path.resolve(process.cwd(), 'src/data/posts-custom.json');
+    if (fs.existsSync(file)) {
+      const raw = fs.readFileSync(file, 'utf-8');
+      const custom: BlogPost[] = JSON.parse(raw);
+      if (Array.isArray(custom)) {
+        const customSlugs = new Set(custom.map(c => c.slug));
+        const filteredDefault = posts.filter(p => !customSlugs.has(p.slug));
+        return [...custom, ...filteredDefault];
+      }
+    }
+  } catch (err) {
+    console.error('Error al cargar posts-custom.json:', err);
+  }
+  return posts;
+}
+
 export function getPublishedPosts(): BlogPost[] {
-  return posts.filter((p) => isPostPublished(p.slug));
+  return getAllPosts().filter((p) => isPostPublished(p.slug));
 }
 
 export function getPostsWithStatus(): (BlogPost & { isPublished: boolean })[] {
   const map = getVisibilityMap();
-  return posts.map((p) => ({
+  return getAllPosts().map((p) => ({
     ...p,
     isPublished: map[p.slug] !== false,
   }));
 }
+
