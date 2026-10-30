@@ -1,0 +1,79 @@
+---
+import type { HTMLAttributes } from 'astro/types';
+
+export interface Props extends Omit<HTMLAttributes<'input'>, 'size'> {
+  id?: string;
+  name?: string;
+  value?: string;
+  placeholder?: string;
+  ariaLabel?: string;
+  class?: string;
+  wrapperClass?: string;
+  showSubmitButton?: boolean;
+  submitText?: string;
+  size?: 'sm' | 'md' | 'lg';
+  autoFocus?: boolean;
+}
+
+const {
+  id,
+  name,
+  value = '',
+  placeholder = 'Buscar...',
+  ariaLabel = 'Buscar',
+  class: className = '',
+  wrapperClass = '',
+  showSubmitButton = false,
+  submitText = 'Buscar',
+  size = 'md',
+  autoFocus = false,
+  type = 'text',
+  ...rest
+} = Astro.props;
+
+const sizeStyles = {
+  sm: 'py-1.5 pl-8 pr-3 text-xs',
+  md: 'py-2 pl-9 pr-4 text-xs',
+  lg: 'py-2.5 pl-10 pr-4 text-sm',
+};
+
+const iconSizes = {
+  sm: 'w-3.5 h-3.5 left-2.5 top-2',
+  md: 'w-4 h-4 left-3 top-2.5',
+  lg: 'w-4.5 h-4.5 left-3.5 top-3',
+};
+---
+
+<div class={`relative flex items-center gap-2 ${wrapperClass}`.trim()}>
+  <div class="relative w-full">
+    <input
+      type={type}
+      id={id}
+      name={name}
+      value={value}
+      placeholder={placeholder}
+      aria-label={ariaLabel}
+      autofocus={autoFocus}
+      class={`w-full bg-[#FAF6F0] dark:bg-[#141414] border border-[#E5DFD5] dark:border-[#282828] rounded-xl text-[#1F1B16] dark:text-[#FAF6F0] placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:border-[#E4572E] focus:ring-1 focus:ring-[#E4572E] transition-all ${sizeStyles[size] || sizeStyles.md} ${className}`.trim()}
+      {...rest}
+    />
+    <svg
+      class={`text-neutral-400 dark:text-neutral-500 absolute pointer-events-none ${iconSizes[size] || iconSizes.md}`}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+    </svg>
+  </div>
+
+  {showSubmitButton && (
+    <button
+      type="submit"
+      class="px-4 py-2 bg-[#E4572E] hover:bg-[#CF4821] text-white text-xs font-semibold rounded-xl transition-colors shrink-0 shadow-sm cursor-pointer"
+    >
+      {submitText}
+    </button>
+  )}
+</div>

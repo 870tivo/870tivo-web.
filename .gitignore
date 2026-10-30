@@ -7,9 +7,15 @@ node_modules/
 
 # Environment variables
 .env
-.env.production
-.env.local
+.env.*
+!.env.example
 *.env
+
+# Local Scripts & Database Migrations (Protects API keys and SQL seeds)
+scripts/
+
+# Temporary Local Data & Seed Overrides
+src/data/posts-custom.json
 
 # Operating System files
 .DS_Store
@@ -31,3 +37,6 @@ pnpm-debug.log*
 *.njsproj
 *.sln
 *.sw?
+
+# Skills & Agents configuration
+skills/

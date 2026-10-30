@@ -1,0 +1,328 @@
+---
+interface Props {
+  currentPath?: string;
+  activeModule?: 'dashboard' | 'publicaciones' | 'autores' | 'galeria' | 'usuarios' | 'roles' | string;
+  userEmail?: string;
+}
+
+const { activeModule = 'dashboard', userEmail = '' } = Astro.props;
+
+// Group active checks to auto-expand relevant section on SSR
+const isDashboardActive = activeModule === 'dashboard';
+const isEditorialActive = activeModule === 'publicaciones';
+const isAuthorsActive = activeModule === 'autores';
+const isGalleryActive = activeModule === 'galeria';
+const isUsersActive = activeModule === 'usuarios';
+const isRolesActive = activeModule === 'roles';
+const isProfileActive = activeModule === 'profile';
+---
+
+<aside 
+  id="adminSidebar"
+  class="fixed inset-y-0 left-0 z-50 w-72 bg-white dark:bg-[#141414] border-r border-[#E5DFD5] dark:border-[#282828] flex flex-col justify-between transition-all duration-300 ease-in-out -translate-x-full lg:translate-x-0"
+  aria-label="Barra lateral de administración"
+>
+  <!-- Top: Logo & Branding -->
+  <div class="h-16 px-5 border-b border-[#E5DFD5] dark:border-[#282828] flex items-center justify-between">
+    <a href="/admin/dashboard" class="flex items-center gap-3 group">
+      <div class="relative">
+        <img 
+          src="/assets/logo/870.jpeg" 
+          alt="870tivo Logo" 
+          class="w-8 h-8 object-cover rounded-lg shadow-sm border border-[#E5DFD5] dark:border-[#282828] group-hover:border-[#E4572E] transition-all duration-300"
+        />
+        <span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-[#2F4B3A] border-2 border-white dark:border-[#141414] rounded-full"></span>
+      </div>
+      <div class="flex flex-col">
+        <div class="flex items-center gap-1.5">
+          <span class="font-serif font-bold text-base leading-tight tracking-tight text-[#1F1B16] dark:text-white group-hover:text-[#F2B134] transition-colors">
+            870tivo
+          </span>
+          <span class="text-[9px] font-semibold uppercase px-1.5 py-0.5 rounded bg-[#2F4B3A]/15 dark:bg-[#2F4B3A]/20 text-[#2F4B3A] dark:text-[#A7C7B3] border border-[#2F4B3A]/30">
+            Studio
+          </span>
+        </div>
+        <span class="text-[10px] text-[#78716A] dark:text-neutral-400 font-medium">
+          Control Panel
+        </span>
+      </div>
+    </a>
+
+    <!-- Mobile Close Button -->
+    <button 
+      type="button" 
+      id="closeSidebarBtn"
+      class="lg:hidden p-1.5 text-neutral-500 hover:text-[#1F1B16] dark:text-neutral-400 dark:hover:text-white rounded-lg hover:bg-[#F5EFE6] dark:hover:bg-[#222222] transition-colors"
+      aria-label="Cerrar menú"
+    >
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
+  </div>
+
+  <!-- Middle: Organized Navigation Links -->
+  <div class="flex-1 overflow-y-auto px-3.5 py-4 space-y-6 custom-scrollbar text-[13px]">
+
+    <!-- SECTION 1: DASHBOARDS / PRINCIPAL -->
+    <div>
+      <div class="px-3 pb-1.5 text-xs font-semibold text-[#78716A] dark:text-neutral-500 uppercase tracking-wider text-[11px]">
+        Dashboards
+      </div>
+
+      <nav class="space-y-1 mt-1">
+        <!-- Overview -->
+        <a 
+          href="/admin/dashboard" 
+          class={`flex items-center gap-3 px-3 py-2 rounded-xl transition-all ${
+            isDashboardActive 
+              ? 'bg-[#F5EFE6] dark:bg-[#1E1E1E] text-[#1F1B16] dark:text-white font-medium border border-[#E5DFD5] dark:border-[#282828] shadow-sm' 
+              : 'text-[#78716A] dark:text-neutral-400 hover:text-[#1F1B16] dark:hover:text-white hover:bg-[#F5EFE6] dark:hover:bg-white/5'
+          }`}
+        >
+          <svg class={`w-4 h-4 shrink-0 ${isDashboardActive ? 'text-[#E4572E]' : 'text-[#78716A] dark:text-neutral-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+          </svg>
+          <span class="truncate">Overview</span>
+          {isDashboardActive && (
+            <span class="ml-auto w-1.5 h-1.5 rounded-full bg-[#E4572E]"></span>
+          )}
+        </a>
+
+        <!-- Publicaciones (Direct Link) -->
+        <a 
+          href="/admin/publicaciones" 
+          class={`flex items-center gap-3 px-3 py-2 rounded-xl transition-all ${
+            isEditorialActive 
+              ? 'bg-[#F5EFE6] dark:bg-[#1E1E1E] text-[#1F1B16] dark:text-white font-medium border border-[#E5DFD5] dark:border-[#282828] shadow-sm' 
+              : 'text-[#78716A] dark:text-neutral-400 hover:text-[#1F1B16] dark:hover:text-white hover:bg-[#F5EFE6] dark:hover:bg-white/5'
+          }`}
+        >
+          <svg class={`w-4 h-4 shrink-0 ${isEditorialActive ? 'text-[#F2B134]' : 'text-[#78716A] dark:text-neutral-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+          </svg>
+          <span class="truncate">Publicaciones</span>
+          {isEditorialActive && (
+            <span class="ml-auto w-1.5 h-1.5 rounded-full bg-[#F2B134]"></span>
+          )}
+        </a>
+
+        <!-- Autores (Direct Link) -->
+        <a 
+          href="/admin/autores" 
+          class={`flex items-center gap-3 px-3 py-2 rounded-xl transition-all ${
+            isAuthorsActive 
+              ? 'bg-[#F5EFE6] dark:bg-[#1E1E1E] text-[#1F1B16] dark:text-white font-medium border border-[#E5DFD5] dark:border-[#282828] shadow-sm' 
+              : 'text-[#78716A] dark:text-neutral-400 hover:text-[#1F1B16] dark:hover:text-white hover:bg-[#F5EFE6] dark:hover:bg-white/5'
+          }`}
+        >
+          <svg class={`w-4 h-4 shrink-0 ${isAuthorsActive ? 'text-[#E4572E]' : 'text-[#78716A] dark:text-neutral-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+          </svg>
+          <span class="truncate">Autores & Redacción</span>
+          {isAuthorsActive && (
+            <span class="ml-auto w-1.5 h-1.5 rounded-full bg-[#E4572E]"></span>
+          )}
+        </a>
+
+        <!-- Galería & Proyectos (Direct Link) -->
+        <a 
+          href="/admin/galeria" 
+          class={`flex items-center gap-3 px-3 py-2 rounded-xl transition-all ${
+            isGalleryActive 
+              ? 'bg-[#F5EFE6] dark:bg-[#1E1E1E] text-[#1F1B16] dark:text-white font-medium border border-[#E5DFD5] dark:border-[#282828] shadow-sm' 
+              : 'text-[#78716A] dark:text-neutral-400 hover:text-[#1F1B16] dark:hover:text-white hover:bg-[#F5EFE6] dark:hover:bg-white/5'
+          }`}
+        >
+          <svg class={`w-4 h-4 shrink-0 ${isGalleryActive ? 'text-[#2F4B3A]' : 'text-[#78716A] dark:text-neutral-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          <span class="truncate">Galería & Proyectos</span>
+          {isGalleryActive && (
+            <span class="ml-auto w-1.5 h-1.5 rounded-full bg-[#2F4B3A]"></span>
+          )}
+        </a>
+      </nav>
+    </div>
+
+    <!-- SECTION 2: CONFIGURACIÓN -->
+    <div>
+      <div class="px-3 pb-1.5 text-xs font-semibold text-[#78716A] dark:text-neutral-500 uppercase tracking-wider text-[11px]">
+        Configuración
+      </div>
+
+      <nav class="space-y-1 mt-1">
+        <!-- Gestión de Roles -->
+        <a 
+          href="/admin/roles" 
+          class={`flex items-center gap-3 px-3 py-2 rounded-xl transition-all ${
+            isRolesActive 
+              ? 'bg-[#F5EFE6] dark:bg-[#1E1E1E] text-[#1F1B16] dark:text-white font-medium border border-[#E5DFD5] dark:border-[#282828] shadow-sm' 
+              : 'text-[#78716A] dark:text-neutral-400 hover:text-[#1F1B16] dark:hover:text-white hover:bg-[#F5EFE6] dark:hover:bg-white/5'
+          }`}
+        >
+          <svg class={`w-4 h-4 shrink-0 ${isRolesActive ? 'text-[#E4572E]' : 'text-[#78716A] dark:text-neutral-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+          </svg>
+          <span class="truncate">Gestión de Roles</span>
+          {isRolesActive && (
+            <span class="ml-auto w-1.5 h-1.5 rounded-full bg-[#E4572E]"></span>
+          )}
+        </a>
+
+        <!-- Gestión de Usuarios -->
+        <a 
+          href="/admin/usuarios" 
+          class={`flex items-center gap-3 px-3 py-2 rounded-xl transition-all ${
+            isUsersActive 
+              ? 'bg-[#F5EFE6] dark:bg-[#1E1E1E] text-[#1F1B16] dark:text-white font-medium border border-[#E5DFD5] dark:border-[#282828] shadow-sm' 
+              : 'text-[#78716A] dark:text-neutral-400 hover:text-[#1F1B16] dark:hover:text-white hover:bg-[#F5EFE6] dark:hover:bg-white/5'
+          }`}
+        >
+          <svg class={`w-4 h-4 shrink-0 ${isUsersActive ? 'text-[#F2B134]' : 'text-[#78716A] dark:text-neutral-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+          <span class="truncate">Gestión de Usuarios</span>
+          {isUsersActive && (
+            <span class="ml-auto w-1.5 h-1.5 rounded-full bg-[#F2B134]"></span>
+          )}
+        </a>
+      </nav>
+    </div>
+
+    <!-- SECTION 3: ACCESO PÚBLICO -->
+    <div class="pt-3 border-t border-[#E5DFD5] dark:border-[#282828]">
+      <div class="px-3 pb-1.5 text-xs font-semibold text-[#78716A] dark:text-neutral-500 uppercase tracking-wider text-[11px]">
+        Acceso Público
+      </div>
+
+      <nav class="space-y-1 mt-1">
+        <a 
+          href="/" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          class="flex items-center justify-between px-3 py-2 rounded-xl text-[#78716A] dark:text-neutral-400 hover:text-[#1F1B16] dark:hover:text-white hover:bg-[#F5EFE6] dark:hover:bg-white/5 transition-all group"
+        >
+          <div class="flex items-center gap-3 min-w-0">
+            <svg class="w-4 h-4 text-[#78716A] dark:text-neutral-400 group-hover:text-[#E4572E] transition-colors shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
+            <span class="truncate">Ver Sitio Principal</span>
+          </div>
+          <span class="text-[10px] px-1.5 py-0.5 rounded bg-[#FAF6F0] dark:bg-[#181818] text-[#78716A] dark:text-neutral-400 border border-[#E5DFD5] dark:border-[#282828] group-hover:border-[#E4572E]/40 group-hover:text-[#E4572E] transition-colors">
+            Web
+          </span>
+        </a>
+      </nav>
+    </div>
+
+  </div>
+
+  <!-- Bottom: User Account Card & Logout -->
+  <div class="p-3 border-t border-[#E5DFD5] dark:border-[#282828] bg-[#FAF6F0] dark:bg-[#111111]">
+    <div class={`p-2.5 rounded-xl border transition-all flex items-center justify-between gap-2.5 ${isProfileActive ? 'bg-[#F5EFE6] dark:bg-[#1E1E1E] border-[#E4572E]/50 shadow-sm' : 'bg-white dark:bg-[#181818] border-[#E5DFD5] dark:border-[#282828]'}`}>
+      <a 
+        href="/admin/profile" 
+        class="flex items-center gap-2.5 min-w-0 flex-1 group cursor-pointer"
+        title="Ver y editar mi perfil de usuario"
+      >
+        <div class="w-8 h-8 rounded-lg bg-[#E4572E] flex items-center justify-center text-white font-bold text-xs shrink-0 group-hover:scale-105 transition-transform shadow-sm">
+          {(userEmail?.[0] || 'A').toUpperCase()}
+        </div>
+        <div class="flex flex-col min-w-0">
+          <span class="text-xs font-semibold text-[#1F1B16] dark:text-white truncate max-w-[115px] group-hover:text-[#F2B134] transition-colors" id="sidebarUserEmail" title={userEmail || 'Administrador'}>
+            {userEmail || 'Administrador'}
+          </span>
+          <span class="text-[10px] text-[#2F4B3A] dark:text-[#A7C7B3] flex items-center gap-1 font-medium">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#2F4B3A]"></span>
+            Mi Perfil
+          </span>
+        </div>
+      </a>
+
+      <button 
+        type="button" 
+        id="sidebarLogoutBtn"
+        class="p-1.5 rounded-lg text-neutral-500 dark:text-neutral-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 border border-transparent hover:border-red-500/20 transition-all duration-200 cursor-pointer shrink-0"
+        title="Cerrar sesión de forma segura"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+        </svg>
+      </button>
+    </div>
+  </div>
+</aside>
+
+<!-- Backdrop Overlay for Mobile -->
+<div 
+  id="sidebarBackdrop" 
+  class="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden hidden transition-opacity duration-300"
+  aria-hidden="true"
+></div>
+
+<script>
+  import { supabase, clearAuthCookies } from '../../lib/supabase';
+
+  const sidebar = document.getElementById('adminSidebar');
+  const backdrop = document.getElementById('sidebarBackdrop');
+  const closeBtn = document.getElementById('closeSidebarBtn');
+  const sidebarLogoutBtn = document.getElementById('sidebarLogoutBtn');
+  const sidebarUserEmail = document.getElementById('sidebarUserEmail');
+
+  // Close sidebar on mobile
+  function closeMobileSidebar() {
+    sidebar?.classList.add('-translate-x-full');
+    backdrop?.classList.add('hidden');
+  }
+
+  closeBtn?.addEventListener('click', closeMobileSidebar);
+  backdrop?.addEventListener('click', closeMobileSidebar);
+
+  // Accordion toggle behavior for group items
+  const toggles = document.querySelectorAll('.sidebar-group-toggle');
+  toggles.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const targetId = btn.getAttribute('data-target');
+      if (!targetId) return;
+      const targetEl = document.getElementById(targetId);
+      const chevron = btn.querySelector('.chevron-icon');
+
+      if (targetEl) {
+        const isHidden = targetEl.classList.contains('hidden');
+        if (isHidden) {
+          targetEl.classList.remove('hidden');
+          chevron?.classList.add('rotate-90', 'text-slate-200');
+          btn.setAttribute('aria-expanded', 'true');
+        } else {
+          targetEl.classList.add('hidden');
+          chevron?.classList.remove('rotate-90', 'text-slate-200');
+          btn.setAttribute('aria-expanded', 'false');
+        }
+      }
+    });
+  });
+
+  // Sync session email if present
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    if (session?.user?.email && sidebarUserEmail) {
+      sidebarUserEmail.textContent = session.user.email;
+      sidebarUserEmail.title = session.user.email;
+    }
+  });
+
+  // Logout handler
+  sidebarLogoutBtn?.addEventListener('click', async () => {
+    try {
+      sidebarLogoutBtn.classList.add('opacity-50', 'pointer-events-none');
+      await supabase.auth.signOut();
+      clearAuthCookies();
+      window.location.href = '/admin/login';
+    } catch (e) {
+      console.error('Error al cerrar sesión:', e);
+      clearAuthCookies();
+      window.location.href = '/admin/login';
+    }
+  });
+</script>

@@ -1,20 +1,63 @@
 ---
+/**
+ * src/pages/index.astro
+ * Landing Page principal de 870tivo.
+ * Consume datos en tiempo real desde Supabase (SSR):
+ *  - public.posts   → status = 'publicado', ordenadas por fecha desc
+ *  - public.gallery → status = 'publicado', ordenadas por fecha desc
+ */
 import BaseLayout from '../layouts/BaseLayout.astro';
 import BentoGrid from '../components/bento/BentoGrid.astro';
 import EditorialQuote from '../components/EditorialQuote.astro';
 import RecentPosts from '../components/RecentPosts.astro';
+import GallerySection from '../components/GallerySection.astro';
+import { supabase } from '../lib/supabase';
+import type { SupabasePost } from '../types/posts';
+import type { GalleryItem } from '../types/gallery';
+
+// ── Publicaciones publicadas ───────────────────────────────────────────────────
+const { data: postsData, error: postsError } = await supabase
+  .from('posts')
+  .select('id, title, slug, subtitle, category, author, author_social_url, cover_image, read_time, created_at')
+  .eq('status', 'publicado')
+  .order('created_at', { ascending: false });
+
+if (postsError) {
+  console.error('[index.astro] Error al cargar posts:', postsError.message);
+}
+const posts: SupabasePost[] = (postsData as SupabasePost[]) ?? [];
+
+// ── Obras de galería publicadas ────────────────────────────────────────────────
+const { data: galleryData, error: galleryError } = await supabase
+  .from('gallery')
+  .select('id, title, description, image_url, category, status, created_at')
+  .eq('status', 'publicado')
+  .order('created_at', { ascending: false });
+
+if (galleryError) {
+  console.error('[index.astro] Error al cargar galería:', galleryError.message);
+}
+const galleryItems: GalleryItem[] = (galleryData as GalleryItem[]) ?? [];
 ---
 
 <BaseLayout title="870tivo - Encuentros Inmateriales">
   <main class="flex-grow flex flex-col gap-6 lg:gap-12 pb-12">
+
     <div class="container mx-auto px-4 md:px-6">
-      <BentoGrid />
+      <BentoGrid posts={posts} />
     </div>
+
     <div class="container mx-auto px-4 md:px-6">
       <EditorialQuote />
     </div>
+
     <div class="container mx-auto px-4 md:px-6">
-      <RecentPosts />
+      <RecentPosts posts={posts} />
     </div>
+
+    <div class="container mx-auto px-4 md:px-6">
+      <GallerySection items={galleryItems} />
+    </div>
+
   </main>
 </BaseLayout>

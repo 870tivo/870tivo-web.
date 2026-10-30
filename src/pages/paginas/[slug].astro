@@ -2,33 +2,19 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 
 // Static pages: Nosotros, Redes, Contacto
+export const prerender = true;
+
+import { staticPages } from '../../lib/pages';
+
 export function getStaticPaths() {
-  return [
-    {
-      params: { slug: 'nosotros' },
-      props: {
-        title: 'Nosotros',
-        description: '870tivo es un colectivo editorial inmaterial dedicado a la literatura, el cine y las artes visuales.',
-        content: '870tivo nació como un encuentro inmaterial entre artistas, escritores y cinéfilos de Bogotá y Latinoamérica. Nuestra misión es documentar, crear y diseminar expresiones culturales a través de la escritura, el cine club y la fotografía.',
-      }
+  return staticPages.map((page) => ({
+    params: { slug: page.slug },
+    props: {
+      title: page.title,
+      description: page.description,
+      content: page.content,
     },
-    {
-      params: { slug: 'contacto' },
-      props: {
-        title: 'Contacto',
-        description: 'Ponte en contacto con el colectivo 870tivo.',
-        content: 'Para colaboraciones, propuestas editoriales o solo para saludar, escríbenos a 870colectivo@gmail.com',
-      }
-    },
-    {
-      params: { slug: 'redes' },
-      props: {
-        title: 'Redes',
-        description: 'Síguenos en nuestras redes sociales.',
-        content: 'Encuentra nuestro trabajo en Instagram: @870tivo para el blog y galería, @870raw para fotografía sin editar.',
-      }
-    },
-  ];
+  }));
 }
 
 interface Props {
@@ -36,7 +22,15 @@ interface Props {
   description: string;
   content: string;
 }
-const { title, description, content } = Astro.props;
+
+const { slug } = Astro.params;
+const pageData = Astro.props.title ? Astro.props : staticPages.find((p) => p.slug === slug);
+
+if (!pageData) {
+  return Astro.redirect('/');
+}
+
+const { title, description, content } = pageData;
 ---
 
 <BaseLayout title={`${title} - 870tivo`} description={description}>

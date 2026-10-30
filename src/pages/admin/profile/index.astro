@@ -1,0 +1,843 @@
+---
+/**
+ * src/pages/admin/profile/index.astro
+ * Módulo de Perfil del Usuario Admin.
+ * Permite visualizar y editar:
+ * 1. Información Personal (full_name, rol activo preview)
+ * 2. Avatar de Perfil (upload a Storage bucket 'avatars' / 'blog-media', preview en vivo)
+ * 3. Seguridad & Contraseña (cambio seguro de clave con validación de coincidencia)
+ */
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { supabaseAdmin } from '../../../lib/supabase';
+import { 
+  User, 
+  Shield, 
+  Lock, 
+  Camera, 
+  Check, 
+  AlertCircle, 
+  Save, 
+  Key, 
+  Mail, 
+  Upload, 
+  Trash2, 
+  Calendar, 
+  ExternalLink
+} from 'lucide-astro';
+
+export const prerender = false;
+
+// 1. Obtener usuario autenticado desde locals
+const currentUser = Astro.locals.user;
+
+if (!currentUser) {
+  return Astro.redirect('/admin/login');
+}
+
+// 2. Consultar perfil en public.profiles
+let profileData: { id: string; full_name: string | null; role: string | null; avatar_url?: string | null } | null = null;
+
+try {
+  const { data, error } = await supabaseAdmin
+    .from('profiles')
+    .select('*')
+    .eq('id', currentUser.id)
+    .maybeSingle();
+
+  if (!error && data) {
+    profileData = data;
+  }
+} catch (e) {
+  console.warn('Error consultando public.profiles:', e);
+}
+
+// 3. Consultar rol asignado en user_roles o fallback a profile/metadata
+let userRoleName = profileData?.role || 'Administrador';
+
+try {
+  const { data: userRoleRow } = await supabaseAdmin
+    .from('user_roles')
+    .select('role_id, roles(id, name, permissions)')
+    .eq('user_id', currentUser.id)
+    .maybeSingle();
+
+  const roleObj = Array.isArray(userRoleRow?.roles) ? userRoleRow?.roles[0] : userRoleRow?.roles;
+  if (roleObj?.name) {
+    userRoleName = roleObj.name;
+  }
+} catch (e) {
+  console.warn('Error consultando rol de usuario:', e);
+}
+
+// 4. Determinar avatar y nombre actual combinando BD y metadata de Auth
+const currentAvatarUrl = profileData?.avatar_url || (currentUser.user_metadata?.avatar_url as string) || '';
+const currentFullName = profileData?.full_name || (currentUser.user_metadata?.full_name as string) || '';
+const userEmail = currentUser.email || '';
+const userInitials = (currentFullName || userEmail || 'AD')
+  .trim()
+  .split(/\s+/)
+  .map(w => w[0])
+  .slice(0, 2)
+  .join('')
+  .toUpperCase();
+
+const createdAtFormatted = currentUser.created_at 
+  ? new Intl.DateTimeFormat('es-CO', { dateStyle: 'medium' }).format(new Date(currentUser.created_at))
+  : 'Reciente';
+---
+
+<AdminLayout 
+  title="Mi Perfil de Usuario | 870tivo Control Studio" 
+  headerTitle="Mi Perfil"
+  activeModule="profile"
+>
+  <div class="space-y-8 max-w-6xl mx-auto">
+    
+    <!-- Top Header Banner -->
+    <div class="relative overflow-hidden rounded-2xl bg-white dark:bg-[#141414] border border-[#E5DFD5] dark:border-[#282828] p-6 sm:p-8">
+
+      <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div class="flex items-center gap-5">
+          <!-- Big Avatar with Glow -->
+          <div class="relative group shrink-0">
+            <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl border-2 border-[#E4572E]/40 bg-[#FAF6F0] dark:bg-[#181818] overflow-hidden flex items-center justify-center">
+                <img 
+                  id="headerHeroAvatarImg"
+                  src={currentAvatarUrl || ''} 
+                  alt={currentFullName || userEmail} 
+                  class={`w-full h-full object-cover transition-all duration-300 ${currentAvatarUrl ? '' : 'hidden'}`}
+                />
+                <div 
+                  id="headerHeroAvatarInitials"
+                  class={`font-bold text-2xl sm:text-3xl text-[#E4572E] tracking-wider ${currentAvatarUrl ? 'hidden' : 'flex'}`}
+                >
+                  {userInitials}
+                </div>
+            </div>
+            <div class="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-white dark:bg-[#141414] border-2 border-[#E5DFD5] dark:border-[#282828] flex items-center justify-center">
+              <span class="w-2.5 h-2.5 rounded-full bg-[#2F4B3A] animate-pulse"></span>
+            </div>
+          </div>
+
+          <!-- User Identifiers -->
+          <div class="space-y-1.5 min-w-0">
+            <div class="flex flex-wrap items-center gap-2.5">
+              <h1 id="headerHeroFullName" class="text-xl sm:text-2xl font-bold text-[#1F1B16] dark:text-white tracking-tight truncate">
+                {currentFullName || 'Administrador 870tivo'}
+              </h1>
+              <span class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-[#E4572E]/10 text-[#E4572E] border border-[#E4572E]/30 text-xs font-semibold uppercase tracking-wider">
+                <Shield class="w-3 h-3 text-[#E4572E]" />
+                <span>{userRoleName}</span>
+              </span>
+            </div>
+
+            <p class="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 flex items-center gap-2 truncate">
+              <Mail class="w-3.5 h-3.5 text-neutral-400 dark:text-neutral-500 shrink-0" />
+              <span class="truncate">{userEmail}</span>
+            </p>
+
+            <div class="flex items-center gap-4 text-[11px] text-neutral-500 dark:text-neutral-400 pt-1">
+              <span class="flex items-center gap-1.5">
+                <Calendar class="w-3 h-3 text-neutral-400 dark:text-neutral-600" />
+                <span>Miembro desde {createdAtFormatted}</span>
+              </span>
+              <span>&bull;</span>
+              <span class="text-[#2F4B3A] dark:text-emerald-400 font-medium">Sesión activa verificada</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Action / Status Badges -->
+        <div class="flex items-center gap-3">
+          <a 
+            href="/admin/dashboard" 
+            class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#FAF6F0] hover:bg-neutral-100 dark:bg-[#181818] dark:hover:bg-[#222222] text-xs font-medium text-neutral-700 hover:text-[#1F1B16] dark:text-neutral-300 dark:hover:text-white border border-[#E5DFD5] dark:border-[#282828] hover:border-[#E4572E]/40 transition-all"
+          >
+            <span>Volver a Overview</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notification Toast Container -->
+    <div id="statusToast" class="hidden transition-all duration-300 rounded-2xl p-4 border flex items-center gap-3 shadow-lg">
+      <div id="statusToastIcon" class="shrink-0"></div>
+      <div class="text-xs sm:text-sm font-medium" id="statusToastMessage"></div>
+    </div>
+
+    <!-- Main Grid: Sections -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      
+      <!-- LEFT COLUMN: Avatar & Profile Card (5 cols) -->
+      <div class="lg:col-span-5 space-y-6">
+        
+        <!-- SECTION 1: AVATAR DE PERFIL -->
+        <div class="bg-white dark:bg-[#141414] rounded-2xl border border-[#E5DFD5] dark:border-[#282828] p-6 sm:p-7 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between gap-3 pb-5 border-b border-[#E5DFD5] dark:border-[#282828] mb-6">
+              <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-xl bg-[#E4572E]/10 border border-[#E4572E]/20 flex items-center justify-center text-[#E4572E]">
+                  <Camera class="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 class="text-sm font-bold text-[#1F1B16] dark:text-white tracking-wide">Avatar de Perfil</h3>
+                  <p class="text-[11px] text-neutral-500 dark:text-neutral-400">Personaliza la imagen visible de tu cuenta</p>
+                </div>
+              </div>
+              <span class="text-[10px] uppercase font-bold tracking-widest text-[#E4572E] px-2 py-0.5 rounded bg-[#E4572E]/10 border border-[#E4572E]/20">
+                Storage
+              </span>
+            </div>
+
+            <!-- Avatar Preview Centerpiece -->
+            <div class="flex flex-col items-center justify-center py-4">
+              <div class="relative group">
+                <div class="w-32 h-32 sm:w-36 sm:h-36 rounded-full border-2 border-[#E4572E]/40 bg-[#FAF6F0] dark:bg-[#181818] overflow-hidden flex items-center justify-center relative">
+                    <img 
+                      id="avatarPreviewImg" 
+                      src={currentAvatarUrl || ''} 
+                      alt="Previsualización de Avatar" 
+                      class={`w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 ${currentAvatarUrl ? '' : 'hidden'}`}
+                    />
+                    <div 
+                      id="avatarPreviewFallback" 
+                      class={`w-full h-full flex flex-col items-center justify-center text-neutral-400 ${currentAvatarUrl ? 'hidden' : 'flex'}`}
+                    >
+                      <User class="w-12 h-12 text-neutral-400 dark:text-neutral-600 mb-1" />
+                      <span class="text-[11px] uppercase tracking-wider font-semibold text-neutral-500">Sin Avatar</span>
+                    </div>
+
+                    <!-- Overlay loading spinner -->
+                    <div id="avatarLoadingOverlay" class="absolute inset-0 bg-[#111111]/80 hidden flex items-center justify-center">
+                      <div class="w-8 h-8 border-2 border-[#E4572E] border-t-transparent rounded-full animate-spin"></div>
+                    </div>
+                </div>
+
+                <!-- Live Tag if previewing newly selected file -->
+                <span id="avatarPendingTag" class="hidden absolute top-1 right-1 px-2 py-0.5 rounded-full bg-[#F2B134] text-[#111111] font-bold text-[10px] animate-pulse">
+                  Nueva Previa
+                </span>
+              </div>
+
+              <p class="text-[11px] text-neutral-500 dark:text-neutral-400 text-center mt-4 max-w-xs leading-relaxed">
+                Formatos recomendados: JPG, PNG, WEBP o AVIF.<br/>
+                Tamaño máximo permitido: <strong>5 MB</strong>.
+              </p>
+            </div>
+
+            <!-- Upload Dropzone / Picker -->
+            <div class="mt-4">
+              <label 
+                for="avatarFileInput" 
+                class="flex flex-col items-center justify-center p-4 border-2 border-dashed border-[#E5DFD5] dark:border-[#282828] hover:border-[#E4572E]/50 rounded-2xl bg-[#FAF6F0] hover:bg-neutral-100 dark:bg-[#111111] dark:hover:bg-[#181818] cursor-pointer transition-all group"
+              >
+                <Upload class="w-5 h-5 text-neutral-500 dark:text-neutral-400 group-hover:text-[#E4572E] group-hover:-translate-y-0.5 transition-all mb-1.5" />
+                <span class="text-xs font-semibold text-neutral-700 dark:text-neutral-200 group-hover:text-[#E4572E]">
+                  Seleccionar nueva fotografía
+                </span>
+                <span class="text-[10px] text-neutral-500 mt-0.5">
+                  Haz clic o arrastra un archivo aquí
+                </span>
+                <input 
+                  type="file" 
+                  id="avatarFileInput" 
+                  name="avatar" 
+                  accept="image/jpeg,image/png,image/webp,image/avif,image/gif" 
+                  class="hidden" 
+                />
+              </label>
+            </div>
+          </div>
+
+          <!-- Avatar Actions (Upload / Remove) -->
+          <div class="pt-5 mt-6 border-t border-[#E5DFD5] dark:border-[#282828] flex flex-col gap-2.5">
+            <button 
+              type="button" 
+              id="uploadAvatarBtn"
+              disabled
+              class="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-[#E4572E] hover:bg-[#CF4821] text-white font-bold text-xs uppercase tracking-wider disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
+            >
+              <Upload class="w-4 h-4" />
+              <span>Guardar Nueva Foto</span>
+            </button>
+
+            <button 
+              type="button" 
+              id="removeAvatarBtn"
+              class={`w-full inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-medium text-neutral-500 hover:text-red-500 dark:text-slate-400 dark:hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/20 transition-all ${currentAvatarUrl ? '' : 'hidden'}`}
+            >
+              <Trash2 class="w-3.5 h-3.5" />
+              <span>Remover fotografía actual</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT COLUMN: Personal Info & Security (7 cols) -->
+      <div class="lg:col-span-7 space-y-6">
+        
+        <!-- SECTION 2: INFORMACIÓN PERSONAL -->
+        <div class="bg-white dark:bg-[#141414] rounded-2xl border border-[#E5DFD5] dark:border-[#282828] p-6 sm:p-7">
+          <div class="flex items-center justify-between gap-3 pb-5 border-b border-[#E5DFD5] dark:border-[#282828] mb-6">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-xl bg-[#F2B134]/15 border border-[#F2B134]/30 flex items-center justify-center text-[#966B0D] dark:text-[#F2B134]">
+                <User class="w-4 h-4" />
+              </div>
+              <div>
+                <h3 class="text-sm font-bold text-[#1F1B16] dark:text-white tracking-wide">Información Personal</h3>
+                <p class="text-[11px] text-neutral-500 dark:text-neutral-400">Actualiza tus datos de identidad en la plataforma</p>
+              </div>
+            </div>
+            <span class="text-[10px] uppercase font-bold tracking-widest text-[#966B0D] dark:text-[#F2B134] px-2 py-0.5 rounded bg-[#F2B134]/15 border border-[#F2B134]/30">
+              Perfil DB
+            </span>
+          </div>
+
+          <form id="personalInfoForm" class="space-y-5">
+            <!-- Full Name Input -->
+            <div>
+              <label for="fullNameInput" class="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5 uppercase tracking-wider">
+                Nombre Completo / Firma de Redactor <span class="text-[#E4572E]">*</span>
+              </label>
+              <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400 dark:text-neutral-500">
+                  <User class="w-4 h-4" />
+                </div>
+                <input 
+                  type="text" 
+                  id="fullNameInput" 
+                  name="full_name" 
+                  value={currentFullName} 
+                  required
+                  placeholder="Ej: Miguel Ángel Uribe" 
+                  class="w-full pl-10 pr-4 py-3 rounded-xl bg-white dark:bg-[#111111] border border-[#E5DFD5] dark:border-[#282828] text-[#1F1B16] dark:text-white placeholder-neutral-400 dark:placeholder-neutral-600 text-sm focus:outline-none focus:border-[#E4572E] focus:ring-1 focus:ring-[#E4572E] transition-all"
+                />
+              </div>
+              <p class="text-[11px] text-neutral-500 mt-1.5">
+                Este nombre se asociará como autor de tus publicaciones editoriales en el blog.
+              </p>
+            </div>
+
+            <!-- Email (Read-only) -->
+            <div>
+              <label for="emailInput" class="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5 uppercase tracking-wider">
+                Correo Electrónico (Cuenta de Acceso)
+              </label>
+              <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400 dark:text-neutral-600">
+                  <Mail class="w-4 h-4" />
+                </div>
+                <input 
+                  type="email" 
+                  id="emailInput" 
+                  value={userEmail} 
+                  disabled 
+                  class="w-full pl-10 pr-4 py-3 rounded-xl bg-neutral-100 dark:bg-[#111111]/40 border border-[#E5DFD5] dark:border-[#282828] text-neutral-500 dark:text-neutral-400 text-sm cursor-not-allowed select-none"
+                />
+              </div>
+              <p class="text-[11px] text-neutral-500 mt-1.5">
+                El correo está vinculado a Supabase Auth y no puede modificarse desde este formulario.
+              </p>
+            </div>
+
+            <!-- Active Role Preview Card -->
+            <div class="rounded-xl bg-[#FAF6F0] dark:bg-[#111111] border border-[#E5DFD5] dark:border-[#282828] p-4 flex items-center justify-between gap-4">
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="w-10 h-10 rounded-xl bg-[#E4572E]/10 border border-[#E4572E]/20 flex items-center justify-center text-[#E4572E] shrink-0">
+                  <Shield class="w-5 h-5" />
+                </div>
+                <div class="min-w-0">
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold text-[#1F1B16] dark:text-white tracking-wide truncate">Rol Activo: {userRoleName}</span>
+                    <span class="w-2 h-2 rounded-full bg-[#2F4B3A] shrink-0"></span>
+                  </div>
+                  <p class="text-[11px] text-neutral-500 dark:text-neutral-400 truncate">
+                    Privilegios asignados en el catálogo de roles del sistema.
+                  </p>
+                </div>
+              </div>
+
+              <a 
+                href="/admin/roles" 
+                class="hidden sm:inline-flex items-center gap-1 text-[11px] font-semibold text-[#E4572E] hover:text-[#F2B134] transition-colors uppercase tracking-wider shrink-0"
+              >
+                <span>Ver Matriz</span>
+                <ExternalLink class="w-3 h-3" />
+              </a>
+            </div>
+
+            <!-- Submit Personal Info Button -->
+            <div class="pt-3 flex justify-end">
+              <button 
+                type="submit" 
+                id="savePersonalInfoBtn"
+                class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#F2B134] hover:bg-[#DAA02E] text-[#111111] font-bold text-xs uppercase tracking-wider transition-all cursor-pointer active:scale-95"
+              >
+                <Save class="w-4 h-4 text-[#111111]" />
+                <span>Guardar Cambios</span>
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- SECTION 3: SEGURIDAD & CONTRASEÑA -->
+        <div class="bg-white dark:bg-[#141414] rounded-2xl border border-[#E5DFD5] dark:border-[#282828] p-6 sm:p-7">
+          <div class="flex items-center justify-between gap-3 pb-5 border-b border-[#E5DFD5] dark:border-[#282828] mb-6">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-xl bg-[#2F4B3A]/15 dark:bg-[#2F4B3A]/20 border border-[#2F4B3A]/30 flex items-center justify-center text-[#2F4B3A] dark:text-[#A7C7B3]">
+                <Lock class="w-4 h-4" />
+              </div>
+              <div>
+                <h3 class="text-sm font-bold text-[#1F1B16] dark:text-white tracking-wide">Seguridad & Contraseña</h3>
+                <p class="text-[11px] text-neutral-500 dark:text-neutral-400">Actualiza tu clave de acceso con validación criptográfica</p>
+              </div>
+            </div>
+            <span class="text-[10px] uppercase font-bold tracking-widest text-[#2F4B3A] dark:text-[#A7C7B3] px-2 py-0.5 rounded bg-[#2F4B3A]/15 border border-[#2F4B3A]/30">
+              Auth Guard
+            </span>
+          </div>
+
+          <form id="changePasswordForm" class="space-y-4">
+            <!-- New Password Input -->
+            <div>
+              <label for="newPasswordInput" class="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5 uppercase tracking-wider">
+                Nueva Contraseña <span class="text-[#2F4B3A]">*</span>
+              </label>
+              <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400 dark:text-neutral-500">
+                  <Key class="w-4 h-4" />
+                </div>
+                <input 
+                  type="password" 
+                  id="newPasswordInput" 
+                  name="password" 
+                  required
+                  minlength="6"
+                  placeholder="Mínimo 6 caracteres seguros" 
+                  class="w-full pl-10 pr-10 py-3 rounded-xl bg-white dark:bg-[#111111] border border-[#E5DFD5] dark:border-[#282828] text-[#1F1B16] dark:text-white placeholder-neutral-400 dark:placeholder-neutral-600 text-sm focus:outline-none focus:border-[#2F4B3A] focus:ring-1 focus:ring-[#2F4B3A] transition-all font-mono"
+                />
+                <button 
+                  type="button" 
+                  id="togglePasswordVisibilityBtn1" 
+                  class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-neutral-400 hover:text-neutral-600 dark:text-neutral-500 dark:hover:text-neutral-300 transition-colors"
+                  aria-label="Ver u ocultar contraseña"
+                >
+                  <span class="text-[10px] uppercase font-bold tracking-wider">Ver</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Confirm New Password Input -->
+            <div>
+              <label for="confirmPasswordInput" class="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5 uppercase tracking-wider">
+                Confirmar Nueva Contraseña <span class="text-[#2F4B3A]">*</span>
+              </label>
+              <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400 dark:text-neutral-500">
+                  <Key class="w-4 h-4" />
+                </div>
+                <input 
+                  type="password" 
+                  id="confirmPasswordInput" 
+                  name="confirmPassword" 
+                  required
+                  minlength="6"
+                  placeholder="Repite la nueva contraseña" 
+                  class="w-full pl-10 pr-10 py-3 rounded-xl bg-white dark:bg-[#111111] border border-[#E5DFD5] dark:border-[#282828] text-[#1F1B16] dark:text-white placeholder-neutral-400 dark:placeholder-neutral-600 text-sm focus:outline-none focus:border-[#2F4B3A] focus:ring-1 focus:ring-[#2F4B3A] transition-all font-mono"
+                />
+                <button 
+                  type="button" 
+                  id="togglePasswordVisibilityBtn2" 
+                  class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-neutral-400 hover:text-neutral-600 dark:text-neutral-500 dark:hover:text-neutral-300 transition-colors"
+                  aria-label="Ver u ocultar contraseña"
+                >
+                  <span class="text-[10px] uppercase font-bold tracking-wider">Ver</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Live Match & Validation Feedback -->
+            <div id="passwordMismatchWarning" class="hidden text-[11px] text-red-500 dark:text-red-400 flex items-center gap-1.5 pt-1">
+              <AlertCircle class="w-3.5 h-3.5 shrink-0" />
+              <span>Las contraseñas no coinciden.</span>
+            </div>
+
+            <div id="passwordMatchSuccess" class="hidden text-[11px] text-[#2F4B3A] dark:text-[#A7C7B3] flex items-center gap-1.5 pt-1">
+              <Check class="w-3.5 h-3.5 shrink-0" />
+              <span>Las contraseñas coinciden correctamente.</span>
+            </div>
+
+            <!-- Password Requirements Pill List -->
+            <div class="p-3 rounded-xl bg-[#FAF6F0] dark:bg-[#111111] border border-[#E5DFD5] dark:border-[#282828] text-[11px] text-neutral-600 dark:text-neutral-400 space-y-1">
+              <span class="font-semibold text-neutral-700 dark:text-neutral-300 block mb-1">Recomendaciones de seguridad:</span>
+              <div class="flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-[#2F4B3A]"></span>
+                <span>Longitud mínima de 6 caracteres (recomendado 8 o más).</span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-[#2F4B3A]"></span>
+                <span>Combina mayúsculas, números y símbolos para máxima protección.</span>
+              </div>
+            </div>
+
+            <!-- Submit Change Password Button -->
+            <div class="pt-3 flex justify-end">
+              <button 
+                type="submit" 
+                id="changePasswordBtn"
+                class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#2F4B3A] hover:bg-[#3A5C47] text-white font-bold text-xs uppercase tracking-wider transition-all cursor-pointer active:scale-95"
+              >
+                <Lock class="w-4 h-4 text-white" />
+                <span>Actualizar Contraseña</span>
+              </button>
+            </div>
+          </form>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+</AdminLayout>
+
+<script>
+  import { supabase } from '../../../lib/supabase';
+
+  // Elementos UI
+  const toast = document.getElementById('statusToast');
+  const toastMessage = document.getElementById('statusToastMessage');
+  const toastIcon = document.getElementById('statusToastIcon');
+
+  function showToast(message: string, isError = false) {
+    if (!toast || !toastMessage || !toastIcon) return;
+
+    toast.classList.remove('hidden', 'bg-[#2F4B3A]/10', 'border-[#2F4B3A]/30', 'text-[#A7C7B3]', 'bg-red-500/10', 'border-red-500/30', 'text-red-300');
+    
+    if (isError) {
+      toast.classList.add('bg-red-500/10', 'border-red-500/30', 'text-red-300');
+      toastIcon.innerHTML = `<svg class="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`;
+    } else {
+      toast.classList.add('bg-[#2F4B3A]/10', 'border-[#2F4B3A]/30', 'text-[#A7C7B3]');
+      toastIcon.innerHTML = `<svg class="w-5 h-5 text-[#2F4B3A]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>`;
+    }
+
+    toastMessage.textContent = message;
+    toast.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+    setTimeout(() => {
+      toast.classList.add('hidden');
+    }, 4500);
+  }
+
+  // ==========================================
+  // 1. MANEJO DEL AVATAR (Preview, Upload, Remove)
+  // ==========================================
+  const avatarFileInput = document.getElementById('avatarFileInput') as HTMLInputElement | null;
+  const avatarPreviewImg = document.getElementById('avatarPreviewImg') as HTMLImageElement | null;
+  const avatarPreviewFallback = document.getElementById('avatarPreviewFallback');
+  const avatarPendingTag = document.getElementById('avatarPendingTag');
+  const avatarLoadingOverlay = document.getElementById('avatarLoadingOverlay');
+  const uploadAvatarBtn = document.getElementById('uploadAvatarBtn') as HTMLButtonElement | null;
+  const removeAvatarBtn = document.getElementById('removeAvatarBtn');
+  const headerHeroAvatarImg = document.getElementById('headerHeroAvatarImg') as HTMLImageElement | null;
+  const headerHeroAvatarInitials = document.getElementById('headerHeroAvatarInitials');
+
+  let selectedAvatarFile: File | null = null;
+
+  // Previsualización en vivo al seleccionar imagen
+  avatarFileInput?.addEventListener('change', (e) => {
+    const target = e.target as HTMLInputElement;
+    const file = target.files?.[0];
+
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      showToast('Por favor selecciona un archivo de imagen válido (JPG, PNG, WEBP, AVIF).', true);
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('La imagen supera el límite de 5MB.', true);
+      return;
+    }
+
+    selectedAvatarFile = file;
+
+    // Crear URL de objeto para preview instantáneo
+    const objectUrl = URL.createObjectURL(file);
+    if (avatarPreviewImg) {
+      avatarPreviewImg.src = objectUrl;
+      avatarPreviewImg.classList.remove('hidden');
+    }
+    avatarPreviewFallback?.classList.add('hidden');
+    avatarPendingTag?.classList.remove('hidden');
+
+    if (uploadAvatarBtn) {
+      uploadAvatarBtn.removeAttribute('disabled');
+      uploadAvatarBtn.classList.remove('opacity-40');
+    }
+  });
+
+  // Subir imagen a Supabase Storage y actualizar avatar_url
+  uploadAvatarBtn?.addEventListener('click', async () => {
+    if (!selectedAvatarFile) return;
+
+    try {
+      uploadAvatarBtn.disabled = true;
+      uploadAvatarBtn.classList.add('opacity-50', 'pointer-events-none');
+      avatarLoadingOverlay?.classList.remove('hidden');
+
+      // 1. Subir vía endpoint /api/admin/profile/upload-avatar
+      const formData = new FormData();
+      formData.append('file', selectedAvatarFile);
+
+      const uploadRes = await fetch('/api/admin/profile/upload-avatar', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const uploadJson = await uploadRes.json();
+
+      if (!uploadRes.ok || !uploadJson.success) {
+        throw new Error(uploadJson.message || 'Error al subir imagen al bucket de Storage');
+      }
+
+      const newAvatarUrl = uploadJson.url;
+
+      // 2. Persistir avatar_url en la BD mediante /api/admin/profile/update
+      const updateRes = await fetch('/api/admin/profile/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ avatar_url: newAvatarUrl }),
+      });
+
+      const updateJson = await updateRes.json();
+
+      if (!updateRes.ok || !updateJson.success) {
+        throw new Error(updateJson.message || 'Error al registrar avatar en el perfil');
+      }
+
+      // Actualizar avatares en la UI
+      if (headerHeroAvatarImg) {
+        headerHeroAvatarImg.src = newAvatarUrl;
+        headerHeroAvatarImg.classList.remove('hidden');
+      }
+      headerHeroAvatarInitials?.classList.add('hidden');
+      avatarPendingTag?.classList.add('hidden');
+      removeAvatarBtn?.classList.remove('hidden');
+
+      showToast('¡Foto de perfil actualizada exitosamente!');
+    } catch (err: any) {
+      console.error('Error al subir avatar:', err);
+      showToast(err?.message || 'Error al actualizar el avatar.', true);
+    } finally {
+      avatarLoadingOverlay?.classList.add('hidden');
+      if (uploadAvatarBtn) {
+        uploadAvatarBtn.disabled = true;
+        uploadAvatarBtn.classList.add('opacity-40');
+        uploadAvatarBtn.classList.remove('pointer-events-none');
+      }
+    }
+  });
+
+  // Remover foto de perfil
+  removeAvatarBtn?.addEventListener('click', async () => {
+    if (!confirm('¿Estás seguro de que deseas eliminar tu foto de perfil actual?')) return;
+
+    try {
+      avatarLoadingOverlay?.classList.remove('hidden');
+
+      const updateRes = await fetch('/api/admin/profile/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ avatar_url: '' }),
+      });
+
+      const updateJson = await updateRes.json();
+
+      if (!updateRes.ok || !updateJson.success) {
+        throw new Error(updateJson.message || 'Error al remover la foto de perfil');
+      }
+
+      if (avatarPreviewImg) {
+        avatarPreviewImg.src = '';
+        avatarPreviewImg.classList.add('hidden');
+      }
+      avatarPreviewFallback?.classList.remove('hidden');
+      if (headerHeroAvatarImg) {
+        headerHeroAvatarImg.src = '';
+        headerHeroAvatarImg.classList.add('hidden');
+      }
+      headerHeroAvatarInitials?.classList.remove('hidden');
+      removeAvatarBtn.classList.add('hidden');
+      avatarPendingTag?.classList.add('hidden');
+
+      showToast('Foto de perfil eliminada correctamente.');
+    } catch (err: any) {
+      showToast(err?.message || 'Error al remover avatar.', true);
+    } finally {
+      avatarLoadingOverlay?.classList.add('hidden');
+    }
+  });
+
+  // ==========================================
+  // 2. INFORMACIÓN PERSONAL (Actualizar full_name)
+  // ==========================================
+  const personalInfoForm = document.getElementById('personalInfoForm');
+  const fullNameInput = document.getElementById('fullNameInput') as HTMLInputElement | null;
+  const savePersonalInfoBtn = document.getElementById('savePersonalInfoBtn') as HTMLButtonElement | null;
+  const headerHeroFullName = document.getElementById('headerHeroFullName');
+
+  personalInfoForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const newFullName = fullNameInput?.value?.trim();
+
+    if (!newFullName) {
+      showToast('Por favor ingresa un nombre completo válido.', true);
+      return;
+    }
+
+    try {
+      if (savePersonalInfoBtn) {
+        savePersonalInfoBtn.disabled = true;
+        savePersonalInfoBtn.classList.add('opacity-60', 'pointer-events-none');
+      }
+
+      const res = await fetch('/api/admin/profile/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ full_name: newFullName }),
+      });
+
+      const json = await res.json();
+
+      if (!res.ok || !json.success) {
+        throw new Error(json.message || 'Error al guardar los datos personales');
+      }
+
+      if (headerHeroFullName) {
+        headerHeroFullName.textContent = newFullName;
+      }
+
+      showToast('¡Información personal actualizada con éxito!');
+    } catch (err: any) {
+      console.error('Error al guardar datos personales:', err);
+      showToast(err?.message || 'Error al actualizar información personal.', true);
+    } finally {
+      if (savePersonalInfoBtn) {
+        savePersonalInfoBtn.disabled = false;
+        savePersonalInfoBtn.classList.remove('opacity-60', 'pointer-events-none');
+      }
+    }
+  });
+
+  // ==========================================
+  // 3. SEGURIDAD & CONTRASEÑA
+  // ==========================================
+  const changePasswordForm = document.getElementById('changePasswordForm') as HTMLFormElement | null;
+  const newPasswordInput = document.getElementById('newPasswordInput') as HTMLInputElement | null;
+  const confirmPasswordInput = document.getElementById('confirmPasswordInput') as HTMLInputElement | null;
+  const changePasswordBtn = document.getElementById('changePasswordBtn') as HTMLButtonElement | null;
+  const mismatchWarning = document.getElementById('passwordMismatchWarning');
+  const matchSuccess = document.getElementById('passwordMatchSuccess');
+
+  // Toggle visibilidad de contraseña
+  const toggleBtn1 = document.getElementById('togglePasswordVisibilityBtn1');
+  const toggleBtn2 = document.getElementById('togglePasswordVisibilityBtn2');
+
+  function toggleInputType(input: HTMLInputElement | null, btn: HTMLElement | null) {
+    if (!input || !btn) return;
+    if (input.type === 'password') {
+      input.type = 'text';
+      btn.textContent = 'Ocultar';
+    } else {
+      input.type = 'password';
+      btn.textContent = 'Ver';
+    }
+  }
+
+  toggleBtn1?.addEventListener('click', () => toggleInputType(newPasswordInput, toggleBtn1));
+  toggleBtn2?.addEventListener('click', () => toggleInputType(confirmPasswordInput, toggleBtn2));
+
+  // Validación de coincidencia en vivo
+  function checkPasswordMatch() {
+    const p1 = newPasswordInput?.value || '';
+    const p2 = confirmPasswordInput?.value || '';
+
+    if (!p2) {
+      mismatchWarning?.classList.add('hidden');
+      matchSuccess?.classList.add('hidden');
+      return;
+    }
+
+    if (p1 === p2) {
+      mismatchWarning?.classList.add('hidden');
+      matchSuccess?.classList.remove('hidden');
+    } else {
+      mismatchWarning?.classList.remove('hidden');
+      matchSuccess?.classList.add('hidden');
+    }
+  }
+
+  newPasswordInput?.addEventListener('input', checkPasswordMatch);
+  confirmPasswordInput?.addEventListener('input', checkPasswordMatch);
+
+  // Envío del cambio de contraseña
+  changePasswordForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const p1 = newPasswordInput?.value || '';
+    const p2 = confirmPasswordInput?.value || '';
+
+    if (!p1 || p1.length < 6) {
+      showToast('La nueva contraseña debe tener al menos 6 caracteres.', true);
+      return;
+    }
+
+    if (p1 !== p2) {
+      showToast('Las contraseñas no coinciden.', true);
+      return;
+    }
+
+    try {
+      if (changePasswordBtn) {
+        changePasswordBtn.disabled = true;
+        changePasswordBtn.classList.add('opacity-60', 'pointer-events-none');
+      }
+
+      // Invocar actualización de contraseña mediante el endpoint requerido
+      const res = await fetch('/api/admin/profile/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: p1, confirmPassword: p2 }),
+      });
+
+      const json = await res.json();
+
+      if (!res.ok || !json.success) {
+        throw new Error(json.message || 'Error al cambiar contraseña');
+      }
+
+      // También sincronizar vía supabase.auth.updateUser en el cliente para mantener sesión íntegra
+      try {
+        await supabase.auth.updateUser({ password: p1 });
+      } catch (authClientErr) {
+        console.warn('Nota: Sincronización de cliente:', authClientErr);
+      }
+
+      showToast('¡Contraseña actualizada con éxito! Tu acceso está protegido.');
+      changePasswordForm.reset();
+      mismatchWarning?.classList.add('hidden');
+      matchSuccess?.classList.add('hidden');
+    } catch (err: any) {
+      console.error('Error al actualizar contraseña:', err);
+      showToast(err?.message || 'Error al actualizar contraseña.', true);
+    } finally {
+      if (changePasswordBtn) {
+        changePasswordBtn.disabled = false;
+        changePasswordBtn.classList.remove('opacity-60', 'pointer-events-none');
+      }
+    }
+  });
+</script>

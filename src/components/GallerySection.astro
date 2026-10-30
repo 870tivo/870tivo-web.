@@ -1,0 +1,73 @@
+---
+import type { GalleryItem } from '../types/gallery';
+
+interface Props {
+  items?: GalleryItem[];
+}
+
+const { items = [] } = Astro.props;
+---
+<section class="mb-20">
+  <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10 pb-6 border-b border-brand-ink/10 dark:border-white/10">
+    <div class="flex items-center gap-4">
+      <div class="w-4 h-4 bg-brand-orange dark:bg-brand-bg shrink-0 rotate-45"></div>
+      <h2 class="font-serif text-3xl md:text-4xl font-bold tracking-tight text-brand-ink dark:text-white">
+        Galería 870
+      </h2>
+    </div>
+    <a
+      href="/galeria"
+      class="inline-flex items-center gap-2 text-xs font-bold text-brand-orange dark:text-brand-bg uppercase tracking-[0.2em] hover:text-brand-ink dark:hover:text-white transition-colors group"
+    >
+      Ver galería completa
+      <svg class="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" />
+      </svg>
+    </a>
+  </div>
+
+  {items.length === 0 ? (
+    <div class="py-16 text-center rounded-2xl bg-brand-card/40 dark:bg-neutral-900/40 border border-brand-ink/10 dark:border-white/5">
+      <p class="font-serif text-lg text-brand-muted">La galería se encuentra en preparación.</p>
+      <p class="text-xs text-brand-muted/70 mt-1">Próximamente obras de arte y exhibiciones.</p>
+    </div>
+  ) : (
+    <div class="columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4">
+      {items.map((item, i) => (
+        <a
+          href="/galeria"
+          class={`group block break-inside-avoid rounded-xl overflow-hidden relative border border-brand-ink/10 dark:border-white/5 shadow-md hover:shadow-xl hover:shadow-brand-ink/10 transition-all duration-500 ${i % 3 === 0 ? 'aspect-[3/4]' : i % 3 === 1 ? 'aspect-square' : 'aspect-[4/3]'}`}
+          aria-label={item.title}
+        >
+          <div class="absolute inset-0 bg-brand-card dark:bg-neutral-900">
+            <img
+              src={item.image_url}
+              alt={item.title}
+              class="w-full h-full object-cover opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700 ease-out"
+              loading="lazy"
+              onerror="this.setAttribute('src','/assets/logo/870.jpeg')"
+            />
+          </div>
+
+          <div class="absolute inset-0 bg-gradient-to-t from-brand-ink/90 via-brand-ink/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10 flex flex-col justify-end p-4">
+            <span class="text-brand-orange text-[10px] font-bold uppercase tracking-[0.2em] mb-1">
+              {item.category}
+            </span>
+            <h3 class="font-serif text-white text-base font-bold leading-tight line-clamp-2">
+              {item.title}
+            </h3>
+            {item.description && (
+              <p class="text-white/70 text-xs mt-1 line-clamp-2">{item.description}</p>
+            )}
+          </div>
+
+          <div class="absolute top-3 left-3 z-20">
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-black/50 backdrop-blur-sm text-white/90 border border-white/10">
+              {item.category}
+            </span>
+          </div>
+        </a>
+      ))}
+    </div>
+  )}
+</section>

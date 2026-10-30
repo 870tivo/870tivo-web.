@@ -1,338 +1,452 @@
 ---
+/**
+ * src/pages/blog/[slug].astro
+ * Detalle del Artículo Público con Server-Side Rendering (SSR).
+ * Consulta Supabase 'public.posts' por { slug, status: 'publicado' }.
+ * Si no existe, responde con estado 404.
+ */
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import VideoEmbed from '../../components/post/VideoEmbed.astro';
 import CommentSection from '../../components/post/CommentSection';
-import { ArrowLeft, Clock, ArrowRight } from 'lucide-astro';
+import { supabase } from '../../lib/supabase';
+import type { SupabasePost } from '../../types/posts';
+import { getAuthorInitials, formatPostDate } from '../../types/posts';
+import { Clock, ArrowRight, Share2, Copy, Check, ExternalLink } from 'lucide-astro';
+import { marked } from 'marked';
 
-export function getStaticPaths() {
-  const posts = [
-    {
-      slug: 'pajaro-muerto',
-      badge: 'ENSAYO DE PORTADA',
-      title: '«Pájaro muerto»',
-      subtitle: 'Una reflexión sobre la transitoriedad, el duelo fraternal y el despertar estético a través de la lente del cine inmaterial.',
-      author: 'MIGUEL ÁNGEL URIBE',
-      authorInitials: 'MU',
-      authorHandle: '870tivo',
-      date: 'OCTUBRE 14, 2026',
-      readingTime: '12 MIN DE LECTURA',
-      heroImage: '/assets/images/pajaro-muerto.jpeg',
-      heroCaption: 'Fotografía de portada: Colección Archivo Inmaterial (2026)',
-      recommended: [
-        {
-          slug: 'la-estetica-de-las-ruinas',
-          badge: 'FOTOGRAFÍA',
-          title: 'La estética de las ruinas en el paisaje contemporáneo',
-          excerpt: 'Un análisis visual sobre cómo los espacios abandonados redefinen nuestra relación con el tiempo.',
-          author: 'Jose Gómez',
-          initials: 'JG',
-          date: 'OCTUBRE 12, 2026',
-          readingTime: '6 MIN',
-        },
-        {
-          slug: 'buscando-el-silencio',
-          badge: 'PAISAJE SONORO',
-          title: 'Buscando el silencio en la metrópolis moderna',
-          excerpt: 'Registros sonoros y reflexiones literarias sobre el significado de la quietud en Bogotá.',
-          author: 'Mariana García',
-          initials: 'MG',
-          date: 'SEPTIEMBRE 28, 2026',
-          readingTime: '8 MIN',
-        }
-      ]
-    },
-    {
-      slug: 'la-estetica-de-las-ruinas',
-      badge: 'FOTOGRAFÍA & ARQUITECTURA',
-      title: 'La estética de las ruinas en el paisaje contemporáneo',
-      subtitle: 'Exploración sobre las texturas del concreto desgastado y la memoria que persiste en las esquinas olvidadas de la urbe.',
-      author: 'JOSE GÓMEZ',
-      authorInitials: 'JG',
-      authorHandle: '870tivo',
-      date: 'OCTUBRE 12, 2026',
-      readingTime: '6 MIN DE LECTURA',
-      heroImage: '/assets/images/pajaro-muerto.jpeg',
-      heroCaption: 'Fotografía de portada: Colección Archivo Inmaterial (2026)',
-      recommended: [
-        {
-          slug: 'pajaro-muerto',
-          badge: 'ENSAYO DE PORTADA',
-          title: '«Pájaro muerto»',
-          excerpt: 'Una reflexión sobre la transitoriedad y la belleza en la decadencia, a través de la lente documental.',
-          author: 'Miguel Ángel Uribe',
-          initials: 'MU',
-          date: 'OCTUBRE 14, 2026',
-          readingTime: '12 MIN',
-        },
-        {
-          slug: 'buscando-el-silencio',
-          badge: 'PAISAJE SONORO',
-          title: 'Buscando el silencio en la metrópolis moderna',
-          excerpt: 'Registros sonoros y reflexiones literarias sobre el significado de la quietud en Bogotá.',
-          author: 'Mariana García',
-          initials: 'MG',
-          date: 'SEPTIEMBRE 28, 2026',
-          readingTime: '8 MIN',
-        }
-      ]
-    },
-    {
-      slug: 'buscando-el-silencio',
-      badge: 'PAISAJE SONORO',
-      title: 'Buscando el silencio en la metrópolis moderna',
-      subtitle: 'Registros sonoros y reflexiones literarias sobre el significado de la quietud en Bogotá.',
-      author: 'MARIANA GARCÍA',
-      authorInitials: 'MG',
-      authorHandle: '870tivo',
-      date: 'SEPTIEMBRE 28, 2026',
-      readingTime: '8 MIN DE LECTURA',
-      heroImage: '/assets/images/pajaro-muerto.jpeg',
-      heroCaption: 'Fotografía de portada: Colección Archivo Inmaterial (2026)',
-      recommended: [
-        {
-          slug: 'pajaro-muerto',
-          badge: 'ENSAYO DE PORTADA',
-          title: '«Pájaro muerto»',
-          excerpt: 'Una reflexión sobre la transitoriedad y la belleza en la decadencia, a través de la lente documental.',
-          author: 'Miguel Ángel Uribe',
-          initials: 'MU',
-          date: 'OCTUBRE 14, 2026',
-          readingTime: '12 MIN',
-        },
-        {
-          slug: 'la-estetica-de-las-ruinas',
-          badge: 'FOTOGRAFÍA',
-          title: 'La estética de las ruinas en el paisaje contemporáneo',
-          excerpt: 'Un análisis visual sobre cómo los espacios abandonados redefinen nuestra relación con el tiempo.',
-          author: 'Jose Gómez',
-          initials: 'JG',
-          date: 'OCTUBRE 12, 2026',
-          readingTime: '6 MIN',
-        }
-      ]
-    }
-  ];
+export const prerender = false;
 
-  return posts.map((post) => ({
-    params: { slug: post.slug },
-    props: { post },
-  }));
+const { slug } = Astro.params;
+
+if (!slug) {
+  Astro.response.status = 404;
 }
 
-const { post } = Astro.props;
+// 1. Consultar el post publicado en Supabase
+const { data: postData, error: postError } = await supabase
+  .from('posts')
+  .select('*')
+  .eq('slug', slug || '')
+  .eq('status', 'publicado')
+  .maybeSingle();
+
+const post: SupabasePost | null = postData || null;
+
+// Si no se encuentra el post publicado, retornar estado 404
+if (!post || postError) {
+  Astro.response.status = 404;
+}
+
+// 2. Consultar lecturas recomendadas (otros artículos publicados)
+let recommendedPosts: SupabasePost[] = [];
+if (post) {
+  const { data: recData } = await supabase
+    .from('posts')
+    .select('*')
+    .eq('status', 'publicado')
+    .neq('slug', post.slug)
+    .order('created_at', { ascending: false })
+    .limit(2);
+  recommendedPosts = recData || [];
+}
+
+// 3. Procesar el contenido HTML / Markdown y sanitizar/envolver iframes de YouTube
+let formattedContent = '';
+if (post?.content) {
+  try {
+    // Si contiene markdown o html, procesar con marked
+    formattedContent = await marked.parse(post.content);
+    
+    // Convertir iframes de YouTube en contenedores responsivos si no lo están
+    formattedContent = formattedContent.replace(
+      /<iframe\s+([^>]*src=["']https?:\/\/(?:www\.)?(?:youtube\.com|youtu\.be)[^"']*["'][^>]*)><\/iframe>/gi,
+      (_, attrs) => {
+        return `<div class="my-8 aspect-video rounded-xl overflow-hidden border border-white/10 shadow-2xl bg-black"><iframe ${attrs} class="w-full h-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>`;
+      }
+    );
+  } catch (err) {
+    console.error('Error parseando contenido de post:', err);
+    formattedContent = post.content;
+  }
+}
+
+// Extraer handle de red social para visualización limpia
+function getCleanSocialHandle(url: string | null): { handle: string; href: string } | null {
+  if (!url || !url.trim()) return null;
+  const cleanUrl = url.trim();
+  const href = cleanUrl.startsWith('http://') || cleanUrl.startsWith('https://') 
+    ? cleanUrl 
+    : `https://${cleanUrl}`;
+  
+  // Extraer nombre de usuario si es Instagram o Twitter
+  const match = cleanUrl.match(/(?:instagram\.com\/|twitter\.com\/|x\.com\/)?@?([a-zA-Z0-9._]+)\/?$/i);
+  const handle = match && match[1] ? `@${match[1]}` : cleanUrl.replace(/^https?:\/\//, '');
+  return { handle, href };
+}
+
+const socialInfo = post ? getCleanSocialHandle(post.author_social_url) : null;
+const authorInitials = post ? getAuthorInitials(post.author) : '870';
+const formattedDate = post ? formatPostDate(post.created_at) : '';
 ---
 
-<BaseLayout title={`${post.title} — 870tivo`} description={post.subtitle}>
-  <main class="flex-grow bg-brand-ink text-[#D3D3BF] selection:bg-brand-orange selection:text-white">
+<BaseLayout 
+  title={post ? `${post.title} — 870tivo` : 'Artículo No Encontrado (404) — 870tivo'} 
+  description={post?.subtitle || 'Ensayo editorial y pensamiento visual contemporáneo en Galería 870tivo.'}
+>
+  <main class="flex-grow bg-brand-ink text-[#D3D3BF] selection:bg-brand-orange selection:text-white min-h-[70vh]">
     
-    <!-- 1. Top Back Navigation Link -->
-    <div class="max-w-4xl mx-auto px-4 md:px-6 pt-10 pb-6">
-      <a 
-        href="/" 
-        class="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.25em] text-brand-muted hover:text-brand-yellow transition-all duration-200 group"
-      >
-        <span class="inline-block transition-transform duration-200 group-hover:-translate-x-1">←</span>
-        <span>VOLVER AL INICIO</span>
-      </a>
-    </div>
-
-    <!-- 2. Post Header Section -->
-    <header class="max-w-4xl mx-auto px-4 md:px-6 pt-4 pb-10">
-      <!-- Category Badge -->
-      <div class="mb-5">
-        <span class="text-brand-turquoise text-xs sm:text-sm font-bold uppercase tracking-[0.25em] inline-block">
-          {post.badge}
-        </span>
-      </div>
-
-      <!-- Title: Big Serif font h1 -->
-      <h1 class="font-serif text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-white mb-6 leading-[1.08] text-balance">
-        {post.title}
-      </h1>
-
-      <!-- Subtitle / Lead paragraph -->
-      <p class="font-serif italic text-lg sm:text-xl md:text-2xl text-brand-muted font-normal leading-relaxed mb-8 max-w-3xl">
-        {post.subtitle}
-      </p>
-
-      <!-- Author & Meta Bar -->
-      <div class="flex flex-wrap items-center gap-4 sm:gap-6 pt-6 border-t border-white/10 text-xs tracking-wider uppercase font-medium text-brand-muted">
-        <!-- Author avatar/initials badge -->
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-full bg-brand-darkCard border border-brand-orange/40 flex items-center justify-center font-bold text-xs text-brand-yellow shadow-inner shrink-0 tracking-wider">
-            {post.authorInitials}
-          </div>
-          <span class="font-bold text-white tracking-widest text-xs sm:text-sm">{post.author}</span>
-        </div>
-
-        <span class="text-white/20 hidden sm:inline">•</span>
-
-        <!-- Published date -->
-        <span class="text-brand-muted text-[11px] sm:text-xs tracking-widest">{post.date}</span>
-
-        <span class="text-white/20 hidden sm:inline">•</span>
-
-        <!-- Reading time -->
-        <span class="inline-flex items-center gap-1.5 text-brand-muted text-[11px] sm:text-xs tracking-widest">
-          <Clock class="w-3.5 h-3.5 text-brand-orange" />
-          {post.readingTime}
-        </span>
-      </div>
-    </header>
-
-    <!-- 3. Main Hero Image & Captions -->
-    <section class="max-w-5xl mx-auto px-4 md:px-6 mb-8 lg:mb-12">
-      <div class="relative aspect-[21/9] rounded-xl overflow-hidden bg-neutral-900 border border-white/10 shadow-2xl group">
-        <img 
-          src={post.heroImage} 
-          alt={post.title} 
-          class="w-full h-full object-cover grayscale contrast-125 brightness-90 transition-transform duration-1000 ease-out group-hover:scale-[1.02]"
-          loading="eager"
-        />
-        <div class="absolute inset-0 bg-gradient-to-t from-brand-ink/70 via-transparent to-transparent pointer-events-none"></div>
-      </div>
-      <p class="mt-3 text-xs text-brand-muted font-serif italic tracking-wide text-center sm:text-left">
-        {post.heroCaption}
-      </p>
-    </section>
-
-    <!-- 4. Article Body Styling: Single focused reading column -->
-    <article class="max-w-3xl mx-auto px-4 py-12 text-[#D3D3BF]">
-      <!-- Opening paragraph with Drop Cap -->
-      <p class="first-letter:float-left first-letter:text-5xl first-letter:pr-3 first-letter:font-serif first-letter:text-brand-yellow first-letter:leading-none text-lg md:text-xl font-normal leading-[1.85] mb-8 text-[#D3D3BF]">
-        David ve su tabla recordando a su hermano, a quien le presume todo, ahora está muy ocupado y no puede mostrarle ninguna de sus hazañas. Aun así, no se desespera y va en búsqueda de más cosas que mostrarle cuando se desocupe. El asfalto húmedo de la carrera séptima refracta las luces mortecinas del atardecer; el crujido de las ruedas contra las grietas de la acera marca un compás que sólo quien patina conoce con devoción.
-      </p>
-
-      <p class="text-lg md:text-xl font-normal leading-[1.85] mb-8 text-[#D3D3BF]">
-        Así pasa una semana entera sudando, acumulando cosas que contar. Recorre los callejones del centro histórico, esquivando palomas que levantan vuelo perezoso y transeúntes absortos en el murmullo de sus propias urgencias. Cada salto en el bordillo, cada giro forzado sobre el concreto, es una carta muda escrita en el aire que aguarda un destinatario.
-      </p>
-
-      <!-- Section Title -->
-      <h2 class="font-serif text-2xl sm:text-3xl font-bold text-white mt-14 mb-6 tracking-tight flex items-center gap-3">
-        <span class="w-2.5 h-2.5 bg-brand-orange rounded-sm shrink-0"></span>
-        I. La epifanía en el suelo urbano
-      </h2>
-
-      <p class="text-lg md:text-xl font-normal leading-[1.85] mb-8 text-[#D3D3BF]">
-        Un día ve un pájaro muerto envuelto en sí mismo, reposado en el suelo. La palidez y la sombra alrededor de sus ojos le hace ver a su hermano reflejado en el cadáver, lo levanta y le abre las alas dejándolo brillar a la luz del sol. No hay morbo en el gesto, sino una ternura casi litúrgica: extender el plumaje inerte para devolverle, al menos por un instante bajo el destello del mediodía, la ilusión de la envergadura y el viento.
-      </p>
-
-      <!-- Blockquote with orange border and italic serif -->
-      <blockquote class="border-l-4 border-brand-orange pl-6 sm:pl-8 py-3 my-12 font-serif italic text-xl sm:text-2xl md:text-3xl text-white/95 leading-relaxed bg-brand-darkCard/40 rounded-r-lg">
-        «En ese momento pasaban muchas cosas por mi cabeza, pero haberlo visto abriéndole las alas a un pájaro muerto, me hizo pensar que ha hecho lo mismo conmigo muchas veces.»
-      </blockquote>
-
-      <!-- Section Title -->
-      <h2 class="font-serif text-2xl sm:text-3xl font-bold text-white mt-14 mb-6 tracking-tight flex items-center gap-3">
-        <span class="w-2.5 h-2.5 bg-brand-turquoise rounded-sm shrink-0"></span>
-        II. Archivo inmaterial y memoria
-      </h2>
-
-      <p class="text-lg md:text-xl font-normal leading-[1.85] mb-8 text-[#D3D3BF]">
-        Este microcuento proviene de la realidad más descarnada y pura. En el universo estético de 870tivo, la documentación audiovisual no busca catalogar certezas, sino registrar aquellos instantes donde la fragilidad humana se cruza con lo trascendente. El ave muerta recogida por un niño en una calle cualquiera de Bogotá no es una metáfora fabricada; es el punto de fuga donde la memoria, el duelo y el afecto fraternal se funden en una sola imagen indeleble.
-      </p>
-
-      <!-- Video / Cinematic Embed figure -->
-      <VideoEmbed caption="Registro visual y sonoro: Documentación del proceso creativo (870tivo)" />
-
-      <p class="text-lg md:text-xl font-normal leading-[1.85] mb-8 text-[#D3D3BF]">
-        Al abrir las alas a lo que ya no vuela, David no sólo honra al cuerpo caído; inventa una forma de sostener la presencia ausente de su hermano. El cine y la literatura inmaterial nacen precisamente ahí: en la obstinación de mirar donde otros apartan la vista, en encontrar la luz dorada filtrándose entre las plumas y el polvo.
-      </p>
-
-      <!-- 5. Author Bio Box -->
-      <div class="mt-16 pt-10 border-t border-white/10">
-        <div class="bg-brand-darkCard/70 rounded-xl p-6 sm:p-8 border border-white/5 flex flex-col sm:flex-row items-center sm:items-start gap-6 shadow-xl">
-          <div class="w-16 h-16 rounded-full bg-brand-ink border-2 border-brand-orange/50 flex items-center justify-center font-serif font-bold text-xl text-brand-yellow shrink-0 shadow-lg tracking-wider">
-            {post.authorInitials}
-          </div>
-          <div class="flex-grow text-center sm:text-left">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
-              <h3 class="font-serif text-xl font-bold text-white tracking-wide">{post.author}</h3>
-              <a 
-                href="https://instagram.com/870tivo" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                class="inline-flex items-center justify-center gap-1.5 text-xs font-bold uppercase tracking-widest text-brand-orange hover:text-brand-yellow transition-colors"
-              >
-                @{post.authorHandle}
-                <ArrowRight class="w-3.5 h-3.5" />
-              </a>
-            </div>
-            <p class="text-sm text-brand-muted leading-relaxed mb-4">
-              Cineasta, fotógrafo e investigador visual en el colectivo 870tivo. Su obra explora la memoria urbana en Bogotá, la poesía en los espacios residuales y las narrativas de la transitoriedad a través de la imagen en movimiento.
-            </p>
-            <div class="flex items-center justify-center sm:justify-start gap-4 text-xs font-semibold uppercase tracking-wider text-brand-muted/80">
-              <span>Bogotá, Colombia</span>
-              <span class="text-white/20">•</span>
-              <a href="https://instagram.com/870raw" target="_blank" rel="noopener noreferrer" class="hover:text-white transition-colors">@870raw</a>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Comment Section Island -->
-      <div class="mt-12">
-        <CommentSection client:visible />
-      </div>
-    </article>
-
-    <!-- 5. "Lecturas recomendadas" 2-card mini grid -->
-    <section class="max-w-5xl mx-auto px-4 md:px-6 pt-12 pb-24 border-t border-white/10 mt-12">
-      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
-        <div>
-          <div class="flex items-center gap-2.5 mb-2">
-            <div class="w-3 h-3 bg-brand-orange rounded-sm"></div>
-            <span class="text-xs uppercase tracking-[0.25em] font-bold text-brand-turquoise">Continuar Explorando</span>
-          </div>
-          <h2 class="font-serif text-2xl sm:text-3xl font-bold text-white tracking-tight">Lecturas recomendadas</h2>
-        </div>
-        <a 
-          href="/" 
-          class="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-brand-muted hover:text-brand-yellow transition-colors group"
-        >
-          <span>Ver todo el archivo</span>
-          <ArrowRight class="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-        </a>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {post.recommended.map((item) => (
+    {post ? (
+      <>
+        {/* 1. Barra de navegación superior: Volver al Inicio */}
+        <div class="max-w-4xl mx-auto px-4 md:px-6 pt-10 pb-6">
           <a 
-            href={`/blog/${item.slug}`} 
-            class="group bg-brand-darkCard/40 hover:bg-brand-darkCard/80 border border-white/5 hover:border-brand-orange/40 rounded-xl p-6 sm:p-8 flex flex-col justify-between transition-all duration-300 hover:-translate-y-1 shadow-lg"
+            href="/" 
+            id="backToHomeTop"
+            class="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.25em] text-brand-muted hover:text-brand-yellow transition-all duration-200 group"
           >
-            <div>
-              <div class="flex items-center justify-between gap-4 mb-4">
-                <span class="text-brand-turquoise text-[11px] font-bold uppercase tracking-[0.2em]">
-                  {item.badge}
-                </span>
-                <span class="text-brand-muted text-[11px] font-medium uppercase tracking-wider flex items-center gap-1">
-                  <Clock class="w-3 h-3 text-brand-orange" /> {item.readingTime}
-                </span>
+            <span class="inline-block transition-transform duration-200 group-hover:-translate-x-1">←</span>
+            <span>VOLVER AL INICIO</span>
+          </a>
+        </div>
+
+        {/* 2. Cabecera Editorial */}
+        <header class="max-w-4xl mx-auto px-4 md:px-6 pt-4 pb-8">
+          <!-- Categoría / Badge -->
+          <div class="mb-5">
+            <span class="text-brand-turquoise text-xs sm:text-sm font-bold uppercase tracking-[0.25em] inline-block px-3 py-1 rounded-full bg-brand-turquoise/10 border border-brand-turquoise/20">
+              {post.category || 'EDITORIAL'}
+            </span>
+          </div>
+
+          <!-- Título: Tipografía Editorial Hero -->
+          <h1 class="font-serif text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-white mb-6 leading-[1.08] text-balance">
+            {post.title}
+          </h1>
+
+          <!-- Subtítulo / Bajada -->
+          {post.subtitle && (
+            <p class="font-serif italic text-lg sm:text-xl md:text-2xl text-brand-muted font-normal leading-relaxed mb-8 max-w-3xl">
+              {post.subtitle}
+            </p>
+          )}
+
+          <!-- Metadatos de Publicación y Firma de Autor -->
+          <div class="flex flex-wrap items-center gap-4 sm:gap-6 pt-6 border-t border-white/10 text-xs tracking-wider uppercase font-medium text-brand-muted">
+            <!-- Firma del Autor / Redactor con enlace dinámico -->
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full bg-brand-darkCard border border-brand-orange/40 flex items-center justify-center font-bold text-xs text-brand-yellow shadow-inner shrink-0 tracking-wider">
+                {authorInitials}
               </div>
-              <h3 class="font-serif text-xl sm:text-2xl font-bold text-white group-hover:text-brand-yellow transition-colors mb-3 leading-snug">
-                {item.title}
-              </h3>
-              <p class="text-brand-muted text-sm leading-relaxed mb-6 line-clamp-2">
-                {item.excerpt}
-              </p>
+              <div class="flex flex-col">
+                <span class="font-bold text-white tracking-widest text-xs sm:text-sm">{post.author}</span>
+                {socialInfo && (
+                  <a 
+                    href={socialInfo.href} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    class="text-[11px] text-brand-orange hover:text-brand-yellow transition-colors inline-flex items-center gap-1 font-semibold tracking-normal lowercase"
+                    title={`Visitar red de ${post.author}`}
+                  >
+                    <span>{socialInfo.handle}</span>
+                    <ExternalLink class="w-2.5 h-2.5" />
+                  </a>
+                )}
+              </div>
             </div>
 
-            <div class="flex items-center justify-between pt-4 border-t border-white/5 mt-auto">
-              <div class="flex items-center gap-2.5">
-                <div class="w-7 h-7 rounded-full bg-brand-ink border border-white/10 flex items-center justify-center font-bold text-[10px] text-brand-yellow">
-                  {item.initials}
-                </div>
-                <span class="text-xs font-medium text-white/70 uppercase tracking-wider">{item.author}</span>
-              </div>
-              <span class="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-widest text-brand-orange group-hover:text-brand-yellow transition-colors">
-                Leer <ArrowRight class="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+            <span class="text-white/20 hidden sm:inline">•</span>
+
+            <!-- Fecha de publicación formateada -->
+            <div class="flex flex-col">
+              <span class="text-[10px] text-brand-muted/70 tracking-widest uppercase">Fecha</span>
+              <span class="text-white text-xs tracking-wider">{formattedDate}</span>
+            </div>
+
+            <span class="text-white/20 hidden sm:inline">•</span>
+
+            <!-- Tiempo de lectura -->
+            <div class="flex flex-col">
+              <span class="text-[10px] text-brand-muted/70 tracking-widest uppercase">Lectura</span>
+              <span class="inline-flex items-center gap-1.5 text-brand-muted text-xs tracking-wider">
+                <Clock class="w-3.5 h-3.5 text-brand-orange shrink-0" />
+                <span>{post.read_time || '5 MIN DE LECTURA'}</span>
               </span>
             </div>
-          </a>
-        ))}
+          </div>
+        </header>
+
+        {/* 3. Portada Amplia en Alta Resolución */}
+        {post.cover_image && (
+          <section class="max-w-5xl mx-auto px-4 md:px-6 mb-10 lg:mb-14">
+            <div class="relative aspect-[21/9] sm:aspect-[2/1] rounded-2xl overflow-hidden bg-neutral-900 border border-white/10 shadow-2xl group">
+              <img 
+                src={post.cover_image} 
+                alt={post.title} 
+                class="w-full h-full object-cover transition-transform duration-1000 ease-out group-hover:scale-[1.02]"
+                loading="eager"
+              />
+              <div class="absolute inset-0 bg-gradient-to-t from-brand-ink/80 via-transparent to-transparent pointer-events-none"></div>
+            </div>
+            <p class="mt-3 text-xs text-brand-muted font-serif italic tracking-wide text-center sm:text-left">
+              Fotografía editorial: Colección Archivo Inmaterial 870tivo
+            </p>
+          </section>
+        )}
+
+        {/* 4. Cuerpo del Artículo con Tailwind Typography ('prose') */}
+        <article class="max-w-3xl mx-auto px-4 py-8">
+          
+          <div 
+            class="prose prose-invert prose-lg md:prose-xl max-w-none text-[#D3D3BF] 
+                   prose-headings:font-serif prose-headings:text-white prose-headings:tracking-tight
+                   prose-h2:text-2xl sm:prose-h2:text-3xl prose-h2:mt-12 prose-h2:mb-6
+                   prose-p:leading-[1.85] prose-p:mb-6 prose-p:text-[#D3D3BF]
+                   prose-a:text-brand-orange prose-a:underline hover:prose-a:text-brand-yellow
+                   prose-blockquote:border-l-4 prose-blockquote:border-brand-orange prose-blockquote:pl-6 prose-blockquote:py-2 prose-blockquote:font-serif prose-blockquote:italic prose-blockquote:text-white/95 prose-blockquote:bg-brand-darkCard/40 prose-blockquote:rounded-r-lg
+                   prose-img:rounded-xl prose-img:border prose-img:border-white/10 prose-img:mx-auto prose-img:shadow-xl
+                   prose-figcaption:text-center prose-figcaption:text-xs prose-figcaption:text-brand-muted prose-figcaption:italic prose-figcaption:mt-2
+                   first-letter:float-left first-letter:text-5xl first-letter:pr-3 first-letter:font-serif first-letter:text-brand-yellow first-letter:leading-none"
+            set:html={formattedContent}
+          />
+
+          {/* 5. Sección de Compartir Ensayo */}
+          <div class="mt-16 pt-10 border-t border-white/10">
+            <div class="bg-brand-darkCard/60 rounded-2xl p-6 sm:p-8 border border-white/5 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-6">
+              <div>
+                <div class="flex items-center gap-2 mb-1.5">
+                  <Share2 class="w-4 h-4 text-brand-turquoise" />
+                  <span class="text-xs font-bold uppercase tracking-[0.2em] text-brand-turquoise">Compartir Ensayo</span>
+                </div>
+                <h4 class="font-serif text-lg font-bold text-white">Difunde este pensamiento visual</h4>
+                <p class="text-xs text-brand-muted mt-0.5">Comparte esta lectura con tu red o copia el enlace directo.</p>
+              </div>
+
+              <!-- Botones de Compartir -->
+              <div class="flex flex-wrap items-center gap-2.5 w-full sm:w-auto justify-center sm:justify-end">
+                <!-- Botón Copiar Enlace -->
+                <button 
+                  type="button" 
+                  id="copyLinkBtn"
+                  class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold uppercase tracking-wider text-white hover:text-brand-yellow transition-all cursor-pointer active:scale-95"
+                  title="Copiar enlace al portapapeles"
+                >
+                  <Copy class="w-3.5 h-3.5 copy-icon text-brand-orange" />
+                  <Check class="w-3.5 h-3.5 check-icon text-emerald-400 hidden" />
+                  <span id="copyLinkText">Copiar Enlace</span>
+                </button>
+
+                <!-- Twitter / X -->
+                <a 
+                  id="shareTwitterBtn"
+                  href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(post.title)}&url=${encodeURIComponent(`https://870tivo.com/blog/${post.slug}`)}`}
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  class="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-brand-muted hover:text-white transition-all"
+                  title="Compartir en X / Twitter"
+                  aria-label="Compartir en X"
+                >
+                  <svg class="w-4 h-4 fill-currentColor" viewBox="0 0 24 24">
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                  </svg>
+                </a>
+
+                <!-- WhatsApp -->
+                <a 
+                  id="shareWhatsappBtn"
+                  href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`${post.title} — https://870tivo.com/blog/${post.slug}`)}`}
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  class="p-2.5 rounded-xl bg-white/5 hover:bg-emerald-500/20 border border-white/10 text-brand-muted hover:text-emerald-400 transition-all"
+                  title="Compartir en WhatsApp"
+                  aria-label="Compartir en WhatsApp"
+                >
+                  <svg class="w-4 h-4 fill-currentColor" viewBox="0 0 24 24">
+                    <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.976.58 1.96.924 3.149.924 3.182 0 5.767-2.587 5.767-5.766.001-3.187-2.575-5.766-5.767-5.766zm10.007 5.766c-.004 5.568-4.53 10.091-10.007 10.091-1.748 0-3.414-.46-4.887-1.282l-5.644 1.48 1.507-5.504c-.9-1.528-1.396-3.292-1.396-5.115.004-5.567 4.532-10.09 10.009-10.09 5.485 0 10.018 4.524 10.018 10.02z"/>
+                  </svg>
+                </a>
+              </div>
+            </div>
+          </div>
+
+          {/* 6. Caja de Autor con Enlace Dinámico */}
+          <div class="mt-12 pt-10 border-t border-white/10">
+            <div class="bg-brand-darkCard/70 rounded-2xl p-6 sm:p-8 border border-white/5 flex flex-col sm:flex-row items-center sm:items-start gap-6 shadow-xl">
+              <div class="w-16 h-16 rounded-full bg-brand-ink border-2 border-brand-orange/50 flex items-center justify-center font-serif font-bold text-xl text-brand-yellow shrink-0 shadow-lg tracking-wider">
+                {authorInitials}
+              </div>
+              <div class="flex-grow text-center sm:text-left">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+                  <h3 class="font-serif text-xl font-bold text-white tracking-wide">{post.author}</h3>
+                  {socialInfo && (
+                    <a 
+                      href={socialInfo.href} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      class="inline-flex items-center justify-center gap-1.5 text-xs font-bold uppercase tracking-widest text-brand-orange hover:text-brand-yellow transition-colors"
+                    >
+                      <span>{socialInfo.handle}</span>
+                      <ArrowRight class="w-3.5 h-3.5" />
+                    </a>
+                  )}
+                </div>
+                <p class="text-sm text-brand-muted leading-relaxed mb-4">
+                  Investigador visual y redactor en el colectivo 870tivo. Su obra explora la memoria urbana, la poesía visual en los espacios residuales y las narrativas de la transitoriedad a través de la imagen.
+                </p>
+                <div class="flex items-center justify-center sm:justify-start gap-4 text-xs font-semibold uppercase tracking-wider text-brand-muted/80">
+                  <span>Bogotá, Colombia</span>
+                  <span class="text-white/20">•</span>
+                  <a href="https://instagram.com/870tivo" target="_blank" rel="noopener noreferrer" class="hover:text-white transition-colors">@870tivo</a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 7. Sección de Comentarios / Likes interactiva */}
+          <div class="mt-12">
+            <CommentSection client:visible />
+          </div>
+
+          {/* 8. Botón inferior Volver al Inicio */}
+          <div class="pt-8 pb-4 text-center sm:text-left">
+            <a 
+              href="/" 
+              id="backToHomeBottom"
+              class="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.25em] text-brand-muted hover:text-brand-yellow transition-all duration-200 group"
+            >
+              <span class="inline-block transition-transform duration-200 group-hover:-translate-x-1">←</span>
+              <span>VOLVER AL INICIO</span>
+            </a>
+          </div>
+
+        </article>
+
+        {/* 9. Lecturas Recomendadas */}
+        {recommendedPosts.length > 0 && (
+          <section class="max-w-5xl mx-auto px-4 md:px-6 pt-12 pb-24 border-t border-white/10 mt-12">
+            <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
+              <div>
+                <div class="flex items-center gap-2.5 mb-2">
+                  <div class="w-3 h-3 bg-brand-orange rounded-sm"></div>
+                  <span class="text-xs uppercase tracking-[0.25em] font-bold text-brand-turquoise">Continuar Explorando</span>
+                </div>
+                <h2 class="font-serif text-2xl sm:text-3xl font-bold text-white tracking-tight">Lecturas recomendadas</h2>
+              </div>
+              <a 
+                href="/" 
+                class="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-brand-muted hover:text-brand-yellow transition-colors group"
+              >
+                <span>Ver todo el archivo</span>
+                <ArrowRight class="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+              </a>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {recommendedPosts.map((item) => (
+                <a 
+                  href={`/blog/${item.slug}`} 
+                  class="group bg-brand-darkCard/40 hover:bg-brand-darkCard/80 border border-white/5 hover:border-brand-orange/40 rounded-xl p-6 sm:p-8 flex flex-col justify-between transition-all duration-300 hover:-translate-y-1 shadow-lg"
+                >
+                  <div>
+                    <div class="flex items-center justify-between gap-4 mb-4">
+                      <span class="text-brand-turquoise text-[11px] font-bold uppercase tracking-[0.2em]">
+                        {item.category || 'ENSAYO'}
+                      </span>
+                      <span class="text-brand-muted text-[11px] font-medium uppercase tracking-wider flex items-center gap-1">
+                        <Clock class="w-3 h-3 text-brand-orange" /> {item.read_time || '5 MIN'}
+                      </span>
+                    </div>
+                    <h3 class="font-serif text-xl sm:text-2xl font-bold text-white group-hover:text-brand-yellow transition-colors mb-3 leading-snug">
+                      {item.title}
+                    </h3>
+                    {item.subtitle && (
+                      <p class="text-brand-muted text-sm leading-relaxed mb-6 line-clamp-2 font-serif italic">
+                        {item.subtitle}
+                      </p>
+                    )}
+                  </div>
+
+                  <div class="flex items-center justify-between pt-4 border-t border-white/5 mt-auto">
+                    <div class="flex items-center gap-2.5">
+                      <div class="w-7 h-7 rounded-full bg-brand-ink border border-white/10 flex items-center justify-center font-bold text-[10px] text-brand-yellow">
+                        {getAuthorInitials(item.author)}
+                      </div>
+                      <span class="text-xs font-medium text-white/70 uppercase tracking-wider">{item.author}</span>
+                    </div>
+                    <span class="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-widest text-brand-orange group-hover:text-brand-yellow transition-colors">
+                      Leer <ArrowRight class="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                    </span>
+                  </div>
+                </a>
+              ))}
+            </div>
+          </section>
+        )}
+      </>
+    ) : (
+      /* Estado 404 Editorial cuando el post no existe o no está publicado */
+      <div class="max-w-3xl mx-auto px-4 py-24 sm:py-32 text-center flex flex-col items-center">
+        <div class="w-20 h-20 rounded-full bg-brand-darkCard border border-brand-orange/40 flex items-center justify-center mb-8 shadow-inner">
+          <span class="font-serif text-3xl font-extrabold text-brand-yellow">404</span>
+        </div>
+        <span class="text-xs font-bold uppercase tracking-[0.25em] text-brand-orange mb-3">
+          Ensayo no disponible
+        </span>
+        <h1 class="font-serif text-3xl sm:text-5xl font-bold text-white mb-6 tracking-tight leading-tight">
+          La publicación que buscas no existe o fue despublicada
+        </h1>
+        <p class="text-brand-muted text-sm sm:text-base max-w-lg mb-10 leading-relaxed font-serif italic">
+          El artículo con identificador «{slug}» no se encuentra registrado en el archivo público de Galería 870tivo.
+        </p>
+        <a 
+          href="/" 
+          id="backToHome404"
+          class="inline-flex items-center gap-2 px-8 py-3.5 rounded-full bg-brand-orange hover:bg-brand-yellow text-brand-ink font-bold text-xs uppercase tracking-[0.2em] shadow-lg shadow-brand-orange/20 transition-all hover:scale-105 active:scale-95"
+        >
+          <span>← Volver al Inicio</span>
+        </a>
       </div>
-    </section>
+    )}
 
   </main>
 </BaseLayout>
+
+<script>
+  // Script interactivo para la sección 'Compartir Ensayo'
+  const copyBtn = document.getElementById('copyLinkBtn');
+  const copyText = document.getElementById('copyLinkText');
+  const copyIcon = document.querySelector('.copy-icon');
+  const checkIcon = document.querySelector('.check-icon');
+
+  copyBtn?.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      if (copyText) copyText.textContent = '¡Enlace Copiado!';
+      copyIcon?.classList.add('hidden');
+      checkIcon?.classList.remove('hidden');
+      copyBtn.classList.add('border-emerald-500/50', 'bg-emerald-500/10', 'text-emerald-400');
+
+      setTimeout(() => {
+        if (copyText) copyText.textContent = 'Copiar Enlace';
+        copyIcon?.classList.remove('hidden');
+        checkIcon?.classList.add('hidden');
+        copyBtn.classList.remove('border-emerald-500/50', 'bg-emerald-500/10', 'text-emerald-400');
+      }, 2500);
+    } catch (e) {
+      console.error('Error al copiar al portapapeles:', e);
+    }
+  });
+
+  // Actualizar URLs de compartir con la URL real del navegador en cliente
+  if (typeof window !== 'undefined') {
+    const twitterBtn = document.getElementById('shareTwitterBtn') as HTMLAnchorElement | null;
+    const whatsappBtn = document.getElementById('shareWhatsappBtn') as HTMLAnchorElement | null;
+    const currentUrl = window.location.href;
+    const pageTitle = document.title;
+
+    if (twitterBtn) {
+      twitterBtn.href = `https://twitter.com/intent/tweet?text=${encodeURIComponent(pageTitle)}&url=${encodeURIComponent(currentUrl)}`;
+    }
+    if (whatsappBtn) {
+      whatsappBtn.href = `https://api.whatsapp.com/send?text=${encodeURIComponent(`${pageTitle} — ${currentUrl}`)}`;
+    }
+  }
+</script>

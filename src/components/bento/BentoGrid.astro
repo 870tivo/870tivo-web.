@@ -1,6 +1,16 @@
 ---
 import BentoCardFeatured from './BentoCardFeatured.astro';
 import BentoCardStandard from './BentoCardStandard.astro';
+import type { SupabasePost } from '../../types/posts';
+
+interface Props {
+  posts?: SupabasePost[];
+}
+
+const { posts = [] } = Astro.props;
+
+const featured = posts[0] ?? null;
+const secondary = posts.slice(1, 4);
 ---
 <section class="mt-8 pt-8 border-t border-brand-ink/10 dark:border-white/10">
   <div class="mb-10">
@@ -16,29 +26,31 @@ import BentoCardStandard from './BentoCardStandard.astro';
     </p>
   </div>
 
-  <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 md:gap-5 auto-rows-[250px] md:auto-rows-[300px]">
-    <BentoCardFeatured 
-      title="«Pájaro muerto»"
-      excerpt="Una reflexión sobre la transitoriedad y la belleza en la decadencia, a través de la lente documental y la narrativa poética en la obra de Uribe."
-      author="Miguel Ángel Uribe"
-      link="/blog/pajaro-muerto"
-      image="/assets/images/pajaro-muerto.jpeg"
-    />
-    <BentoCardStandard 
-      title="«Madres, maternidades colombianas a través del cine»"
-      category="Cuadernos de Cine"
-      author="Jose Gómez"
-    />
-    <BentoCardStandard 
-      title="«La Isla Rebelde de América, Cuba a través del cine»"
-      category="Latinoamérica"
-      author="Jose Gómez"
-    />
-    <BentoCardStandard 
-      title="«Del cine mudo al ¡Tango!»"
-      category="Podcast Visual"
-      author="Jose Gómez"
-      isWide={true}
-    />
-  </div>
+  {posts.length === 0 ? (
+    <div class="py-16 text-center rounded-2xl bg-brand-card/40 dark:bg-neutral-900/40 border border-brand-ink/10 dark:border-white/5">
+      <p class="font-serif text-lg text-brand-muted">Próximamente nuevas publicaciones editoriales.</p>
+      <p class="text-xs text-brand-muted/60 mt-1">Vuelve pronto.</p>
+    </div>
+  ) : (
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 md:gap-5 auto-rows-[250px] md:auto-rows-[300px]">
+      {featured && (
+        <BentoCardFeatured
+          title={featured.title}
+          excerpt={featured.subtitle ?? (featured.content?.slice(0, 160) + '…')}
+          author={featured.author}
+          badge={featured.category}
+          link={`/blog/${featured.slug}`}
+          image={featured.cover_image ?? undefined}
+        />
+      )}
+      {secondary.map((post) => (
+        <BentoCardStandard
+          title={post.title}
+          category={post.category}
+          author={post.author}
+          link={`/blog/${post.slug}`}
+        />
+      ))}
+    </div>
+  )}
 </section>

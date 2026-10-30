@@ -1,0 +1,529 @@
+---
+/**
+ * src/pages/admin/dashboard.astro
+ * Dashboard Principal de Control 870tivo — Estética «Paper & Ink» (Tierra y Energía).
+ * Refactorizado para alta densidad editorial: sin parpadeos, métricas reales en vivo,
+ * Bento Grid con tarjetas oscuras #1F1B16 y acciones rápidas de 1 solo clic.
+ */
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { posts } from '../../lib/posts';
+import { staticPages } from '../../lib/pages';
+import { supabaseAdmin } from '../../lib/supabase';
+
+// 1. Contexto de autenticación Server-Side
+const user = Astro.locals.user;
+if (!user?.id) {
+  return Astro.redirect('/admin/login');
+}
+
+const role = Astro.locals.role;
+const isSuperAdmin = Astro.locals.isSuperAdmin;
+
+// Saludo limpio y cálculo de nombre del usuario
+const userEmail = user.email || 'administrador@870tivo.com';
+const metaName = user.user_metadata?.full_name || user.user_metadata?.name;
+const rawName = metaName || userEmail.split('@')[0];
+const userName = rawName.charAt(0).toUpperCase() + rawName.slice(1);
+
+// Indicador estático de Rol
+const userRoleName = role?.name 
+  ? (role.name.charAt(0).toUpperCase() + role.name.slice(1))
+  : (isSuperAdmin ? 'Administrador' : 'Redactor Editorial');
+
+// Parámetros de alerta / denegación de acceso
+const errorParam = Astro.url.searchParams.get('error');
+const messageParam = Astro.url.searchParams.get('message') || 'Acceso restringido: Se requieren privilegios de Administrador para acceder a esta sección.';
+
+// 2. Consulta de Métricas Reales en Supabase (SSR)
+// a) Conteo de Publicaciones y desglose
+const { count: totalPostsRaw } = await supabaseAdmin
+  .from('posts')
+  .select('*', { count: 'exact', head: true });
+
+const { count: publishedPostsRaw } = await supabaseAdmin
+  .from('posts')
+  .select('*', { count: 'exact', head: true })
+  .eq('status', 'publicado');
+
+const { count: draftPostsRaw } = await supabaseAdmin
+  .from('posts')
+  .select('*', { count: 'exact', head: true })
+  .eq('status', 'borrador');
+
+const totalPosts = totalPostsRaw ?? posts.length;
+const publishedCount = publishedPostsRaw ?? posts.length;
+const draftCount = draftPostsRaw ?? 0;
+
+// b) Conteo de Autores en Supabase (con fallback a posts)
+let totalAuthors = 0;
+try {
+  const { count: authorsCountRaw, error: authorsErr } = await supabaseAdmin
+    .from('authors')
+    .select('*', { count: 'exact', head: true });
+
+  if (!authorsErr && typeof authorsCountRaw === 'number' && authorsCountRaw > 0) {
+    totalAuthors = authorsCountRaw;
+  } else {
+    const { data: postsAuthors } = await supabaseAdmin.from('posts').select('author');
+    if (postsAuthors && postsAuthors.length > 0) {
+      const unique = new Set(postsAuthors.map(p => p.author?.trim()).filter(Boolean));
+      totalAuthors = unique.size || 1;
+    } else {
+      totalAuthors = 1;
+    }
+  }
+} catch {
+  totalAuthors = 1;
+}
+
+// c) Páginas Estáticas (/nosotros, /contacto, /redes)
+const totalStaticPages = staticPages.length;
+---
+
+<AdminLayout 
+  title="Dashboard Principal | 870tivo Control Studio" 
+  headerTitle="Dashboard & Vista General"
+  activeModule="dashboard"
+>
+  {errorParam === 'access_denied' && (
+    <div 
+      role="alert" 
+      class="mb-6 p-4 rounded-2xl bg-[#F2B134]/15 border border-[#F2B134]/40 text-[#1F1B16] dark:text-[#FAF6F0] flex items-start gap-3 shadow-xs"
+    >
+      <svg class="w-5 h-5 text-[#966B0D] dark:text-[#F2B134] shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+      </svg>
+      <div class="flex-1 text-xs sm:text-sm">
+        <p class="font-bold text-[#1F1B16] dark:text-white">Privilegios Insuficientes</p>
+        <p class="mt-0.5 opacity-90">{messageParam}</p>
+      </div>
+    </div>
+  )}
+
+  <!-- 1. HEADER DE CONTROL PROFESIONAL -->
+  <header class="mb-8">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[#E5DFD5] dark:border-[#282828]">
+      <div>
+        <!-- Indicador estático de rol sin parpadeos -->
+        <div class="flex items-center gap-2 mb-2 flex-wrap">
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#2F4B3A]/15 text-[#2F4B3A] dark:text-[#A7C7B3] text-xs font-semibold border border-[#2F4B3A]/30">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#2F4B3A]"></span>
+            <span>Rol: {userRoleName}</span>
+          </span>
+          <span class="text-xs text-[#78716A] dark:text-neutral-500">•</span>
+          <span class="text-xs text-[#78716A] dark:text-neutral-400 font-mono">
+            {userEmail}
+          </span>
+        </div>
+
+        <!-- Saludo limpio -->
+        <h1 class="text-2xl sm:text-4xl font-bold font-serif text-[#1F1B16] dark:text-[#FAF6F0] tracking-tight">
+          Hola, <span class="text-[#E4572E] font-serif">{userName}</span>
+        </h1>
+      </div>
+
+      <!-- Acciones de cabecera -->
+      <div class="flex items-center gap-2.5 sm:gap-3 shrink-0">
+        <a 
+          href="/" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          class="inline-flex items-center gap-2 px-3.5 py-2.5 text-xs font-semibold rounded-xl bg-white dark:bg-[#181818] text-[#1F1B16] dark:text-[#FAF6F0] border border-[#E5DFD5] dark:border-[#282828] hover:border-[#E4572E]/50 dark:hover:border-[#E4572E]/50 transition-colors shadow-xs"
+          title="Abrir el sitio web en una nueva pestaña"
+        >
+          <span>Ver Sitio Web</span>
+          <svg class="w-3.5 h-3.5 text-[#78716A] dark:text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+          </svg>
+        </a>
+
+        <!-- Botón de acción principal directo: Crear Publicación -->
+        <a 
+          href="/admin/publicaciones?new=1" 
+          class="inline-flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-xl bg-[#E4572E] hover:bg-[#CF4821] text-white shadow-sm transition-all cursor-pointer select-none active:translate-y-0.5"
+          id="btnCrearPublicacionHeader"
+          title="Crear una nueva publicación editorial"
+        >
+          <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+          </svg>
+          <span>Crear Publicación</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- 2. TARJETAS DE KPIs DE ALTO VALOR (MÉTRICAS REALES) -->
+  <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 mb-10" aria-label="Métricas clave del sistema">
+    
+    <!-- KPI 1: Publicaciones Registradas -->
+    <a 
+      href="/admin/publicaciones" 
+      class="group block p-5 rounded-2xl bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] hover:border-[#E4572E]/60 dark:hover:border-[#E4572E]/60 transition-all shadow-xs"
+    >
+      <div class="flex items-center justify-between mb-3">
+        <span class="p-2.5 rounded-xl bg-[#E4572E]/10 text-[#E4572E] group-hover:bg-[#E4572E]/20 transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+          </svg>
+        </span>
+        <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#FAF6F0] dark:bg-[#222222] text-[#1F1B16] dark:text-[#FAF6F0] border border-[#E5DFD5] dark:border-[#282828]">
+          Editorial
+        </span>
+      </div>
+      <div class="text-3xl font-bold font-serif text-[#1F1B16] dark:text-[#FAF6F0] tracking-tight">{totalPosts}</div>
+      <div class="text-xs font-semibold text-[#1F1B16] dark:text-[#FAF6F0] mt-1">Publicaciones Registradas</div>
+      <div class="text-[11px] text-[#78716A] dark:text-neutral-400 mt-1.5 flex items-center justify-between">
+        <span>{publishedCount} activas · {draftCount} borradores</span>
+        <span class="text-[#E4572E] font-semibold group-hover:translate-x-1 transition-transform">&rarr;</span>
+      </div>
+    </a>
+
+    <!-- KPI 2: Equipo Editorial / Autores activos -->
+    <a 
+      href="/admin/autores" 
+      class="group block p-5 rounded-2xl bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] hover:border-[#F2B134]/70 dark:hover:border-[#F2B134]/70 transition-all shadow-xs"
+    >
+      <div class="flex items-center justify-between mb-3">
+        <span class="p-2.5 rounded-xl bg-[#F2B134]/15 text-[#966B0D] dark:text-[#F2B134] group-hover:bg-[#F2B134]/25 transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+        </span>
+        <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#FAF6F0] dark:bg-[#222222] text-[#1F1B16] dark:text-[#FAF6F0] border border-[#E5DFD5] dark:border-[#282828]">
+          Autores
+        </span>
+      </div>
+      <div class="text-3xl font-bold font-serif text-[#1F1B16] dark:text-[#FAF6F0] tracking-tight">{totalAuthors}</div>
+      <div class="text-xs font-semibold text-[#1F1B16] dark:text-[#FAF6F0] mt-1">Equipo Editorial</div>
+      <div class="text-[11px] text-[#78716A] dark:text-neutral-400 mt-1.5 flex items-center justify-between">
+        <span>Redactores y colaboradores</span>
+        <span class="text-[#E4572E] font-semibold group-hover:translate-x-1 transition-transform">&rarr;</span>
+      </div>
+    </a>
+
+    <!-- KPI 3: Páginas Estáticas del Sitio -->
+    <a 
+      href="/paginas/nosotros" 
+      target="_blank"
+      class="group block p-5 rounded-2xl bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] hover:border-[#2F4B3A]/70 dark:hover:border-[#2F4B3A]/70 transition-all shadow-xs"
+    >
+      <div class="flex items-center justify-between mb-3">
+        <span class="p-2.5 rounded-xl bg-[#2F4B3A]/15 text-[#2F4B3A] dark:text-[#A7C7B3] group-hover:bg-[#2F4B3A]/25 transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+        </span>
+        <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#FAF6F0] dark:bg-[#222222] text-[#1F1B16] dark:text-[#FAF6F0] border border-[#E5DFD5] dark:border-[#282828]">
+          Estáticas
+        </span>
+      </div>
+      <div class="text-3xl font-bold font-serif text-[#1F1B16] dark:text-[#FAF6F0] tracking-tight">{totalStaticPages}</div>
+      <div class="text-xs font-semibold text-[#1F1B16] dark:text-[#FAF6F0] mt-1">Páginas del Sitio</div>
+      <div class="text-[11px] text-[#78716A] dark:text-neutral-400 mt-1.5 flex items-center justify-between font-mono">
+        <span>/nosotros · /contacto · /redes</span>
+        <span class="text-[#E4572E] font-semibold group-hover:translate-x-1 transition-transform">&rarr;</span>
+      </div>
+    </a>
+
+    <!-- KPI 4: Estado del Sistema de Seguridad -->
+    <a 
+      href="/admin/roles" 
+      class="group block p-5 rounded-2xl bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] hover:border-[#2F4B3A]/70 dark:hover:border-[#2F4B3A]/70 transition-all shadow-xs"
+    >
+      <div class="flex items-center justify-between mb-3">
+        <span class="p-2.5 rounded-xl bg-[#2F4B3A]/15 text-[#2F4B3A] dark:text-[#A7C7B3] group-hover:bg-[#2F4B3A]/25 transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+          </svg>
+        </span>
+        <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#2F4B3A]/15 text-[#2F4B3A] dark:text-[#A7C7B3] border border-[#2F4B3A]/30">
+          Protegido
+        </span>
+      </div>
+      <div class="text-3xl font-bold font-serif text-[#1F1B16] dark:text-[#FAF6F0] tracking-tight">Activo</div>
+      <div class="text-xs font-semibold text-[#1F1B16] dark:text-[#FAF6F0] mt-1">Sistema de Seguridad</div>
+      <div class="text-[11px] text-[#78716A] dark:text-neutral-400 mt-1.5 flex items-center justify-between">
+        <span>Supabase Auth + RLS</span>
+        <span class="text-[#E4572E] font-semibold group-hover:translate-x-1 transition-transform">&rarr;</span>
+      </div>
+    </a>
+
+  </section>
+
+  <!-- 3. MATRIZ DE MÓDULOS (BENTO GRID EDITORIAL) -->
+  <section class="mb-10">
+    <div class="flex items-center justify-between mb-5">
+      <div>
+        <h2 class="text-xl sm:text-2xl font-bold font-serif text-[#1F1B16] dark:text-[#FAF6F0] tracking-tight">
+          Secciones del Sistema
+        </h2>
+        <p class="text-xs text-[#78716A] dark:text-neutral-400 mt-0.5">
+          Matriz de control directo para módulos editoriales, exhibición y difusión pública.
+        </p>
+      </div>
+      <span class="text-xs font-semibold px-2.5 py-1 rounded-lg bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] text-[#78716A] dark:text-neutral-400 font-mono">
+        6 Módulos
+      </span>
+    </div>
+
+    <!-- Bento Grid con Tarjetas Oscuras (#1F1B16 con borde border-[#FAF6F0]/15) -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      
+      <!-- BENTO 1: Publicaciones & Artículos -->
+      <div class="p-6 rounded-2xl bg-[#1F1B16] border border-[#FAF6F0]/15 text-[#FAF6F0] flex flex-col justify-between shadow-sm hover:border-[#E4572E]/60 transition-colors">
+        <div>
+          <div class="flex items-center justify-between mb-4">
+            <div class="w-10 h-10 rounded-xl bg-[#E4572E]/15 border border-[#E4572E]/30 flex items-center justify-center text-[#E4572E]">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+            </div>
+            <span class="text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded-full bg-[#2F4B3A]/30 text-[#A7C7B3] border border-[#2F4B3A]/60">
+              Activo
+            </span>
+          </div>
+          
+          <h3 class="text-lg font-bold font-serif text-[#FAF6F0] tracking-tight">
+            Publicaciones & Ensayos
+          </h3>
+          <p class="text-xs text-[#FAF6F0]/70 mt-1 font-mono">
+            {totalPosts} artículos en catálogo · Visibilidad en tiempo real
+          </p>
+        </div>
+
+        <div class="pt-5 mt-5 border-t border-[#FAF6F0]/10 flex items-center justify-between gap-3">
+          <a 
+            href="/admin/publicaciones" 
+            class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#E4572E] hover:bg-[#CF4821] text-white text-xs font-semibold shadow-xs transition-colors"
+          >
+            <span>Gestionar Publicaciones</span>
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+          </a>
+        </div>
+      </div>
+
+      <!-- BENTO 2: Equipo Editorial & Autores -->
+      <div class="p-6 rounded-2xl bg-[#1F1B16] border border-[#FAF6F0]/15 text-[#FAF6F0] flex flex-col justify-between shadow-sm hover:border-[#F2B134]/60 transition-colors">
+        <div>
+          <div class="flex items-center justify-between mb-4">
+            <div class="w-10 h-10 rounded-xl bg-[#F2B134]/15 border border-[#F2B134]/30 flex items-center justify-center text-[#F2B134]">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            </div>
+            <span class="text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded-full bg-[#2F4B3A]/30 text-[#A7C7B3] border border-[#2F4B3A]/60">
+              Activo
+            </span>
+          </div>
+          
+          <h3 class="text-lg font-bold font-serif text-[#FAF6F0] tracking-tight">
+            Autores & Redacción
+          </h3>
+          <p class="text-xs text-[#FAF6F0]/70 mt-1 font-mono">
+            {totalAuthors} autores activos vinculados al catálogo
+          </p>
+        </div>
+
+        <div class="pt-5 mt-5 border-t border-[#FAF6F0]/10 flex items-center justify-between gap-3">
+          <a 
+            href="/admin/autores" 
+            class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#FAF6F0]/10 hover:bg-[#FAF6F0]/20 text-[#FAF6F0] text-xs font-semibold border border-[#FAF6F0]/15 transition-colors"
+          >
+            <span>Gestionar Autores</span>
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+          </a>
+        </div>
+      </div>
+
+      <!-- BENTO 3: Galería 870 -->
+      <div class="p-6 rounded-2xl bg-[#1F1B16] border border-[#FAF6F0]/15 text-[#FAF6F0] flex flex-col justify-between shadow-sm hover:border-[#2F4B3A]/80 transition-colors">
+        <div>
+          <div class="flex items-center justify-between mb-4">
+            <div class="w-10 h-10 rounded-xl bg-[#2F4B3A]/25 border border-[#2F4B3A]/50 flex items-center justify-center text-[#A7C7B3]">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <span class="text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded-full bg-[#F2B134]/15 text-[#F2B134] border border-[#F2B134]/40">
+              Conectado
+            </span>
+          </div>
+          
+          <h3 class="text-lg font-bold font-serif text-[#FAF6F0] tracking-tight">
+            Galería 870
+          </h3>
+          <p class="text-xs text-[#FAF6F0]/70 mt-1 font-mono">
+            Catálogo de artes plásticas, fichas y convocatorias
+          </p>
+        </div>
+
+        <div class="pt-5 mt-5 border-t border-[#FAF6F0]/10 flex items-center justify-between gap-3">
+          <a 
+            href="/galeria" 
+            target="_blank"
+            rel="noopener noreferrer"
+            class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#FAF6F0]/10 hover:bg-[#FAF6F0]/20 text-[#FAF6F0] text-xs font-semibold border border-[#FAF6F0]/15 transition-colors"
+          >
+            <span>Ver Sección Galería</span>
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
+          </a>
+        </div>
+      </div>
+
+      <!-- BENTO 4: Cine Club -->
+      <div class="p-6 rounded-2xl bg-[#1F1B16] border border-[#FAF6F0]/15 text-[#FAF6F0] flex flex-col justify-between shadow-sm hover:border-[#2F4B3A]/80 transition-colors">
+        <div>
+          <div class="flex items-center justify-between mb-4">
+            <div class="w-10 h-10 rounded-xl bg-[#2F4B3A]/25 border border-[#2F4B3A]/50 flex items-center justify-center text-[#A7C7B3]">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
+              </svg>
+            </div>
+            <span class="text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded-full bg-[#F2B134]/15 text-[#F2B134] border border-[#F2B134]/40">
+              Conectado
+            </span>
+          </div>
+          
+          <h3 class="text-lg font-bold font-serif text-[#FAF6F0] tracking-tight">
+            Cine Club
+          </h3>
+          <p class="text-xs text-[#FAF6F0]/70 mt-1 font-mono">
+            Cartelera de funciones, ciclos y directores
+          </p>
+        </div>
+
+        <div class="pt-5 mt-5 border-t border-[#FAF6F0]/10 flex items-center justify-between gap-3">
+          <a 
+            href="/cine-club" 
+            target="_blank"
+            rel="noopener noreferrer"
+            class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#FAF6F0]/10 hover:bg-[#FAF6F0]/20 text-[#FAF6F0] text-xs font-semibold border border-[#FAF6F0]/15 transition-colors"
+          >
+            <span>Ver Cartelera Cine</span>
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
+          </a>
+        </div>
+      </div>
+
+      <!-- BENTO 5: Páginas Institucionales -->
+      <div class="p-6 rounded-2xl bg-[#1F1B16] border border-[#FAF6F0]/15 text-[#FAF6F0] flex flex-col justify-between shadow-sm hover:border-[#FAF6F0]/40 transition-colors">
+        <div>
+          <div class="flex items-center justify-between mb-4">
+            <div class="w-10 h-10 rounded-xl bg-[#FAF6F0]/10 border border-[#FAF6F0]/20 flex items-center justify-center text-[#FAF6F0]">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+              </svg>
+            </div>
+            <span class="text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded-full bg-[#2F4B3A]/30 text-[#A7C7B3] border border-[#2F4B3A]/60">
+              Activo
+            </span>
+          </div>
+          
+          <h3 class="text-lg font-bold font-serif text-[#FAF6F0] tracking-tight">
+            Páginas Institucionales
+          </h3>
+          <p class="text-xs text-[#FAF6F0]/70 mt-1 font-mono">
+            3 páginas estáticas (/nosotros, /contacto, /redes)
+          </p>
+        </div>
+
+        <div class="pt-5 mt-5 border-t border-[#FAF6F0]/10 flex items-center justify-between gap-3">
+          <a 
+            href="/paginas/nosotros" 
+            target="_blank"
+            rel="noopener noreferrer"
+            class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#FAF6F0]/10 hover:bg-[#FAF6F0]/20 text-[#FAF6F0] text-xs font-semibold border border-[#FAF6F0]/15 transition-colors"
+          >
+            <span>Ver Sección Nosotros</span>
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
+          </a>
+        </div>
+      </div>
+
+      <!-- BENTO 6: Redes & Difusión -->
+      <div class="p-6 rounded-2xl bg-[#1F1B16] border border-[#FAF6F0]/15 text-[#FAF6F0] flex flex-col justify-between shadow-sm hover:border-[#FAF6F0]/40 transition-colors">
+        <div>
+          <div class="flex items-center justify-between mb-4">
+            <div class="w-10 h-10 rounded-xl bg-[#FAF6F0]/10 border border-[#FAF6F0]/20 flex items-center justify-center text-[#FAF6F0]">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+              </svg>
+            </div>
+            <span class="text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded-full bg-[#F2B134]/15 text-[#F2B134] border border-[#F2B134]/40">
+              Conectado
+            </span>
+          </div>
+          
+          <h3 class="text-lg font-bold font-serif text-[#FAF6F0] tracking-tight">
+            Redes & Difusión RAW
+          </h3>
+          <p class="text-xs text-[#FAF6F0]/70 mt-1 font-mono">
+            Enlaces a @870tivo y @870raw (archivo documental)
+          </p>
+        </div>
+
+        <div class="pt-5 mt-5 border-t border-[#FAF6F0]/10 flex items-center justify-between gap-3">
+          <a 
+            href="/redes" 
+            target="_blank"
+            rel="noopener noreferrer"
+            class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#FAF6F0]/10 hover:bg-[#FAF6F0]/20 text-[#FAF6F0] text-xs font-semibold border border-[#FAF6F0]/15 transition-colors"
+          >
+            <span>Ver Sección Redes</span>
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 4. BARRA DE PROTOCOLO DE SEGURIDAD & MATRIZ RBAC -->
+  <section class="p-5 sm:p-6 rounded-2xl bg-[#1F1B16] border border-[#FAF6F0]/15 text-[#FAF6F0] shadow-sm">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div class="flex items-center gap-3.5">
+        <div class="w-10 h-10 rounded-xl bg-[#2F4B3A]/25 border border-[#2F4B3A]/50 flex items-center justify-center text-[#A7C7B3] shrink-0">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+        </div>
+        <div>
+          <h3 class="text-sm font-bold font-serif text-[#FAF6F0]">
+            Protección de Acceso & Matriz RBAC
+          </h3>
+          <p class="text-xs text-[#FAF6F0]/70 mt-0.5">
+            Sesión validada criptográficamente en SSR con Supabase Auth y políticas RLS activas.
+          </p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2.5 shrink-0">
+        <a 
+          href="/admin/roles" 
+          class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#FAF6F0]/10 hover:bg-[#FAF6F0]/20 text-[#FAF6F0] text-xs font-semibold border border-[#FAF6F0]/15 transition-colors"
+        >
+          <span>Matriz de Roles</span>
+        </a>
+        <a 
+          href="/admin/reset-password" 
+          class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#FAF6F0]/10 hover:bg-[#FAF6F0]/20 text-[#FAF6F0] text-xs font-semibold border border-[#FAF6F0]/15 transition-colors"
+        >
+          <span>Cambiar Contraseña</span>
+        </a>
+      </div>
+    </div>
+  </section>
+</AdminLayout>
