@@ -9,10 +9,10 @@
     "astro": "astro",
     "check": "astro check",
     "test:security": "node scripts/test-e2e-security.mjs",
-    "postbuild": "node -e \"import('node:fs').then(fs => { const base = '.vercel/output/functions'; if (fs.existsSync(base)) { for (const dir of fs.readdirSync(base)) { const p = base + '/' + dir + '/.vc-config.json'; if (fs.existsSync(p)) { const c = JSON.parse(fs.readFileSync(p, 'utf8')); if (c.runtime === 'nodejs18.x') { c.runtime = 'nodejs20.x'; fs.writeFileSync(p, JSON.stringify(c, null, 2)); console.log('[postbuild] Patched ' + dir + ' runtime to nodejs20.x'); } } } } })\""
+    "postbuild": "node -e \"import('node:fs').then(fs => { const base = '.vercel/output/functions'; if (fs.existsSync(base)) { for (const dir of fs.readdirSync(base)) { const p = base + '/' + dir + '/.vc-config.json'; if (fs.existsSync(p)) { const c = JSON.parse(fs.readFileSync(p, 'utf8')); if (c.runtime !== 'nodejs22.x') { c.runtime = 'nodejs22.x'; fs.writeFileSync(p, JSON.stringify(c, null, 2)); console.log('[postbuild] Patched ' + dir + ' runtime to nodejs22.x'); } } } } })\""
   },
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=22.0.0"
   },
   "dependencies": {
     "@astrojs/node": "^8.3.4",
