@@ -3,9 +3,10 @@ interface Props {
   currentPath?: string;
   activeModule?: 'dashboard' | 'publicaciones' | 'autores' | 'galeria' | 'usuarios' | 'roles' | string;
   userEmail?: string;
+  userFullName?: string;
 }
 
-const { activeModule = 'dashboard', userEmail = '' } = Astro.props;
+const { activeModule = 'dashboard', userEmail = '', userFullName: _userFullName = '' } = Astro.props;
 
 // Group active checks to auto-expand relevant section on SSR
 const isDashboardActive = activeModule === 'dashboard';
