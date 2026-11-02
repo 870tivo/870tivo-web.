@@ -447,6 +447,24 @@ function formatDate(dateStr: string) {
                     </button>
                   )}
 
+                  {/* Botón de Editar Metadatos */}
+                  {canUpdate && (
+                    <button 
+                      type="button" 
+                      class="edit-metadata-btn p-1.5 rounded-lg text-[#78716A] dark:text-slate-400 hover:text-[#E4572E] dark:hover:text-amber-400 hover:bg-[#FAF6F0] dark:hover:bg-slate-800/70 transition-colors cursor-pointer"
+                      title="Editar Metadatos / Ficha Técnica"
+                      data-id={item.id}
+                      data-title={item.title}
+                      data-category={item.category}
+                      data-description={item.description || ''}
+                      data-status={item.status}
+                    >
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                    </button>
+                  )}
+
                   {/* Botón de Eliminación */}
                   {canDelete && (
                     <button 
@@ -588,6 +606,111 @@ function formatDate(dateStr: string) {
           <span id="confirmDeleteText">Eliminar Definitivamente</span>
         </button>
       </div>
+    </div>
+  </div>
+
+  {/* Modal para Editar Metadatos / Ficha de la Obra */}
+  <div 
+    id="editMetadataModal" 
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-300"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="editMetadataModalTitle"
+  >
+    <div class="relative w-full max-w-lg rounded-2xl bg-[#FAF6F0] dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] p-6 sm:p-8 shadow-2xl text-[#1F1B16] dark:text-[#FAF6F0]">
+      <div class="flex items-center justify-between mb-5">
+        <h3 id="editMetadataModalTitle" class="text-lg font-bold text-[#1F1B16] dark:text-white">
+          Editar Metadatos de la Obra
+        </h3>
+        <button 
+          type="button" 
+          id="closeEditModalBtn" 
+          class="p-1.5 text-neutral-400 hover:text-white rounded-lg hover:bg-neutral-800 transition-colors"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <form id="editMetadataForm" class="space-y-4">
+        <input type="hidden" id="editItemHiddenId" />
+
+        <!-- Título -->
+        <div>
+          <label for="editItemTitle" class="block text-xs font-bold uppercase tracking-wider mb-1.5 text-neutral-700 dark:text-neutral-200">
+            Título *
+          </label>
+          <input 
+            type="text" 
+            id="editItemTitle" 
+            required
+            class="w-full px-3.5 py-2.5 bg-white dark:bg-[#141414] border border-[#E5DFD5] dark:border-[#282828] rounded-xl text-xs text-[#1F1B16] dark:text-white focus:outline-none focus:border-[#E4572E] focus:ring-1 focus:ring-[#E4572E]"
+          />
+        </div>
+
+        <!-- Categoría -->
+        <div>
+          <label for="editItemCategory" class="block text-xs font-bold uppercase tracking-wider mb-1.5 text-neutral-700 dark:text-neutral-200">
+            Categoría *
+          </label>
+          <select 
+            id="editItemCategory" 
+            class="w-full px-3.5 py-2.5 bg-white dark:bg-[#141414] border border-[#E5DFD5] dark:border-[#282828] rounded-xl text-xs text-[#1F1B16] dark:text-white focus:outline-none focus:border-[#E4572E] focus:ring-1 focus:ring-[#E4572E] cursor-pointer"
+          >
+            {GALLERY_CATEGORIES.map((cat) => (
+              <option value={cat.toLowerCase()}>{cat}</option>
+            ))}
+          </select>
+        </div>
+
+        <!-- Descripción -->
+        <div>
+          <label for="editItemDescription" class="block text-xs font-bold uppercase tracking-wider mb-1.5 text-neutral-700 dark:text-neutral-200">
+            Descripción / Ficha Técnica
+          </label>
+          <textarea 
+            id="editItemDescription" 
+            rows="3" 
+            class="w-full px-3.5 py-2.5 bg-white dark:bg-[#141414] border border-[#E5DFD5] dark:border-[#282828] rounded-xl text-xs text-[#1F1B16] dark:text-white focus:outline-none focus:border-[#E4572E] focus:ring-1 focus:ring-[#E4572E] resize-none"
+          ></textarea>
+        </div>
+
+        <!-- Estado -->
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider mb-1.5 text-neutral-700 dark:text-neutral-200">
+            Estado de Publicación
+          </label>
+          <div class="flex items-center gap-3">
+            <label class="flex items-center gap-2 text-xs cursor-pointer">
+              <input type="radio" name="editStatusRadio" value="borrador" id="editStatusDraft" class="text-amber-500 focus:ring-amber-500" />
+              <span>Borrador</span>
+            </label>
+            <label class="flex items-center gap-2 text-xs cursor-pointer">
+              <input type="radio" name="editStatusRadio" value="publicado" id="editStatusPublished" class="text-[#2F4B3A] focus:ring-[#2F4B3A]" />
+              <span>Publicado</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex items-center justify-end gap-3 pt-3 border-t border-[#E5DFD5] dark:border-[#282828]">
+          <button 
+            type="button" 
+            id="cancelEditModalBtn" 
+            class="px-4 py-2 rounded-xl text-xs text-[#78716A] dark:text-neutral-400 hover:text-[#1F1B16] dark:hover:text-white transition-colors"
+          >
+            Cancelar
+          </button>
+          <button 
+            type="submit" 
+            id="saveEditModalBtn" 
+            class="px-5 py-2 rounded-xl bg-[#E4572E] hover:bg-[#CF4821] text-white text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow-sm"
+          >
+            Guardar Cambios
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -820,6 +943,97 @@ function formatDate(dateStr: string) {
       confirmDeleteBtn.disabled = false;
       confirmDeleteSpinner.classList.add('hidden');
       confirmDeleteText.textContent = 'Eliminar Definitivamente';
+    }
+  });
+
+  // ─── Edición de Metadatos de Obras ─────────────────────────────────────
+  const editModal = document.getElementById('editMetadataModal') as HTMLElement | null;
+  const editForm = document.getElementById('editMetadataForm') as HTMLFormElement | null;
+  const editIdInput = document.getElementById('editItemHiddenId') as HTMLInputElement | null;
+  const editTitleInput = document.getElementById('editItemTitle') as HTMLInputElement | null;
+  const editCategorySelect = document.getElementById('editItemCategory') as HTMLSelectElement | null;
+  const editDescriptionInput = document.getElementById('editItemDescription') as HTMLTextAreaElement | null;
+  const editStatusDraft = document.getElementById('editStatusDraft') as HTMLInputElement | null;
+  const editStatusPublished = document.getElementById('editStatusPublished') as HTMLInputElement | null;
+  const closeEditModalBtn = document.getElementById('closeEditModalBtn');
+  const cancelEditModalBtn = document.getElementById('cancelEditModalBtn');
+  const saveEditModalBtn = document.getElementById('saveEditModalBtn') as HTMLButtonElement | null;
+
+  function closeEditModal() {
+    if (!editModal) return;
+    editModal.classList.add('opacity-0', 'pointer-events-none');
+    editModal.classList.remove('opacity-100');
+  }
+
+  closeEditModalBtn?.addEventListener('click', closeEditModal);
+  cancelEditModalBtn?.addEventListener('click', closeEditModal);
+
+  document.querySelectorAll('.edit-metadata-btn').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const id = btn.getAttribute('data-id') || '';
+      const title = btn.getAttribute('data-title') || '';
+      const category = (btn.getAttribute('data-category') || 'general').toLowerCase();
+      const description = btn.getAttribute('data-description') || '';
+      const status = btn.getAttribute('data-status') || 'borrador';
+
+      if (editIdInput) editIdInput.value = id;
+      if (editTitleInput) editTitleInput.value = title;
+      if (editCategorySelect) editCategorySelect.value = category;
+      if (editDescriptionInput) editDescriptionInput.value = description;
+
+      if (status === 'publicado') {
+        if (editStatusPublished) editStatusPublished.checked = true;
+      } else {
+        if (editStatusDraft) editStatusDraft.checked = true;
+      }
+
+      if (editModal) {
+        editModal.classList.remove('opacity-0', 'pointer-events-none');
+        editModal.classList.add('opacity-100');
+      }
+    });
+  });
+
+  editForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id = editIdInput?.value;
+    const title = editTitleInput?.value.trim();
+    const category = editCategorySelect?.value;
+    const description = editDescriptionInput?.value.trim();
+    const status = editStatusPublished?.checked ? 'publicado' : 'borrador';
+
+    if (!id || !title) {
+      showToast('Por favor completa el título de la obra.', 'error');
+      return;
+    }
+
+    try {
+      if (saveEditModalBtn) {
+        saveEditModalBtn.disabled = true;
+        saveEditModalBtn.textContent = 'Guardando...';
+      }
+
+      const res = await fetch('/api/admin/gallery', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, title, category, description, status }),
+        credentials: 'same-origin',
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Error al actualizar metadatos.');
+
+      closeEditModal();
+      showToast('Metadatos actualizados exitosamente.', 'success');
+      setTimeout(() => window.location.reload(), 700);
+    } catch (err: any) {
+      showToast(err.message || 'Error al guardar metadatos.', 'error');
+    } finally {
+      if (saveEditModalBtn) {
+        saveEditModalBtn.disabled = false;
+        saveEditModalBtn.textContent = 'Guardar Cambios';
+      }
     }
   });
 

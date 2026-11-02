@@ -42,9 +42,15 @@ const { count: draftPostsRaw } = await supabaseAdmin
   .select('*', { count: 'exact', head: true })
   .eq('status', 'borrador');
 
+const { count: archivedPostsRaw } = await supabaseAdmin
+  .from('posts')
+  .select('*', { count: 'exact', head: true })
+  .eq('status', 'archivado');
+
 const totalPosts = totalPostsRaw || 0;
 const publishedCount = publishedPostsRaw || 0;
 const draftCount = draftPostsRaw || 0;
+const archivedCount = archivedPostsRaw || 0;
 
 // 4. Query paginada y filtrada en Supabase
 let query = supabaseAdmin
@@ -60,6 +66,8 @@ if (statusFilter === 'published' || statusFilter === 'publicado') {
   query = query.eq('status', 'publicado');
 } else if (statusFilter === 'draft' || statusFilter === 'borrador') {
   query = query.eq('status', 'borrador');
+} else if (statusFilter === 'archived' || statusFilter === 'archivado') {
+  query = query.eq('status', 'archivado');
 }
 
 // Calcular rango de 5 registros
@@ -191,6 +199,17 @@ function getPageUrl(p: number) {
       >
         Borradores (<span id="countDraft">{draftCount}</span>)
       </button>
+      <button 
+        type="button"
+        data-filter="archived" 
+        class={`tab-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap cursor-pointer transition-all ${
+          statusFilter === 'archived' || statusFilter === 'archivado'
+            ? 'active bg-slate-500/20 border border-slate-500/40 text-slate-700 dark:text-slate-300 shadow-sm' 
+            : 'border border-transparent text-[#78716A] dark:text-neutral-400 hover:text-[#1F1B16] dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5'
+        }`}
+      >
+        Archivadas (<span id="countArchived">{archivedCount}</span>)
+      </button>
     </div>
 
     <!-- Server-Side Search Form -->
@@ -239,6 +258,7 @@ function getPageUrl(p: number) {
         <tbody class="divide-y divide-[#E5DFD5] dark:divide-slate-800/60" id="postsTableBody">
           {posts.map((post) => {
             const isPublished = post.status === 'publicado';
+            const isArchived = post.status === 'archivado';
             return (
               <tr 
                 class="hover:bg-[#FAF6F0]/80 dark:hover:bg-slate-850/50 transition-colors group post-row" 
@@ -324,15 +344,25 @@ function getPageUrl(p: number) {
                       </button>
 
                       <!-- Status Badge Pill -->
-                      <span class={`status-pill inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border ${isPublished ? 'bg-[#2F4B3A]/10 text-[#2F4B3A] dark:bg-emerald-500/10 dark:text-emerald-400 border-[#2F4B3A]/25 dark:border-emerald-500/20' : 'bg-[#F2B134]/15 text-[#966B0D] dark:bg-amber-500/10 dark:text-amber-400 border-[#F2B134]/30 dark:border-amber-500/20'}`}>
-                        <span class={`status-dot w-1.5 h-1.5 rounded-full ${isPublished ? 'bg-[#2F4B3A] dark:bg-emerald-400 animate-pulse' : 'bg-[#F2B134]'}`}></span>
-                        <span class="status-text">{isPublished ? 'Publicado' : 'Borrador'}</span>
+                      <span class={`status-pill inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border ${
+                        isPublished 
+                          ? 'bg-[#2F4B3A]/10 text-[#2F4B3A] dark:bg-emerald-500/10 dark:text-emerald-400 border-[#2F4B3A]/25 dark:border-emerald-500/20' 
+                          : (isArchived
+                              ? 'bg-slate-500/15 text-slate-700 dark:bg-slate-500/20 dark:text-slate-300 border-slate-500/30'
+                              : 'bg-[#F2B134]/15 text-[#966B0D] dark:bg-amber-500/10 dark:text-amber-400 border-[#F2B134]/30 dark:border-amber-500/20')
+                      }`}>
+                        <span class={`status-dot w-1.5 h-1.5 rounded-full ${
+                          isPublished 
+                            ? 'bg-[#2F4B3A] dark:bg-emerald-400 animate-pulse' 
+                            : (isArchived ? 'bg-slate-500' : 'bg-[#F2B134]')
+                        }`}></span>
+                        <span class="status-text">{isPublished ? 'Publicado' : (isArchived ? 'Archivado' : 'Borrador')}</span>
                       </span>
                     </div>
 
                     <!-- Micro descriptive text -->
                     <span class="status-subtext text-[10px] text-[#78716A] dark:text-slate-400 font-medium">
-                      {isPublished ? 'Visible en landing pública' : 'Oculto para el público'}
+                      {isPublished ? 'Visible en landing pública' : (isArchived ? 'Archivado en el catálogo' : 'Oculto para el público')}
                     </span>
                   </div>
                 </td>
