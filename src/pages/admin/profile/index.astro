@@ -721,7 +721,14 @@ const createdAtFormatted = currentUser.created_at
         headerHeroFullName.textContent = newFullName;
       }
 
+      // Also update top header name chip
+      const headerUserNameEl = document.getElementById('headerUserName');
+      const headerUserAvatarEl = document.getElementById('headerUserAvatar');
+      if (headerUserNameEl) headerUserNameEl.textContent = newFullName;
+      if (headerUserAvatarEl) headerUserAvatarEl.textContent = newFullName[0].toUpperCase();
+
       showToast('¡Información personal actualizada con éxito!');
+
     } catch (err: any) {
       console.error('Error al guardar datos personales:', err);
       showToast(err?.message || 'Error al actualizar información personal.', true);

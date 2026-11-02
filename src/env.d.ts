@@ -17,5 +17,6 @@ declare namespace App {
         role?: import('./types/roles').Role | null;
         permissions?: import('./types/roles').RolePermissions | null;
         isSuperAdmin?: boolean;
+        userFullName?: string;
     }
 }

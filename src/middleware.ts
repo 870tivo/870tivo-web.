@@ -1,5 +1,5 @@
 import { defineMiddleware } from 'astro:middleware';
-import { supabase } from './lib/supabase';
+import { supabase, supabaseAdmin } from './lib/supabase';
 import { getUserRoleAndPermissions, isUserAdminOrHasAccess } from './lib/auth';
 import type { Role, RolePermissions } from './types/roles';
 
@@ -96,16 +96,39 @@ export const onRequest = defineMiddleware(async (context, next) => {
   let userPermissions: RolePermissions | null = null;
   let isSuperAdmin = false;
 
+  let userFullName = '';
+
   if (isAuthenticated && currentUser) {
     const roleDetails = await getUserRoleAndPermissions(currentUser.id);
     userRole = roleDetails.role;
     userPermissions = roleDetails.permissions;
     isSuperAdmin = roleDetails.isSuperAdmin;
+
+    // Fetch display name from public.profiles (non-blocking, best-effort)
+    try {
+      const { data: profileRow } = await supabaseAdmin
+        .from('profiles')
+        .select('full_name')
+        .eq('id', currentUser.id)
+        .maybeSingle();
+
+      if (profileRow?.full_name) {
+        userFullName = profileRow.full_name;
+      } else {
+        // Fallback: metadata name or email prefix
+        const metaName = currentUser.user_metadata?.full_name || currentUser.user_metadata?.name;
+        userFullName = metaName || (currentUser.email?.split('@')[0] ?? '');
+      }
+    } catch {
+      const metaName = currentUser.user_metadata?.full_name || currentUser.user_metadata?.name;
+      userFullName = metaName || (currentUser.email?.split('@')[0] ?? '');
+    }
   }
 
   context.locals.role = userRole;
   context.locals.permissions = userPermissions;
   context.locals.isSuperAdmin = isSuperAdmin;
+  context.locals.userFullName = userFullName;
 
   // Handle unauthenticated requests
   if (!isAuthenticated && !isPublicAdminRoute) {
