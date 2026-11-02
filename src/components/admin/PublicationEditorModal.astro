@@ -495,6 +495,18 @@ Puedes insertar código <iframe> para videos de YouTube, listas y subtítulos."
           <span class="btn-text">Guardar Borrador</span>
         </Button>
 
+        <!-- Archivar (Neutro Outline) -->
+        <Button 
+          variant="outline" 
+          id="archivePostBtn"
+          size="md"
+        >
+          <svg class="w-4 h-4 text-[#78716A] dark:text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+          </svg>
+          <span class="btn-text">Archivar</span>
+        </Button>
+
         <!-- Publicar Ahora (Naranja Quemado Primario) -->
         <Button 
           variant="primary" 
@@ -575,6 +587,7 @@ Puedes insertar código <iframe> para videos de YouTube, listas y subtítulos."
 
   // Action Buttons
   const saveDraftBtn = document.getElementById('saveDraftBtn') as HTMLButtonElement;
+  const archivePostBtn = document.getElementById('archivePostBtn') as HTMLButtonElement;
   const publishNowBtn = document.getElementById('publishNowBtn') as HTMLButtonElement;
 
   let isAutoSlug = true;
@@ -1102,11 +1115,12 @@ Puedes insertar código <iframe> para videos de YouTube, listas y subtítulos."
     livePreviewContent.innerHTML = html;
   }
 
-  // ─── Guardar Borrador / Publicar Ahora ─────────────────────────────────────────
+  // ─── Guardar Borrador / Archivar / Publicar Ahora ─────────────────────────────
   saveDraftBtn?.addEventListener('click', () => submitForm('borrador'));
+  archivePostBtn?.addEventListener('click', () => submitForm('archivado'));
   publishNowBtn?.addEventListener('click', () => submitForm('publicado'));
 
-  async function submitForm(targetStatus: 'publicado' | 'borrador') {
+  async function submitForm(targetStatus: 'publicado' | 'borrador' | 'archivado') {
     showAlert('');
 
     const title = titleInput.value.trim();
@@ -1156,7 +1170,7 @@ Puedes insertar código <iframe> para videos de YouTube, listas y subtítulos."
         throw new Error(data.message || 'Error al guardar la publicación.');
       }
 
-      showToast(data.message || (targetStatus === 'publicado' ? 'Publicado con éxito' : 'Borrador guardado'));
+      showToast(data.message || (targetStatus === 'publicado' ? 'Publicado con éxito' : (targetStatus === 'archivado' ? 'Archivado con éxito' : 'Borrador guardado')));
       closeModal();
 
       // Recargar para refrescar la tabla
@@ -1171,18 +1185,22 @@ Puedes insertar código <iframe> para videos de YouTube, listas y subtítulos."
     }
   }
 
-  function setButtonsLoading(isLoading: boolean, activeBtn?: 'publicado' | 'borrador') {
+  function setButtonsLoading(isLoading: boolean, activeBtn?: 'publicado' | 'borrador' | 'archivado') {
     if (saveDraftBtn) saveDraftBtn.disabled = isLoading;
+    if (archivePostBtn) archivePostBtn.disabled = isLoading;
     if (publishNowBtn) publishNowBtn.disabled = isLoading;
 
     const draftText = saveDraftBtn?.querySelector('.btn-text');
+    const archiveText = archivePostBtn?.querySelector('.btn-text');
     const pubText = publishNowBtn?.querySelector('.btn-text');
 
     if (isLoading) {
       if (activeBtn === 'borrador' && draftText) draftText.textContent = 'Guardando...';
+      if (activeBtn === 'archivado' && archiveText) archiveText.textContent = 'Archivando...';
       if (activeBtn === 'publicado' && pubText) pubText.textContent = 'Publicando...';
     } else {
       if (draftText) draftText.textContent = 'Guardar Borrador';
+      if (archiveText) archiveText.textContent = 'Archivar';
       if (pubText) pubText.textContent = 'Publicar Ahora';
     }
   }

@@ -105,7 +105,7 @@ export function savePost(
     heroImage?: string;
     heroCaption?: string;
     content?: string;
-    status?: 'publicado' | 'borrador';
+    status?: 'publicado' | 'borrador' | 'archivado';
     readingTime?: string;
   }
 ): BlogPost {

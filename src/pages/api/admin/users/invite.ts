@@ -74,7 +74,13 @@ export const POST: APIRoute = async ({ request, locals }) => {
     }
 
     // 3. Ejecutar invitación vía Supabase Auth Admin (Service Role)
-    const origin = new URL(request.url).origin;
+    const siteUrl = (import.meta.env.PUBLIC_SITE_URL as string) || 'https://870tivo-web.vercel.app';
+    const forwardedHost = request.headers.get('x-forwarded-host') || request.headers.get('host');
+    const forwardedProto = request.headers.get('x-forwarded-proto') || 'https';
+    let origin = forwardedHost ? `${forwardedProto}://${forwardedHost}` : new URL(request.url).origin;
+    if (import.meta.env.PROD && (origin.includes('localhost') || origin.startsWith('http://'))) {
+      origin = siteUrl;
+    }
     const redirectTo = `${origin}/admin/reset-password`;
 
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.inviteUserByEmail(

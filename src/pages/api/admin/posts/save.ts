@@ -49,11 +49,8 @@ export const POST: APIRoute = async ({ request }) => {
         .replace(/(^-|-$)/g, '');
     }
 
-    if (!finalSlug) {
-      finalSlug = `articulo-${Date.now()}`;
-    }
-
-    const postStatus: 'publicado' | 'borrador' = status === 'publicado' ? 'publicado' : 'borrador';
+    const postStatus: 'publicado' | 'borrador' | 'archivado' = 
+      status === 'publicado' ? 'publicado' : (status === 'archivado' ? 'archivado' : 'borrador');
 
     const saved = savePost({
       slug: finalSlug,
@@ -98,7 +95,9 @@ export const POST: APIRoute = async ({ request }) => {
         success: true,
         message: postStatus === 'publicado' 
           ? `«${saved.title}» publicado exitosamente en la web.` 
-          : `Borrador de «${saved.title}» guardado correctamente.`,
+          : (postStatus === 'archivado' 
+              ? `«${saved.title}» archivado correctamente.` 
+              : `Borrador de «${saved.title}» guardado correctamente.`),
         post: saved,
         status: postStatus,
       }),

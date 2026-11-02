@@ -14,7 +14,7 @@ export interface SupabasePost {
   cover_image: string | null;
   content: string;
   read_time: string;
-  status: 'publicado' | 'borrador';
+  status: 'publicado' | 'borrador' | 'archivado';
   created_at: string;
   updated_at: string;
 }
