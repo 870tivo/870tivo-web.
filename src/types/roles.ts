@@ -68,6 +68,7 @@ export interface RoleFormInput {
 export interface AdminUserListItem {
   id: string;
   email: string;
+  full_name?: string | null;
   created_at: string;
   last_sign_in_at?: string | null;
   roleId: string | null;

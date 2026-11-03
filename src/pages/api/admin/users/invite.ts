@@ -81,7 +81,9 @@ export const POST: APIRoute = async ({ request, locals }) => {
     if (import.meta.env.PROD && (origin.includes('localhost') || origin.startsWith('http://'))) {
       origin = siteUrl;
     }
-    const redirectTo = `${origin}/admin/reset-password`;
+    const redirectTo = import.meta.env.PROD 
+      ? 'https://870tivo-web.vercel.app/admin/setup-profile' 
+      : `${origin}/admin/setup-profile`;
 
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
       normalizedEmail,

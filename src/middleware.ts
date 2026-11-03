@@ -8,6 +8,7 @@ const PUBLIC_ADMIN_ROUTES = [
   '/admin/login',
   '/admin/forgot-password',
   '/admin/reset-password',
+  '/admin/setup-profile',
 ];
 
 // Critical administrative routes requiring elevated Admin privileges

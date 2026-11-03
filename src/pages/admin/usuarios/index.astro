@@ -57,12 +57,32 @@ try {
     }
   }
 
-  // Combine auth users with their roles
+  // 4. Fetch all profiles to bring full_name
+  const profileMap: Record<string, string> = {};
+  try {
+    const { data: profilesData } = await supabaseAdmin
+      .from('profiles')
+      .select('id, full_name');
+
+    if (profilesData) {
+      for (const p of profilesData) {
+        if (p.id && p.full_name && p.full_name.trim()) {
+          profileMap[p.id] = p.full_name.trim();
+        }
+      }
+    }
+  } catch (profErr) {
+    console.warn('Aviso: No se pudieron consultar perfiles de usuario:', profErr);
+  }
+
+  // Combine auth users with their roles and profile information
   usersList = (authData?.users || []).map((u: any) => {
     const assigned = roleMap[u.id];
+    const fullName = profileMap[u.id] || u.user_metadata?.full_name || u.user_metadata?.name || null;
     return {
       id: u.id,
       email: u.email || 'Sin correo',
+      full_name: fullName,
       created_at: u.created_at,
       last_sign_in_at: u.last_sign_in_at || null,
       roleId: assigned?.roleId || null,
@@ -78,6 +98,20 @@ try {
 const totalUsers = usersList.length;
 const usersWithRole = usersList.filter((u) => u.roleId !== null).length;
 const usersWithoutRole = totalUsers - usersWithRole;
+
+function getUserInitials(name?: string | null, email?: string | null): string {
+  if (name && name.trim()) {
+    const parts = name.trim().split(/\s+/).filter(Boolean);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return parts[0].slice(0, 2).toUpperCase();
+  }
+  if (email && email.trim() && email !== 'Sin correo') {
+    return email.trim()[0].toUpperCase();
+  }
+  return 'U';
+}
 ---
 
 <AdminLayout 
@@ -213,7 +247,7 @@ const usersWithoutRole = totalUsers - usersWithRole;
     <!-- Centralized Search Input -->
     <SearchInput 
       id="userSearchInput" 
-      placeholder="Buscar por correo electrónico o ID..."
+      placeholder="Buscar por nombre, correo o ID..."
       wrapperClass="w-full md:w-80"
     />
   </Card>
@@ -234,7 +268,7 @@ const usersWithoutRole = totalUsers - usersWithRole;
           {usersList.map((user) => {
             const hasRole = Boolean(user.roleId);
             const isSuperAdmin = user.roleName === 'Super Administrador';
-            const userInitial = (user.email?.[0] || 'U').toUpperCase();
+            const userInitial = getUserInitials(user.full_name, user.email);
             const dateFormatted = new Date(user.created_at).toLocaleDateString('es-ES', {
               year: 'numeric',
               month: 'short',
@@ -246,10 +280,11 @@ const usersWithoutRole = totalUsers - usersWithRole;
                 class="admin-row-hover group user-row"
                 data-user-id={user.id}
                 data-email={user.email.toLowerCase()}
+                data-name={(user.full_name || '').toLowerCase()}
                 data-role-id={user.roleId || ''}
                 data-has-role={hasRole ? 'true' : 'false'}
               >
-                <!-- User email and avatar -->
+                <!-- User name, email and avatar -->
                 <td class="py-4 px-6">
                   <div class="flex items-center gap-3.5">
                     <div class={`admin-avatar-hover w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm shrink-0 shadow-sm group-hover:scale-105 group-hover:ring-2 group-hover:ring-[#E4572E]/40 ${
@@ -261,13 +296,40 @@ const usersWithoutRole = totalUsers - usersWithRole;
                     }`}>
                       {userInitial}
                     </div>
-                    <div class="min-w-0">
-                      <div class="font-semibold text-[#1F1B16] dark:text-white group-hover:text-[#E4572E] dark:group-hover:text-[#F2B134] transition-colors truncate">
-                        {user.email}
+                    <div class="min-w-0 flex-1">
+                      <!-- Título Principal: full_name destacado en blanco (o Sin activar / Invitación pendiente) -->
+                      <div class="flex items-center gap-2">
+                        {user.full_name ? (
+                          <span class="font-semibold text-sm text-[#1F1B16] dark:text-white group-hover:text-[#E4572E] dark:group-hover:text-[#F2B134] transition-colors truncate">
+                            {user.full_name}
+                          </span>
+                        ) : (
+                          <span class="inline-flex items-center gap-1.5 text-xs font-medium text-amber-600 dark:text-amber-400/90 bg-amber-500/10 dark:bg-amber-400/10 px-2 py-0.5 rounded-md border border-amber-500/20">
+                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500 dark:bg-amber-400 animate-pulse"></span>
+                            Sin activar (Invitación pendiente)
+                          </span>
+                        )}
                       </div>
-                      <div class="text-xs text-[#78716A] dark:text-neutral-500 font-mono flex items-center gap-1.5 mt-0.5">
-                        <span>ID:</span>
-                        <span class="truncate max-w-[130px]" title={user.id}>{user.id}</span>
+
+                      <!-- Texto Secundario: Correo electrónico y botón discreto de Copiar ID -->
+                      <div class="text-xs text-[#78716A] dark:text-neutral-400 flex items-center gap-2 mt-0.5">
+                        <span class="truncate">{user.email}</span>
+                        <span class="text-neutral-300 dark:text-neutral-700 select-none">&bull;</span>
+                        <button 
+                          type="button"
+                          class="copy-user-id-btn inline-flex items-center gap-1 text-[11px] text-[#78716A] hover:text-[#1F1B16] dark:text-neutral-500 dark:hover:text-neutral-200 transition-colors p-0.5 rounded hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer"
+                          data-user-id={user.id}
+                          title={`Copiar ID: ${user.id}`}
+                          aria-label={`Copiar ID: ${user.id}`}
+                        >
+                          <svg class="w-3 h-3 copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                          </svg>
+                          <svg class="w-3 h-3 check-icon hidden text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                          </svg>
+                          <span class="copy-label">Copiar ID</span>
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -425,10 +487,11 @@ const usersWithoutRole = totalUsers - usersWithRole;
 
     userRows.forEach((row) => {
       const email = row.getAttribute('data-email') || '';
+      const name = row.getAttribute('data-name') || '';
       const userId = row.getAttribute('data-user-id') || '';
       const hasRole = row.getAttribute('data-has-role') === 'true';
 
-      const matchesSearch = !query || email.includes(query) || userId.includes(query);
+      const matchesSearch = !query || email.includes(query) || name.includes(query) || userId.includes(query);
       let matchesFilter = true;
 
       if (currentFilter === 'with-role') {
@@ -471,6 +534,38 @@ const usersWithoutRole = totalUsers - usersWithRole;
   });
 
   searchInput?.addEventListener('input', applyFilters);
+
+  // Copy user ID handler
+  const copyButtons = document.querySelectorAll('.copy-user-id-btn') as NodeListOf<HTMLButtonElement>;
+  copyButtons.forEach((btn) => {
+    btn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const userId = btn.getAttribute('data-user-id');
+      if (!userId) return;
+
+      try {
+        await navigator.clipboard.writeText(userId);
+        const copyIcon = btn.querySelector('.copy-icon');
+        const checkIcon = btn.querySelector('.check-icon');
+        const copyLabel = btn.querySelector('.copy-label');
+
+        copyIcon?.classList.add('hidden');
+        checkIcon?.classList.remove('hidden');
+        if (copyLabel) copyLabel.textContent = '¡Copiado!';
+
+        showToast('ID copiado al portapapeles');
+
+        setTimeout(() => {
+          copyIcon?.classList.remove('hidden');
+          checkIcon?.classList.add('hidden');
+          if (copyLabel) copyLabel.textContent = 'Copiar ID';
+        }, 1800);
+      } catch (err) {
+        console.warn('No se pudo copiar el ID al portapapeles:', err);
+      }
+    });
+  });
 
   // Role select change handler
   const roleSelects = document.querySelectorAll('.role-select') as NodeListOf<HTMLSelectElement>;
