@@ -21,6 +21,7 @@ if (!isUserAdminOrHasAccess(role, permissions)) {
 }
 
 // 2. Fetch available roles
+const currentUserIsSuperAdmin = Boolean(Astro.locals.isSuperAdmin || role?.name === 'Super Administrador');
 const roles = await getAllRoles();
 
 // 2. Fetch all users from Supabase Auth via admin client
@@ -57,12 +58,42 @@ try {
     }
   }
 
-  // Combine auth users with their roles
+  // 4. Fetch all profiles to bring first_name, last_name, avatar_url
+  const profileMap: Record<string, { first_name: string; last_name: string; avatar_url: string | null }> = {};
+  try {
+    const { data: profilesData } = await supabaseAdmin
+      .from('profiles')
+      .select('id, first_name, last_name, avatar_url');
+
+    if (profilesData) {
+      for (const p of profilesData) {
+        if (p.id) {
+          profileMap[p.id] = {
+            first_name: (p.first_name || '').trim(),
+            last_name: (p.last_name || '').trim(),
+            avatar_url: p.avatar_url || null,
+          };
+        }
+      }
+    }
+  } catch (profErr) {
+    console.warn('Aviso: No se pudieron consultar perfiles de usuario:', profErr);
+  }
+
+  // Combine auth users with their roles and profile information
   usersList = (authData?.users || []).map((u: any) => {
     const assigned = roleMap[u.id];
+    const prof = profileMap[u.id];
+    const firstName = prof?.first_name || (u.user_metadata?.first_name as string) || '';
+    const lastName = prof?.last_name || (u.user_metadata?.last_name as string) || '';
+    const combinedFullName = [firstName, lastName].filter(Boolean).join(' ') || u.user_metadata?.full_name || u.user_metadata?.name || null;
+
     return {
       id: u.id,
       email: u.email || 'Sin correo',
+      first_name: firstName || null,
+      last_name: lastName || null,
+      full_name: combinedFullName,
       created_at: u.created_at,
       last_sign_in_at: u.last_sign_in_at || null,
       roleId: assigned?.roleId || null,
@@ -78,6 +109,20 @@ try {
 const totalUsers = usersList.length;
 const usersWithRole = usersList.filter((u) => u.roleId !== null).length;
 const usersWithoutRole = totalUsers - usersWithRole;
+
+function getUserInitials(name?: string | null, email?: string | null): string {
+  if (name && name.trim()) {
+    const parts = name.trim().split(/\s+/).filter(Boolean);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return parts[0].slice(0, 2).toUpperCase();
+  }
+  if (email && email.trim() && email !== 'Sin correo') {
+    return email.trim()[0].toUpperCase();
+  }
+  return 'U';
+}
 ---
 
 <AdminLayout 
@@ -213,7 +258,7 @@ const usersWithoutRole = totalUsers - usersWithRole;
     <!-- Centralized Search Input -->
     <SearchInput 
       id="userSearchInput" 
-      placeholder="Buscar por correo electrónico o ID..."
+      placeholder="Buscar por nombre, correo o ID..."
       wrapperClass="w-full md:w-80"
     />
   </Card>
@@ -224,17 +269,23 @@ const usersWithoutRole = totalUsers - usersWithRole;
       <table class="w-full text-left text-xs text-[#1F1B16] dark:text-neutral-300" id="usersTable">
         <thead class="bg-[#FAF6F0] dark:bg-[#141414] text-xs font-semibold uppercase tracking-widest text-[#78716A] dark:text-neutral-400 border-b border-[#E5DFD5] dark:border-[#282828]">
           <tr>
-            <th class="py-4 px-6">Usuario & Correo</th>
-            <th class="py-4 px-6">Fecha Registro</th>
-            <th class="py-4 px-6">Rol</th>
-            <th class="py-4 px-6 text-right">Permisos Módulos</th>
+            <th scope="col" class="py-4 px-6 min-w-[280px]">Usuario & Correo</th>
+            <th scope="col" class="py-4 px-6 whitespace-nowrap min-w-[160px]">Fecha Registro</th>
+            <th scope="col" class="py-4 px-6 whitespace-nowrap min-w-[210px]">Rol</th>
+            <th scope="col" class="py-4 px-6 text-right whitespace-nowrap min-w-[190px]">Acciones</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-[#E5DFD5] dark:divide-slate-800/60" id="usersTableBody">
           {usersList.map((user) => {
             const hasRole = Boolean(user.roleId);
             const isSuperAdmin = user.roleName === 'Super Administrador';
-            const userInitial = (user.email?.[0] || 'U').toUpperCase();
+            const isRoleSelectDisabled = isSuperAdmin || !currentUserIsSuperAdmin;
+            const roleSelectTitle = isSuperAdmin 
+              ? 'El rol de Super Administrador no se puede cambiar.' 
+              : (!currentUserIsSuperAdmin 
+                ? 'Solo un Super Administrador puede modificar los roles de usuario.' 
+                : undefined);
+            const userInitial = getUserInitials(user.full_name, user.email);
             const dateFormatted = new Date(user.created_at).toLocaleDateString('es-ES', {
               year: 'numeric',
               month: 'short',
@@ -246,10 +297,11 @@ const usersWithoutRole = totalUsers - usersWithRole;
                 class="admin-row-hover group user-row"
                 data-user-id={user.id}
                 data-email={user.email.toLowerCase()}
+                data-name={(user.full_name || '').toLowerCase()}
                 data-role-id={user.roleId || ''}
                 data-has-role={hasRole ? 'true' : 'false'}
               >
-                <!-- User email and avatar -->
+                <!-- User name, email and avatar -->
                 <td class="py-4 px-6">
                   <div class="flex items-center gap-3.5">
                     <div class={`admin-avatar-hover w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm shrink-0 shadow-sm group-hover:scale-105 group-hover:ring-2 group-hover:ring-[#E4572E]/40 ${
@@ -261,13 +313,24 @@ const usersWithoutRole = totalUsers - usersWithRole;
                     }`}>
                       {userInitial}
                     </div>
-                    <div class="min-w-0">
-                      <div class="font-semibold text-[#1F1B16] dark:text-white group-hover:text-[#E4572E] dark:group-hover:text-[#F2B134] transition-colors truncate">
-                        {user.email}
+                    <div class="min-w-0 flex-1">
+                      <!-- Título Principal: full_name destacado (o Sin activar / Invitación pendiente) -->
+                      <div class="flex items-center gap-2">
+                        {user.full_name ? (
+                          <span class="font-semibold text-sm text-[#1F1B16] dark:text-white group-hover:text-[#E4572E] dark:group-hover:text-[#F2B134] transition-colors truncate">
+                            {user.full_name}
+                          </span>
+                        ) : (
+                          <span class="inline-flex items-center gap-1.5 text-xs font-medium text-amber-600 dark:text-amber-400/90 bg-amber-500/10 dark:bg-amber-400/10 px-2 py-0.5 rounded-md border border-amber-500/20">
+                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500 dark:bg-amber-400 animate-pulse"></span>
+                            Sin activar (Invitación pendiente)
+                          </span>
+                        )}
                       </div>
-                      <div class="text-xs text-[#78716A] dark:text-neutral-500 font-mono flex items-center gap-1.5 mt-0.5">
-                        <span>ID:</span>
-                        <span class="truncate max-w-[130px]" title={user.id}>{user.id}</span>
+
+                      <!-- Texto Secundario: Correo electrónico -->
+                      <div class="text-xs text-[#78716A] dark:text-neutral-400 truncate mt-0.5">
+                        {user.email}
                       </div>
                     </div>
                   </div>
@@ -276,19 +339,21 @@ const usersWithoutRole = totalUsers - usersWithRole;
                 <!-- Date -->
                 <td class="py-4 px-6 whitespace-nowrap">
                   <span class="text-[#1F1B16] dark:text-neutral-300 font-medium">{dateFormatted}</span>
-                  <div class="text-xs text-[#78716A] dark:text-neutral-500">
+                  <div class="text-xs text-[#78716A] dark:text-neutral-500 mt-0.5">
                     {user.last_sign_in_at ? 'Conectado recientemente' : 'Sin inicio de sesión'}
                   </div>
                 </td>
 
-                <!-- Integrated Role Selector Column -->
+                <!-- Rol (Interactive Select) -->
                 <td class="py-4 px-6 whitespace-nowrap">
-                  <div class="relative w-56">
+                  <div class="relative w-52">
                     <select 
-                      class="role-select w-full pl-3 pr-8 py-2 bg-white dark:bg-[#141414] border border-[#E5DFD5] dark:border-[#282828] hover:border-[#E4572E]/50 focus:border-[#E4572E] rounded-xl text-xs font-medium text-[#1F1B16] dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-[#E4572E] cursor-pointer transition-all duration-150"
+                      class="role-select w-full pl-3 pr-8 py-2 bg-white dark:bg-[#141414] border border-[#E5DFD5] dark:border-[#282828] hover:border-[#E4572E]/50 focus:border-[#E4572E] rounded-xl text-xs font-medium text-[#1F1B16] dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-[#E4572E] cursor-pointer transition-all duration-150 disabled:opacity-60 disabled:cursor-not-allowed disabled:bg-neutral-100 dark:disabled:bg-[#181818] disabled:hover:border-[#E5DFD5] dark:disabled:hover:border-[#282828]"
                       data-user-id={user.id}
                       data-user-email={user.email}
                       data-original-role={user.roleId || ''}
+                      disabled={isRoleSelectDisabled}
+                      title={roleSelectTitle}
                     >
                       <option value="" class="bg-white dark:bg-[#181818] text-[#78716A] dark:text-neutral-400" selected={!user.roleId}>
                         Sin Rol Asignado
@@ -311,36 +376,24 @@ const usersWithoutRole = totalUsers - usersWithRole;
                   </div>
                 </td>
 
-                <!-- Module Access Summary Badges -->
+                <!-- Acciones (Botones de acción rápida) -->
                 <td class="py-4 px-6 text-right whitespace-nowrap">
-                  <div class="inline-flex items-center gap-1.5">
-                    {isSuperAdmin ? (
-                      <span class="px-2 py-0.5 rounded-md bg-[#E4572E]/15 text-[#E4572E] border border-[#E4572E]/30 text-xs font-bold">
-                        Acceso Total Irrestricto
-                      </span>
-                    ) : user.permissions ? (
-                      <>
-                        <span 
-                          class={`px-2 py-0.5 rounded-md text-xs font-semibold ${user.permissions.publicaciones?.read ? 'bg-[#F2B134]/15 text-[#966B0D] dark:text-[#F2B134] border border-[#F2B134]/30' : 'bg-[#FAF6F0] dark:bg-[#181818] text-red-500/70 border border-[#E5DFD5] dark:border-transparent'}`}
-                          title="Permiso en Publicaciones"
-                        >
-                          {user.permissions.publicaciones?.read ? 'Pubs' : '✕ Pubs'}
-                        </span>
-                        <span 
-                          class={`px-2 py-0.5 rounded-md text-xs font-semibold ${user.permissions.galeria?.read ? 'bg-[#2F4B3A]/10 text-[#2F4B3A] dark:bg-[#2F4B3A]/20 dark:text-[#A7C7B3] border border-[#2F4B3A]/30' : 'bg-[#FAF6F0] dark:bg-[#181818] text-red-500/70 border border-[#E5DFD5] dark:border-transparent'}`}
-                          title="Permiso en Galería"
-                        >
-                          {user.permissions.galeria?.read ? 'Galería' : '✕ Galería'}
-                        </span>
-                        <span 
-                          class={`px-2 py-0.5 rounded-md text-xs font-semibold ${user.permissions.usuarios?.read ? 'bg-[#E4572E]/15 text-[#E4572E] border border-[#E4572E]/30' : 'bg-[#FAF6F0] dark:bg-[#181818] text-red-500/70 border border-[#E5DFD5] dark:border-transparent'}`}
-                          title="Permiso en Usuarios"
-                        >
-                          {user.permissions.usuarios?.read ? 'Usuarios' : '✕ Usuarios'}
-                        </span>
-                      </>
+                  <div class="inline-flex items-center justify-end">
+                    {!user.full_name ? (
+                      <button
+                        type="button"
+                        class="resend-invite-btn inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-amber-700 dark:text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition-all cursor-pointer active:scale-95 shadow-2xs"
+                        data-email={user.email}
+                        title={`Reenviar invitación de activación a ${user.email}`}
+                      >
+                        <svg class="w-3.5 h-3.5 resend-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                        <span class="resend-spinner hidden w-3 h-3 border-2 border-amber-500 border-t-transparent rounded-full animate-spin"></span>
+                        <span class="resend-text">Reenviar</span>
+                      </button>
                     ) : (
-                      <span class="text-[#78716A] dark:text-neutral-500 text-xs">Ninguno</span>
+                      <span class="text-xs text-[#78716A]/60 dark:text-neutral-600 select-none px-2">&mdash;</span>
                     )}
                   </div>
                 </td>
@@ -425,10 +478,11 @@ const usersWithoutRole = totalUsers - usersWithRole;
 
     userRows.forEach((row) => {
       const email = row.getAttribute('data-email') || '';
+      const name = row.getAttribute('data-name') || '';
       const userId = row.getAttribute('data-user-id') || '';
       const hasRole = row.getAttribute('data-has-role') === 'true';
 
-      const matchesSearch = !query || email.includes(query) || userId.includes(query);
+      const matchesSearch = !query || email.includes(query) || name.includes(query) || userId.includes(query);
       let matchesFilter = true;
 
       if (currentFilter === 'with-role') {
@@ -522,10 +576,21 @@ const usersWithoutRole = totalUsers - usersWithRole;
             select.classList.remove('ring-2', 'ring-emerald-400/50');
           }, 1500);
 
+          const avatar = row?.querySelector('.admin-avatar-hover');
+
           if (data.role) {
+            const isSA = data.role.name === 'Super Administrador';
+            if (avatar) {
+              avatar.className = `admin-avatar-hover w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm shrink-0 shadow-sm group-hover:scale-105 group-hover:ring-2 group-hover:ring-[#E4572E]/40 ${
+                isSA ? 'bg-[#E4572E]' : 'bg-[#2F4B3A]'
+              }`;
+            }
             row?.setAttribute('data-has-role', 'true');
             row?.setAttribute('data-role-id', data.role.id);
           } else {
+            if (avatar) {
+              avatar.className = 'admin-avatar-hover w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm shrink-0 shadow-sm group-hover:scale-105 group-hover:ring-2 group-hover:ring-[#E4572E]/40 bg-neutral-200 dark:bg-[#242424] text-[#78716A] dark:text-neutral-400 border border-[#E5DFD5] dark:border-[#333333]';
+            }
             row?.setAttribute('data-has-role', 'false');
             row?.setAttribute('data-role-id', '');
           }
@@ -534,19 +599,71 @@ const usersWithoutRole = totalUsers - usersWithRole;
           updateUserCounts();
           applyFilters();
         } else {
-          alert('Error: ' + (data.message || 'No se pudo asignar el rol'));
-          // Revert select value and clear indicator
+          showToast(data.message || 'No se pudo asignar el rol', true);
           select.value = originalRoleId;
           select.classList.remove('ring-2', 'ring-amber-400/40');
         }
       } catch (err: any) {
         console.error('Error al asignar rol:', err);
-        alert('Error al conectar con el servidor.');
+        showToast('Error al conectar con el servidor.', true);
         select.value = originalRoleId;
         select.classList.remove('ring-2', 'ring-amber-400/40');
       } finally {
-        select.disabled = false;
+        const isNowSuperAdmin = select.options[select.selectedIndex]?.text?.includes('Super Administrador');
+        if (!isNowSuperAdmin) {
+          select.disabled = false;
+        } else {
+          select.disabled = true;
+          select.title = 'El rol de Super Administrador no se puede cambiar.';
+        }
         spinner?.classList.add('hidden');
+      }
+    });
+  });
+
+  // Resend invitation action handler
+  const resendButtons = document.querySelectorAll('.resend-invite-btn') as NodeListOf<HTMLButtonElement>;
+  resendButtons.forEach((btn) => {
+    btn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      const email = btn.getAttribute('data-email');
+      if (!email) return;
+
+      const icon = btn.querySelector('.resend-icon');
+      const spinner = btn.querySelector('.resend-spinner');
+      const text = btn.querySelector('.resend-text');
+
+      btn.disabled = true;
+      icon?.classList.add('hidden');
+      spinner?.classList.remove('hidden');
+      if (text) text.textContent = 'Enviando...';
+
+      try {
+        const res = await fetch('/api/admin/users/resend-invite', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email }),
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          showToast(data.message || `Invitación reenviada a ${email}`);
+          if (text) text.textContent = '¡Enviado!';
+          setTimeout(() => {
+            if (text) text.textContent = 'Reenviar';
+          }, 3000);
+        } else {
+          showToast(data.message || 'No se pudo reenviar la invitación', true);
+          if (text) text.textContent = 'Reenviar';
+        }
+      } catch (err) {
+        console.error('Error al reenviar invitación:', err);
+        showToast('Error de conexión con el servidor', true);
+        if (text) text.textContent = 'Reenviar';
+      } finally {
+        btn.disabled = false;
+        spinner?.classList.add('hidden');
+        icon?.classList.remove('hidden');
       }
     });
   });
@@ -611,8 +728,13 @@ const usersWithoutRole = totalUsers - usersWithRole;
   inviteUserForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
 
+    const inviteFirstNameInput = document.getElementById('inviteFirstNameInput') as HTMLInputElement | null;
+    const inviteLastNameInput = document.getElementById('inviteLastNameInput') as HTMLInputElement | null;
+
     const email = inviteEmailInput?.value.trim() || '';
     const roleId = inviteRoleSelect?.value.trim() || '';
+    const firstName = inviteFirstNameInput?.value.trim() || '';
+    const lastName = inviteLastNameInput?.value.trim() || '';
 
     if (!email) {
       if (inviteModalError && inviteModalErrorMsg) {
@@ -627,6 +749,8 @@ const usersWithoutRole = totalUsers - usersWithRole;
     if (submitInviteBtn) submitInviteBtn.disabled = true;
     if (inviteEmailInput) inviteEmailInput.disabled = true;
     if (inviteRoleSelect) inviteRoleSelect.disabled = true;
+    if (inviteFirstNameInput) inviteFirstNameInput.disabled = true;
+    if (inviteLastNameInput) inviteLastNameInput.disabled = true;
     inviteBtnIcon?.classList.add('hidden');
     inviteBtnSpinner?.classList.remove('hidden');
     if (inviteBtnText) inviteBtnText.textContent = 'Enviando...';
@@ -636,7 +760,7 @@ const usersWithoutRole = totalUsers - usersWithRole;
       const response = await fetch('/api/admin/users/invite', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, roleId }),
+        body: JSON.stringify({ email, roleId, first_name: firstName, last_name: lastName }),
       });
 
       const result = await response.json();
@@ -678,6 +802,10 @@ const usersWithoutRole = totalUsers - usersWithRole;
       if (submitInviteBtn) submitInviteBtn.disabled = false;
       if (inviteEmailInput) inviteEmailInput.disabled = false;
       if (inviteRoleSelect) inviteRoleSelect.disabled = false;
+      const inviteFirstNameInput = document.getElementById('inviteFirstNameInput') as HTMLInputElement | null;
+      const inviteLastNameInput = document.getElementById('inviteLastNameInput') as HTMLInputElement | null;
+      if (inviteFirstNameInput) inviteFirstNameInput.disabled = false;
+      if (inviteLastNameInput) inviteLastNameInput.disabled = false;
       inviteBtnSpinner?.classList.add('hidden');
       inviteBtnIcon?.classList.remove('hidden');
       if (inviteBtnText) inviteBtnText.textContent = 'Enviar Invitación';

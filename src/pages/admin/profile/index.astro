@@ -3,7 +3,7 @@
  * src/pages/admin/profile/index.astro
  * Módulo de Perfil del Usuario Admin.
  * Permite visualizar y editar:
- * 1. Información Personal (full_name, rol activo preview)
+ * 1. Información Personal (first_name, last_name, rol activo preview)
  * 2. Avatar de Perfil (upload a Storage bucket 'avatars' / 'blog-media', preview en vivo)
  * 3. Seguridad & Contraseña (cambio seguro de clave con validación de coincidencia)
  */
@@ -35,7 +35,7 @@ if (!currentUser) {
 }
 
 // 2. Consultar perfil en public.profiles
-let profileData: { id: string; full_name: string | null; role: string | null; avatar_url?: string | null } | null = null;
+let profileData: { id: string; first_name?: string | null; last_name?: string | null; full_name?: string | null; role: string | null; avatar_url?: string | null } | null = null;
 
 try {
   const { data, error } = await supabaseAdmin
@@ -71,7 +71,9 @@ try {
 
 // 4. Determinar avatar y nombre actual combinando BD y metadata de Auth
 const currentAvatarUrl = profileData?.avatar_url || (currentUser.user_metadata?.avatar_url as string) || '';
-const currentFullName = profileData?.full_name || (currentUser.user_metadata?.full_name as string) || '';
+const profileFullName = profileData ? [profileData.first_name, profileData.last_name].filter(Boolean).join(' ') : '';
+const metaFullName = (currentUser.user_metadata?.first_name ? `${currentUser.user_metadata.first_name} ${currentUser.user_metadata.last_name || ''}`.trim() : '') || (currentUser.user_metadata?.full_name as string) || '';
+const currentFullName = profileFullName || metaFullName || '';
 const userEmail = currentUser.email || '';
 const userInitials = (currentFullName || userEmail || 'AD')
   .trim()
@@ -295,29 +297,54 @@ const createdAtFormatted = currentUser.created_at
           </div>
 
           <form id="personalInfoForm" class="space-y-5">
-            <!-- Full Name Input -->
-            <div>
-              <label for="fullNameInput" class="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5 uppercase tracking-wider">
-                Nombre Completo / Firma de Redactor <span class="text-[#E4572E]">*</span>
-              </label>
-              <div class="relative">
-                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400 dark:text-neutral-500">
-                  <User class="w-4 h-4" />
+            <!-- Nombre y Apellido (dos campos separados) -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <!-- Nombre -->
+              <div>
+                <label for="firstNameInput" class="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5 uppercase tracking-wider">
+                  Nombre <span class="text-[#E4572E]">*</span>
+                </label>
+                <div class="relative">
+                  <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400 dark:text-neutral-500">
+                    <User class="w-4 h-4" />
+                  </div>
+                  <input
+                    type="text"
+                    id="firstNameInput"
+                    name="first_name"
+                    value={profileData?.first_name || ''}
+                    required
+                    autocomplete="given-name"
+                    placeholder="Ej: Miguel Ángel"
+                    class="w-full pl-10 pr-4 py-3 rounded-xl bg-white dark:bg-[#111111] border border-[#E5DFD5] dark:border-[#282828] text-[#1F1B16] dark:text-white placeholder-neutral-400 dark:placeholder-neutral-600 text-sm focus:outline-none focus:border-[#E4572E] focus:ring-1 focus:ring-[#E4572E] transition-all"
+                  />
                 </div>
-                <input 
-                  type="text" 
-                  id="fullNameInput" 
-                  name="full_name" 
-                  value={currentFullName} 
-                  required
-                  placeholder="Ej: Miguel Ángel Uribe" 
-                  class="w-full pl-10 pr-4 py-3 rounded-xl bg-white dark:bg-[#111111] border border-[#E5DFD5] dark:border-[#282828] text-[#1F1B16] dark:text-white placeholder-neutral-400 dark:placeholder-neutral-600 text-sm focus:outline-none focus:border-[#E4572E] focus:ring-1 focus:ring-[#E4572E] transition-all"
-                />
               </div>
-              <p class="text-[11px] text-neutral-500 mt-1.5">
-                Este nombre se asociará como autor de tus publicaciones editoriales en el blog.
-              </p>
+              <!-- Apellido -->
+              <div>
+                <label for="lastNameInput" class="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5 uppercase tracking-wider">
+                  Apellido <span class="text-[#E4572E]">*</span>
+                </label>
+                <div class="relative">
+                  <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400 dark:text-neutral-500">
+                    <User class="w-4 h-4" />
+                  </div>
+                  <input
+                    type="text"
+                    id="lastNameInput"
+                    name="last_name"
+                    value={profileData?.last_name || ''}
+                    required
+                    autocomplete="family-name"
+                    placeholder="Ej: Uribe"
+                    class="w-full pl-10 pr-4 py-3 rounded-xl bg-white dark:bg-[#111111] border border-[#E5DFD5] dark:border-[#282828] text-[#1F1B16] dark:text-white placeholder-neutral-400 dark:placeholder-neutral-600 text-sm focus:outline-none focus:border-[#E4572E] focus:ring-1 focus:ring-[#E4572E] transition-all"
+                  />
+                </div>
+              </div>
             </div>
+            <p class="text-[11px] text-neutral-500 -mt-2">
+              Tu nombre y apellido se asociarán como firma de autor en tus publicaciones editoriales.
+            </p>
 
             <!-- Email (Read-only) -->
             <div>
@@ -683,21 +710,31 @@ const createdAtFormatted = currentUser.created_at
   });
 
   // ==========================================
-  // 2. INFORMACIÓN PERSONAL (Actualizar full_name)
+  // 2. INFORMACIÓN PERSONAL (Actualizar first_name / last_name)
   // ==========================================
   const personalInfoForm = document.getElementById('personalInfoForm');
-  const fullNameInput = document.getElementById('fullNameInput') as HTMLInputElement | null;
+  const firstNameInput = document.getElementById('firstNameInput') as HTMLInputElement | null;
+  const lastNameInput = document.getElementById('lastNameInput') as HTMLInputElement | null;
   const savePersonalInfoBtn = document.getElementById('savePersonalInfoBtn') as HTMLButtonElement | null;
   const headerHeroFullName = document.getElementById('headerHeroFullName');
 
   personalInfoForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const newFullName = fullNameInput?.value?.trim();
+    const firstName = firstNameInput?.value?.trim() || '';
+    const lastName = lastNameInput?.value?.trim() || '';
 
-    if (!newFullName) {
-      showToast('Por favor ingresa un nombre completo válido.', true);
+    if (!firstName) {
+      showToast('Por favor ingresa tu nombre.', true);
+      firstNameInput?.focus();
       return;
     }
+    if (!lastName) {
+      showToast('Por favor ingresa tu apellido.', true);
+      lastNameInput?.focus();
+      return;
+    }
+
+    const newFullName = [firstName, lastName].filter(Boolean).join(' ');
 
     try {
       if (savePersonalInfoBtn) {
@@ -708,7 +745,11 @@ const createdAtFormatted = currentUser.created_at
       const res = await fetch('/api/admin/profile/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ full_name: newFullName }),
+        body: JSON.stringify({
+          first_name: firstName,
+          last_name: lastName,
+          full_name: newFullName,
+        }),
       });
 
       const json = await res.json();
@@ -721,11 +762,11 @@ const createdAtFormatted = currentUser.created_at
         headerHeroFullName.textContent = newFullName;
       }
 
-      // Also update top header name chip
+      // Actualizar chip de nombre en el header superior
       const headerUserNameEl = document.getElementById('headerUserName');
       const headerUserAvatarEl = document.getElementById('headerUserAvatar');
       if (headerUserNameEl) headerUserNameEl.textContent = newFullName;
-      if (headerUserAvatarEl) headerUserAvatarEl.textContent = newFullName[0].toUpperCase();
+      if (headerUserAvatarEl) headerUserAvatarEl.textContent = newFullName[0]?.toUpperCase() || '';
 
       showToast('¡Información personal actualizada con éxito!');
 

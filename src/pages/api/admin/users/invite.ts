@@ -8,7 +8,8 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /**
  * POST /api/admin/users/invite
- * Envía una invitación por correo a un nuevo usuario vía Supabase Auth Admin
+ * Envía una invitación por correo a un nuevo usuario vía Supabase Auth Admin,
+ * guarda first_name y last_name en user_metadata y public.profiles,
  * y le asigna el rol inicial seleccionado en 'public.user_roles'.
  */
 export const POST: APIRoute = async ({ request, locals }) => {
@@ -37,7 +38,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       );
     }
 
-    const { email, roleId } = body || {};
+    const { email, roleId, first_name, last_name, full_name } = body || {};
 
     // 1. Validar correo electrónico
     if (!email || typeof email !== 'string' || !EMAIL_REGEX.test(email.trim())) {
@@ -51,6 +52,19 @@ export const POST: APIRoute = async ({ request, locals }) => {
     }
 
     const normalizedEmail = email.trim().toLowerCase();
+
+    // Validar y normalizar first_name y last_name
+    let firstName = typeof first_name === 'string' ? first_name.trim() : '';
+    let lastName = typeof last_name === 'string' ? last_name.trim() : '';
+
+    // Compatibilidad: si se envía full_name en lugar de first_name/last_name
+    if (!firstName && !lastName && typeof full_name === 'string' && full_name.trim()) {
+      const parts = full_name.trim().split(/\s+/);
+      firstName = parts[0] || '';
+      lastName = parts.slice(1).join(' ') || '';
+    }
+
+    const combinedFullName = [firstName, lastName].filter(Boolean).join(' ');
 
     // 2. Si se proporcionó un rol, validar que exista en el catálogo de roles
     let targetRole: { id: string; name: string } | null = null;
@@ -71,6 +85,18 @@ export const POST: APIRoute = async ({ request, locals }) => {
         );
       }
       targetRole = roleData;
+
+      // Validación de seguridad estricta: Solo un Super Administrador puede invitar usuarios con rol Super Administrador
+      const requesterIsSuperAdmin = Boolean(locals.isSuperAdmin || locals.role?.name === 'Super Administrador');
+      if (targetRole.name === 'Super Administrador' && !requesterIsSuperAdmin) {
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            message: 'Acceso denegado: Solo un Super Administrador puede invitar usuarios con el rol de Super Administrador.' 
+          }),
+          { status: 403, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
     }
 
     // 3. Ejecutar invitación vía Supabase Auth Admin (Service Role)
@@ -81,12 +107,24 @@ export const POST: APIRoute = async ({ request, locals }) => {
     if (import.meta.env.PROD && (origin.includes('localhost') || origin.startsWith('http://'))) {
       origin = siteUrl;
     }
-    const redirectTo = `${origin}/admin/reset-password`;
+    const redirectTo = import.meta.env.PROD 
+      ? 'https://870tivo-web.vercel.app/admin/setup-profile' 
+      : `${origin}/admin/setup-profile`;
+
+    const userMetadata: Record<string, any> = {
+      first_name: firstName,
+      last_name: lastName,
+    };
+    if (combinedFullName) {
+      userMetadata.full_name = combinedFullName;
+      userMetadata.name = combinedFullName;
+    }
 
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
       normalizedEmail,
       {
         redirectTo,
+        data: userMetadata,
       }
     );
 
@@ -158,6 +196,20 @@ export const POST: APIRoute = async ({ request, locals }) => {
       }
     }
 
+    // 5. Inicializar o sincronizar el perfil en public.profiles con first_name y last_name
+    const { error: profileInitErr } = await supabaseAdmin
+      .from('profiles')
+      .upsert({
+        id: invitedUser.id,
+        first_name: firstName,
+        last_name: lastName,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'id' });
+
+    if (profileInitErr) {
+      console.warn('Aviso al inicializar perfil en public.profiles para usuario invitado:', profileInitErr.message);
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
@@ -165,6 +217,9 @@ export const POST: APIRoute = async ({ request, locals }) => {
         user: {
           id: invitedUser.id,
           email: normalizedEmail,
+          first_name: firstName || null,
+          last_name: lastName || null,
+          full_name: combinedFullName || null,
           roleId: targetRole?.id || null,
           roleName: targetRole?.name || null,
         },
