@@ -33,34 +33,31 @@ export const POST: APIRoute = async ({ request, locals }) => {
       );
     }
 
+    const requesterIsSuperAdmin = Boolean(locals.isSuperAdmin || locals.role?.name === 'Super Administrador');
+
+    // Consultar el rol actual del usuario objetivo en la base de datos
+    const { data: currentUR } = await supabaseAdmin
+      .from('user_roles')
+      .select('role_id, roles(id, name)')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    const currentRole = Array.isArray(currentUR?.roles) ? currentUR?.roles[0] : currentUR?.roles;
+    const isTargetSuperAdmin = currentRole?.name === 'Super Administrador';
+
+    // Validación A: Retorna 403 Forbidden si se intenta cambiar o remover el rol de un usuario que ya es 'super_admin'
+    if (isTargetSuperAdmin) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          message: 'Acceso denegado: No está permitido modificar el rol de un Super Administrador.' 
+        }),
+        { status: 403, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
     // 1. Si no hay roleId o es vacío, se remueve el rol del usuario
     if (!roleId) {
-      // Verificar que no estemos quitando el rol al único Super Administrador
-      const { data: currentUR } = await supabaseAdmin
-        .from('user_roles')
-        .select('role_id, roles(name)')
-        .eq('user_id', userId)
-        .maybeSingle();
-
-      const currentRole = Array.isArray(currentUR?.roles) ? currentUR?.roles[0] : currentUR?.roles;
-
-      if (currentRole?.name === 'Super Administrador') {
-        const { count } = await supabaseAdmin
-          .from('user_roles')
-          .select('user_id, roles!inner(name)', { count: 'exact', head: true })
-          .eq('roles.name', 'Super Administrador');
-
-        if ((count || 0) <= 1) {
-          return new Response(
-            JSON.stringify({ 
-              success: false, 
-              message: 'No puedes remover el rol al único Super Administrador del sistema.' 
-            }),
-            { status: 403, headers: { 'Content-Type': 'application/json' } }
-          );
-        }
-      }
-
       // Eliminar asignación previa
       const { error: delErr } = await supabaseAdmin
         .from('user_roles')
@@ -86,6 +83,17 @@ export const POST: APIRoute = async ({ request, locals }) => {
       return new Response(
         JSON.stringify({ success: false, message: 'El rol seleccionado no existe.' }),
         { status: 404, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Validación B: Retorna 403 Forbidden si un usuario que NO es 'super_admin' intenta asignar el rol 'super_admin' a alguien más
+    if (targetRole.name === 'Super Administrador' && !requesterIsSuperAdmin) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          message: 'Acceso denegado: Solo un Super Administrador puede asignar el rol de Super Administrador.' 
+        }),
+        { status: 403, headers: { 'Content-Type': 'application/json' } }
       );
     }
 

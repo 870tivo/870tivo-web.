@@ -1,4 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
+import type { Database } from '../types/database';
+
+export type { Database };
 
 const supabaseUrl = (import.meta.env.PUBLIC_SUPABASE_URL || '') as string;
 const supabaseAnonKey = (import.meta.env.PUBLIC_SUPABASE_ANON_KEY || '') as string;
@@ -51,4 +54,4 @@ export function setAuthCookies(session: { access_token: string; refresh_token: s
  */
 export function clearAuthCookies() {
   setAuthCookies(null);
-}
+}

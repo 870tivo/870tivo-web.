@@ -1,8 +1,8 @@
 /**
  * src/pages/api/admin/profile/me.ts
  * GET /api/admin/profile/me
- * Devuelve { full_name, email } del usuario autenticado para sincronizar el header del admin.
- * El middleware ya valida la sesión antes de llegar aquí.
+ * Devuelve { first_name, last_name, full_name, email, avatar_url } del usuario autenticado
+ * para sincronizar el header y estado del perfil en la interfaz de administración.
  */
 import type { APIRoute } from 'astro';
 import { supabaseAdmin } from '../../../../lib/supabase';
@@ -19,30 +19,55 @@ export const GET: APIRoute = async ({ locals }) => {
     });
   }
 
-  // full_name from middleware locals (already resolved)
-  const fullNameFromLocals = locals.userFullName || '';
-
-  // Also fetch email from auth user
   const email = user.email || '';
 
-  // Try to get fresh full_name from DB if locals didn't have it
-  let full_name = fullNameFromLocals;
+  let firstName = locals.userFirstName || '';
+  let lastName = locals.userLastName || '';
+  let avatarUrl = (user.user_metadata?.avatar_url as string) || null;
 
-  if (!full_name) {
+  // Si locals no tenía first_name / last_name, consultar public.profiles
+  if (!firstName && !lastName) {
     try {
       const { data } = await supabaseAdmin
         .from('profiles')
-        .select('full_name')
+        .select('first_name, last_name, avatar_url')
         .eq('id', user.id)
         .maybeSingle();
-      full_name = data?.full_name || user.user_metadata?.full_name || email.split('@')[0] || '';
-    } catch {
-      full_name = user.user_metadata?.full_name || email.split('@')[0] || '';
+
+      if (data) {
+        firstName = data.first_name || '';
+        lastName = data.last_name || '';
+        if (data.avatar_url) avatarUrl = data.avatar_url;
+      }
+    } catch (e) {
+      console.warn('Error consultando perfil en me.ts:', e);
     }
   }
 
+  // Fallback con metadatos de usuario si aún están vacíos
+  if (!firstName && !lastName) {
+    firstName = (user.user_metadata?.first_name as string) || '';
+    lastName = (user.user_metadata?.last_name as string) || '';
+
+    // Si había un full_name guardado en user_metadata, dividirlo
+    if (!firstName && !lastName && user.user_metadata?.full_name) {
+      const parts = (user.user_metadata.full_name as string).trim().split(/\s+/);
+      firstName = parts[0] || '';
+      lastName = parts.slice(1).join(' ') || '';
+    }
+  }
+
+  const full_name = [firstName, lastName].filter(Boolean).join(' ') || locals.userFullName || email.split('@')[0] || '';
+
   return new Response(
-    JSON.stringify({ success: true, full_name, email }),
+    JSON.stringify({
+      success: true,
+      first_name: firstName,
+      last_name: lastName,
+      full_name,
+      email,
+      avatar_url: avatarUrl,
+    }),
     { status: 200, headers: { 'Content-Type': 'application/json' } }
   );
 };

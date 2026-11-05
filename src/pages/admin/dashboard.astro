@@ -21,7 +21,9 @@ const isSuperAdmin = Astro.locals.isSuperAdmin;
 
 // Saludo limpio y cálculo de nombre del usuario
 const userEmail = user.email || 'administrador@870tivo.com';
-const metaName = user.user_metadata?.full_name || user.user_metadata?.name;
+const userFirstName = Astro.locals.userFirstName || (user.user_metadata?.first_name as string) || '';
+const userLastName = Astro.locals.userLastName || (user.user_metadata?.last_name as string) || '';
+const metaName = [userFirstName, userLastName].filter(Boolean).join(' ') || Astro.locals.userFullName || user.user_metadata?.full_name || user.user_metadata?.name;
 const rawName = metaName || userEmail.split('@')[0];
 const userName = rawName.charAt(0).toUpperCase() + rawName.slice(1);
 

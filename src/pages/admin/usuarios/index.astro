@@ -21,6 +21,7 @@ if (!isUserAdminOrHasAccess(role, permissions)) {
 }
 
 // 2. Fetch available roles
+const currentUserIsSuperAdmin = Boolean(Astro.locals.isSuperAdmin || role?.name === 'Super Administrador');
 const roles = await getAllRoles();
 
 // 2. Fetch all users from Supabase Auth via admin client
@@ -57,17 +58,21 @@ try {
     }
   }
 
-  // 4. Fetch all profiles to bring full_name
-  const profileMap: Record<string, string> = {};
+  // 4. Fetch all profiles to bring first_name, last_name, avatar_url
+  const profileMap: Record<string, { first_name: string; last_name: string; avatar_url: string | null }> = {};
   try {
     const { data: profilesData } = await supabaseAdmin
       .from('profiles')
-      .select('id, full_name');
+      .select('id, first_name, last_name, avatar_url');
 
     if (profilesData) {
       for (const p of profilesData) {
-        if (p.id && p.full_name && p.full_name.trim()) {
-          profileMap[p.id] = p.full_name.trim();
+        if (p.id) {
+          profileMap[p.id] = {
+            first_name: (p.first_name || '').trim(),
+            last_name: (p.last_name || '').trim(),
+            avatar_url: p.avatar_url || null,
+          };
         }
       }
     }
@@ -78,11 +83,17 @@ try {
   // Combine auth users with their roles and profile information
   usersList = (authData?.users || []).map((u: any) => {
     const assigned = roleMap[u.id];
-    const fullName = profileMap[u.id] || u.user_metadata?.full_name || u.user_metadata?.name || null;
+    const prof = profileMap[u.id];
+    const firstName = prof?.first_name || (u.user_metadata?.first_name as string) || '';
+    const lastName = prof?.last_name || (u.user_metadata?.last_name as string) || '';
+    const combinedFullName = [firstName, lastName].filter(Boolean).join(' ') || u.user_metadata?.full_name || u.user_metadata?.name || null;
+
     return {
       id: u.id,
       email: u.email || 'Sin correo',
-      full_name: fullName,
+      first_name: firstName || null,
+      last_name: lastName || null,
+      full_name: combinedFullName,
       created_at: u.created_at,
       last_sign_in_at: u.last_sign_in_at || null,
       roleId: assigned?.roleId || null,
@@ -268,6 +279,12 @@ function getUserInitials(name?: string | null, email?: string | null): string {
           {usersList.map((user) => {
             const hasRole = Boolean(user.roleId);
             const isSuperAdmin = user.roleName === 'Super Administrador';
+            const isRoleSelectDisabled = isSuperAdmin || !currentUserIsSuperAdmin;
+            const roleSelectTitle = isSuperAdmin 
+              ? 'El rol de Super Administrador no se puede cambiar.' 
+              : (!currentUserIsSuperAdmin 
+                ? 'Solo un Super Administrador puede modificar los roles de usuario.' 
+                : undefined);
             const userInitial = getUserInitials(user.full_name, user.email);
             const dateFormatted = new Date(user.created_at).toLocaleDateString('es-ES', {
               year: 'numeric',
@@ -331,10 +348,12 @@ function getUserInitials(name?: string | null, email?: string | null): string {
                 <td class="py-4 px-6 whitespace-nowrap">
                   <div class="relative w-52">
                     <select 
-                      class="role-select w-full pl-3 pr-8 py-2 bg-white dark:bg-[#141414] border border-[#E5DFD5] dark:border-[#282828] hover:border-[#E4572E]/50 focus:border-[#E4572E] rounded-xl text-xs font-medium text-[#1F1B16] dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-[#E4572E] cursor-pointer transition-all duration-150"
+                      class="role-select w-full pl-3 pr-8 py-2 bg-white dark:bg-[#141414] border border-[#E5DFD5] dark:border-[#282828] hover:border-[#E4572E]/50 focus:border-[#E4572E] rounded-xl text-xs font-medium text-[#1F1B16] dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-[#E4572E] cursor-pointer transition-all duration-150 disabled:opacity-60 disabled:cursor-not-allowed disabled:bg-neutral-100 dark:disabled:bg-[#181818] disabled:hover:border-[#E5DFD5] dark:disabled:hover:border-[#282828]"
                       data-user-id={user.id}
                       data-user-email={user.email}
                       data-original-role={user.roleId || ''}
+                      disabled={isRoleSelectDisabled}
+                      title={roleSelectTitle}
                     >
                       <option value="" class="bg-white dark:bg-[#181818] text-[#78716A] dark:text-neutral-400" selected={!user.roleId}>
                         Sin Rol Asignado
@@ -580,17 +599,23 @@ function getUserInitials(name?: string | null, email?: string | null): string {
           updateUserCounts();
           applyFilters();
         } else {
-          alert('Error: ' + (data.message || 'No se pudo asignar el rol'));
+          showToast(data.message || 'No se pudo asignar el rol', true);
           select.value = originalRoleId;
           select.classList.remove('ring-2', 'ring-amber-400/40');
         }
       } catch (err: any) {
         console.error('Error al asignar rol:', err);
-        alert('Error al conectar con el servidor.');
+        showToast('Error al conectar con el servidor.', true);
         select.value = originalRoleId;
         select.classList.remove('ring-2', 'ring-amber-400/40');
       } finally {
-        select.disabled = false;
+        const isNowSuperAdmin = select.options[select.selectedIndex]?.text?.includes('Super Administrador');
+        if (!isNowSuperAdmin) {
+          select.disabled = false;
+        } else {
+          select.disabled = true;
+          select.title = 'El rol de Super Administrador no se puede cambiar.';
+        }
         spinner?.classList.add('hidden');
       }
     });
@@ -703,8 +728,13 @@ function getUserInitials(name?: string | null, email?: string | null): string {
   inviteUserForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
 
+    const inviteFirstNameInput = document.getElementById('inviteFirstNameInput') as HTMLInputElement | null;
+    const inviteLastNameInput = document.getElementById('inviteLastNameInput') as HTMLInputElement | null;
+
     const email = inviteEmailInput?.value.trim() || '';
     const roleId = inviteRoleSelect?.value.trim() || '';
+    const firstName = inviteFirstNameInput?.value.trim() || '';
+    const lastName = inviteLastNameInput?.value.trim() || '';
 
     if (!email) {
       if (inviteModalError && inviteModalErrorMsg) {
@@ -719,6 +749,8 @@ function getUserInitials(name?: string | null, email?: string | null): string {
     if (submitInviteBtn) submitInviteBtn.disabled = true;
     if (inviteEmailInput) inviteEmailInput.disabled = true;
     if (inviteRoleSelect) inviteRoleSelect.disabled = true;
+    if (inviteFirstNameInput) inviteFirstNameInput.disabled = true;
+    if (inviteLastNameInput) inviteLastNameInput.disabled = true;
     inviteBtnIcon?.classList.add('hidden');
     inviteBtnSpinner?.classList.remove('hidden');
     if (inviteBtnText) inviteBtnText.textContent = 'Enviando...';
@@ -728,7 +760,7 @@ function getUserInitials(name?: string | null, email?: string | null): string {
       const response = await fetch('/api/admin/users/invite', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, roleId }),
+        body: JSON.stringify({ email, roleId, first_name: firstName, last_name: lastName }),
       });
 
       const result = await response.json();
@@ -770,6 +802,10 @@ function getUserInitials(name?: string | null, email?: string | null): string {
       if (submitInviteBtn) submitInviteBtn.disabled = false;
       if (inviteEmailInput) inviteEmailInput.disabled = false;
       if (inviteRoleSelect) inviteRoleSelect.disabled = false;
+      const inviteFirstNameInput = document.getElementById('inviteFirstNameInput') as HTMLInputElement | null;
+      const inviteLastNameInput = document.getElementById('inviteLastNameInput') as HTMLInputElement | null;
+      if (inviteFirstNameInput) inviteFirstNameInput.disabled = false;
+      if (inviteLastNameInput) inviteLastNameInput.disabled = false;
       inviteBtnSpinner?.classList.add('hidden');
       inviteBtnIcon?.classList.remove('hidden');
       if (inviteBtnText) inviteBtnText.textContent = 'Enviar Invitación';

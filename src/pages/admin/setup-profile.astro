@@ -15,7 +15,7 @@ const fontsUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;60
     <meta name="description" content="Bienvenido al equipo de Galería 870. Completa tu perfil y activa tu cuenta." />
     <meta name="robots" content="noindex, nofollow" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    
+
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -26,12 +26,8 @@ const fontsUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;60
         if (typeof localStorage !== 'undefined' && localStorage.getItem('theme')) {
           return localStorage.getItem('theme');
         }
-        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-          return 'dark';
-        }
         return 'dark';
       })();
-
       if (theme === 'light') {
         document.documentElement.classList.remove('dark');
         document.documentElement.setAttribute('data-theme', 'light');
@@ -44,7 +40,7 @@ const fontsUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;60
   </head>
 
   <body class="min-h-screen bg-brand-bg text-brand-ink dark:bg-brand-ink dark:text-brand-darkInk font-sans antialiased flex flex-col justify-between selection:bg-brand-orange selection:text-white transition-colors duration-200">
-    
+
     <!-- Top Utility Bar -->
     <header class="w-full px-6 py-4 flex items-center justify-between">
       <a href="/admin/login" class="flex items-center gap-2 text-xs uppercase tracking-widest text-brand-muted hover:text-brand-orange dark:hover:text-brand-bg transition-colors font-medium">
@@ -53,7 +49,6 @@ const fontsUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;60
         </svg>
         <span>Ir a iniciar sesión</span>
       </a>
-
       <div class="flex items-center gap-3">
         <ThemeToggle client:load />
       </div>
@@ -62,20 +57,20 @@ const fontsUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;60
     <!-- Main Content -->
     <main class="flex-1 flex items-center justify-center px-4 py-8 sm:py-12">
       <div class="w-full max-w-md">
-        
+
         <!-- Main Card -->
         <div class="bg-brand-card/70 dark:bg-brand-darkCard border border-brand-ink/10 dark:border-brand-darkCard/80 rounded-2xl p-6 sm:p-8 shadow-2xl backdrop-blur-md transition-all duration-300">
-          
+
           <!-- Logo & Header -->
           <div class="text-center mb-6">
             <div class="inline-block relative mb-3">
-              <img 
-                src="/assets/logo/870.jpeg" 
-                alt="Galería 870" 
+              <img
+                src="/assets/logo/870.jpeg"
+                alt="Galería 870"
                 class="w-12 h-12 object-cover rounded-xl shadow-md mx-auto border border-brand-ink/10 dark:border-white/10"
               />
             </div>
-            
+
             <div class="flex justify-center mb-2">
               <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold tracking-wider uppercase bg-[#E4572E]/10 text-[#E4572E] border border-[#E4572E]/20">
                 <span class="w-1.5 h-1.5 rounded-full bg-[#E4572E] animate-pulse"></span>
@@ -86,9 +81,9 @@ const fontsUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;60
             <h1 class="font-serif text-xl sm:text-2xl font-bold tracking-tight text-brand-ink dark:text-brand-darkInk leading-snug">
               Bienvenido — Completa tu Perfil
             </h1>
-            
+
             <p class="text-[11px] text-brand-muted mt-1.5 max-w-xs mx-auto leading-relaxed">
-              Configura tu nombre y establece tu contraseña para acceder al sistema.
+              Configura tu identidad y establece tu contraseña de acceso.
             </p>
 
             <!-- Detected Account Badge (dynamically filled) -->
@@ -102,6 +97,55 @@ const fontsUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;60
             </div>
           </div>
 
+          <!-- =====================================================
+               STEPPER — Indicador visual de progreso
+               ===================================================== -->
+          <div id="stepperContainer" class="mb-6">
+            <!-- Barra de progreso -->
+            <div class="relative flex items-center justify-between mb-3">
+              <!-- Línea de fondo -->
+              <div class="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-px bg-brand-ink/10 dark:bg-white/10 mx-6"></div>
+              <!-- Línea de progreso activa -->
+              <div
+                id="stepProgressLine"
+                class="absolute left-6 top-1/2 -translate-y-1/2 h-px bg-[#E4572E] transition-all duration-500"
+                style="width: 0%"
+              ></div>
+
+              <!-- Paso 1 -->
+              <div class="relative z-10 flex flex-col items-center gap-1.5">
+                <div
+                  id="stepDot1"
+                  class="w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-all duration-300 border-[#E4572E] bg-[#E4572E] text-white"
+                >
+                  1
+                </div>
+                <span id="stepLabel1" class="text-[10px] font-semibold uppercase tracking-wider text-[#E4572E] transition-colors duration-300">
+                  Identidad
+                </span>
+              </div>
+
+              <!-- Paso 2 -->
+              <div class="relative z-10 flex flex-col items-center gap-1.5">
+                <div
+                  id="stepDot2"
+                  class="w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-all duration-300 border-brand-ink/20 dark:border-white/20 bg-transparent text-brand-muted"
+                >
+                  2
+                </div>
+                <span id="stepLabel2" class="text-[10px] font-semibold uppercase tracking-wider text-brand-muted transition-colors duration-300">
+                  Seguridad
+                </span>
+              </div>
+            </div>
+
+            <!-- Texto descriptivo del paso actual -->
+            <p id="stepTitle" class="text-center text-xs font-medium text-brand-muted">
+              Paso <span id="stepCurrentNum">1</span> de 2:
+              <span id="stepCurrentLabel" class="text-brand-ink dark:text-brand-darkInk font-semibold">Información Personal</span>
+            </p>
+          </div>
+
           <!-- Invalid/Expired Link Alert -->
           <div id="invalidSessionAlert" class="hidden mb-4 p-3 rounded-xl text-xs bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-300">
             <div class="flex items-start gap-2.5">
@@ -113,8 +157,8 @@ const fontsUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;60
                 <p class="text-[11px] opacity-90 leading-relaxed">
                   Para activar tu perfil, debes ingresar utilizando el enlace exclusivo que recibiste por correo electrónico.
                 </p>
-                <a 
-                  href="/admin/login" 
+                <a
+                  href="/admin/login"
                   class="inline-block mt-0.5 text-[11px] font-semibold underline hover:text-brand-orange transition-colors"
                 >
                   Ir a iniciar sesión &rarr;
@@ -150,56 +194,117 @@ const fontsUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;60
                 </div>
               </div>
             </div>
-
-            <a 
-              href="/admin/dashboard" 
+            <a
+              href="/admin/dashboard"
               class="block w-full py-3 px-4 rounded-xl text-center text-xs font-semibold text-white bg-brand-ink dark:bg-brand-orange hover:bg-brand-ink/90 dark:hover:bg-brand-orange/90 transition-all shadow-md hover:shadow-lg"
             >
               Ir al Panel de Administración &rarr;
             </a>
           </div>
 
-          <!-- Setup Profile Form -->
-          <form id="setupProfileForm" class="space-y-4" novalidate>
-            <!-- Full Name Field -->
-            <div>
-              <label for="fullNameInput" class="block text-[11px] font-semibold uppercase tracking-wider text-brand-ink/80 dark:text-brand-darkInk/80 mb-1.5">
-                Nombre Completo <span class="text-[#E4572E]">*</span>
-              </label>
-              <div class="relative">
-                <input 
-                  type="text" 
-                  id="fullNameInput" 
-                  name="fullName" 
-                  required 
-                  autocomplete="name"
-                  placeholder="ej. Mariana Silva" 
-                  class="w-full px-4 py-2.5 pl-10 text-sm rounded-xl bg-white/70 dark:bg-brand-ink/60 border border-brand-ink/15 dark:border-brand-darkCard/80 text-brand-ink dark:text-brand-darkInk placeholder:text-brand-muted/70 focus:outline-none focus:ring-2 focus:ring-brand-orange dark:focus:ring-brand-yellow focus:border-transparent transition-all"
-                />
-                <div class="absolute left-3 top-1/2 -translate-y-1/2 text-brand-muted pointer-events-none">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
+          <!-- =====================================================
+               WIZARD FORM — Contenedor principal
+               ===================================================== -->
+          <form id="setupProfileForm" class="space-y-5" novalidate>
+
+            <!-- ── PASO 1: Información Personal ── -->
+            <div id="step1" class="space-y-4">
+
+              <!-- Nombre -->
+              <div>
+                <label for="firstNameInput" class="block text-[11px] font-semibold uppercase tracking-wider text-brand-ink/80 dark:text-brand-darkInk/80 mb-1.5">
+                  Nombre <span class="text-[#E4572E]">*</span>
+                </label>
+                <div class="relative">
+                  <input
+                    type="text"
+                    id="firstNameInput"
+                    name="firstName"
+                    autocomplete="given-name"
+                    placeholder="ej. Mariana"
+                    class="w-full px-4 py-2.5 pl-10 text-sm rounded-xl bg-white/70 dark:bg-brand-ink/60 border border-brand-ink/15 dark:border-brand-darkCard/80 text-brand-ink dark:text-brand-darkInk placeholder:text-brand-muted/70 focus:outline-none focus:ring-2 focus:ring-brand-orange dark:focus:ring-brand-yellow focus:border-transparent transition-all"
+                  />
+                  <div class="absolute left-3 top-1/2 -translate-y-1/2 text-brand-muted pointer-events-none">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                  </div>
                 </div>
               </div>
+
+              <!-- Apellido -->
+              <div>
+                <label for="lastNameInput" class="block text-[11px] font-semibold uppercase tracking-wider text-brand-ink/80 dark:text-brand-darkInk/80 mb-1.5">
+                  Apellido <span class="text-[#E4572E]">*</span>
+                </label>
+                <div class="relative">
+                  <input
+                    type="text"
+                    id="lastNameInput"
+                    name="lastName"
+                    autocomplete="family-name"
+                    placeholder="ej. Silva"
+                    class="w-full px-4 py-2.5 pl-10 text-sm rounded-xl bg-white/70 dark:bg-brand-ink/60 border border-brand-ink/15 dark:border-brand-darkCard/80 text-brand-ink dark:text-brand-darkInk placeholder:text-brand-muted/70 focus:outline-none focus:ring-2 focus:ring-brand-orange dark:focus:ring-brand-yellow focus:border-transparent transition-all"
+                  />
+                  <div class="absolute left-3 top-1/2 -translate-y-1/2 text-brand-muted pointer-events-none">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Botón Siguiente (Paso 1) -->
+              <button
+                type="button"
+                id="nextStepBtn"
+                class="w-full py-3 px-6 rounded-xl font-medium text-sm tracking-wide text-white bg-brand-ink dark:bg-brand-orange hover:bg-brand-ink/90 dark:hover:bg-brand-orange/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange dark:focus:ring-brand-yellow shadow-md hover:shadow-lg active:scale-[0.99] transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer mt-1"
+              >
+                <span>Siguiente</span>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
             </div>
 
-            <!-- Password fields side by side on larger screens, stacked on mobile -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <!-- New Password Field -->
+            <!-- ── PASO 2: Seguridad y Contraseña ── -->
+            <div id="step2" class="hidden space-y-4">
+
+              <!-- Resumen de identidad (read-only preview) -->
+              <div id="identitySummary" class="flex items-center gap-3 p-3 rounded-xl bg-black/5 dark:bg-white/5 border border-brand-ink/10 dark:border-white/10">
+                <div class="w-8 h-8 rounded-full bg-[#E4572E]/15 border border-[#E4572E]/30 flex items-center justify-center text-[#E4572E] text-xs font-bold shrink-0" id="identityInitials">
+                  --
+                </div>
+                <div class="min-w-0">
+                  <p class="text-xs font-semibold text-brand-ink dark:text-brand-darkInk truncate" id="identityFullNameDisplay">—</p>
+                  <p class="text-[10px] text-brand-muted">Ahora establece tu contraseña de acceso</p>
+                </div>
+                <button
+                  type="button"
+                  id="editIdentityBtn"
+                  class="ml-auto text-[10px] font-semibold text-brand-muted hover:text-brand-orange dark:hover:text-brand-yellow transition-colors shrink-0 flex items-center gap-1"
+                  aria-label="Editar nombre"
+                >
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                  Editar
+                </button>
+              </div>
+
+              <!-- Nueva Contraseña -->
               <div>
                 <label for="newPasswordInput" class="block text-[11px] font-semibold uppercase tracking-wider text-brand-ink/80 dark:text-brand-darkInk/80 mb-1.5">
                   Nueva Contraseña <span class="text-[#E4572E]">*</span>
                 </label>
                 <div class="relative">
-                  <input 
-                    type="password" 
-                    id="newPasswordInput" 
-                    name="newPassword" 
-                    required 
+                  <input
+                    type="password"
+                    id="newPasswordInput"
+                    name="newPassword"
                     minlength="6"
                     autocomplete="new-password"
-                    placeholder="Mín. 6 caracteres" 
+                    placeholder="Mín. 6 caracteres"
                     class="w-full px-4 py-2.5 pl-10 pr-10 text-sm rounded-xl bg-white/70 dark:bg-brand-ink/60 border border-brand-ink/15 dark:border-brand-darkCard/80 text-brand-ink dark:text-brand-darkInk placeholder:text-brand-muted/70 focus:outline-none focus:ring-2 focus:ring-brand-orange dark:focus:ring-brand-yellow focus:border-transparent transition-all"
                   />
                   <div class="absolute left-3 top-1/2 -translate-y-1/2 text-brand-muted pointer-events-none">
@@ -207,9 +312,9 @@ const fontsUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;60
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                     </svg>
                   </div>
-                  <button 
-                    type="button" 
-                    id="toggleNewPasswordBtn" 
+                  <button
+                    type="button"
+                    id="toggleNewPasswordBtn"
                     aria-label="Mostrar u ocultar contraseña"
                     class="absolute right-2.5 top-1/2 -translate-y-1/2 text-brand-muted hover:text-brand-ink dark:hover:text-brand-darkInk transition-colors p-0.5"
                   >
@@ -222,22 +327,34 @@ const fontsUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;60
                     </svg>
                   </button>
                 </div>
+                <!-- Indicador de fuerza de contraseña -->
+                <div id="passwordStrengthBar" class="mt-2 flex gap-1 h-1">
+                  <div class="flex-1 rounded-full bg-brand-ink/10 dark:bg-white/10 overflow-hidden">
+                    <div id="strengthSegment1" class="h-full w-0 rounded-full transition-all duration-300"></div>
+                  </div>
+                  <div class="flex-1 rounded-full bg-brand-ink/10 dark:bg-white/10 overflow-hidden">
+                    <div id="strengthSegment2" class="h-full w-0 rounded-full transition-all duration-300"></div>
+                  </div>
+                  <div class="flex-1 rounded-full bg-brand-ink/10 dark:bg-white/10 overflow-hidden">
+                    <div id="strengthSegment3" class="h-full w-0 rounded-full transition-all duration-300"></div>
+                  </div>
+                </div>
+                <p id="strengthLabel" class="text-[10px] text-brand-muted mt-1 h-3 transition-all"></p>
               </div>
 
-              <!-- Confirm Password Field -->
+              <!-- Confirmar Contraseña -->
               <div>
                 <label for="confirmPasswordInput" class="block text-[11px] font-semibold uppercase tracking-wider text-brand-ink/80 dark:text-brand-darkInk/80 mb-1.5">
                   Confirmar Contraseña <span class="text-[#E4572E]">*</span>
                 </label>
                 <div class="relative">
-                  <input 
-                    type="password" 
-                    id="confirmPasswordInput" 
-                    name="confirmPassword" 
-                    required 
+                  <input
+                    type="password"
+                    id="confirmPasswordInput"
+                    name="confirmPassword"
                     minlength="6"
                     autocomplete="new-password"
-                    placeholder="Repite la contraseña" 
+                    placeholder="Repite la contraseña"
                     class="w-full px-4 py-2.5 pl-10 pr-10 text-sm rounded-xl bg-white/70 dark:bg-brand-ink/60 border border-brand-ink/15 dark:border-brand-darkCard/80 text-brand-ink dark:text-brand-darkInk placeholder:text-brand-muted/70 focus:outline-none focus:ring-2 focus:ring-brand-orange dark:focus:ring-brand-yellow focus:border-transparent transition-all"
                   />
                   <div class="absolute left-3 top-1/2 -translate-y-1/2 text-brand-muted pointer-events-none">
@@ -245,9 +362,9 @@ const fontsUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;60
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                     </svg>
                   </div>
-                  <button 
-                    type="button" 
-                    id="toggleConfirmPasswordBtn" 
+                  <button
+                    type="button"
+                    id="toggleConfirmPasswordBtn"
                     aria-label="Mostrar u ocultar contraseña"
                     class="absolute right-2.5 top-1/2 -translate-y-1/2 text-brand-muted hover:text-brand-ink dark:hover:text-brand-darkInk transition-colors p-0.5"
                   >
@@ -261,20 +378,39 @@ const fontsUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;60
                   </button>
                 </div>
               </div>
+
+              <!-- Botones Paso 2: Volver + Submit -->
+              <div class="flex flex-col gap-2.5 mt-1">
+                <!-- Botón principal: Guardar y Entrar -->
+                <button
+                  type="submit"
+                  id="setupSubmitBtn"
+                  class="w-full py-3 px-6 rounded-xl font-medium text-sm tracking-wide text-white bg-brand-ink dark:bg-brand-orange hover:bg-brand-ink/90 dark:hover:bg-brand-orange/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange dark:focus:ring-brand-yellow shadow-md hover:shadow-lg active:scale-[0.99] transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span id="btnText">Guardar y Entrar al Panel</span>
+                  <svg id="btnSpinner" class="hidden animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                </button>
+
+                <!-- Botón secundario: Volver -->
+                <button
+                  type="button"
+                  id="prevStepBtn"
+                  class="w-full py-2.5 px-6 rounded-xl font-medium text-xs tracking-wide text-brand-muted hover:text-brand-ink dark:hover:text-brand-darkInk border border-brand-ink/15 dark:border-white/15 hover:border-brand-ink/30 dark:hover:border-white/30 bg-transparent transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                  </svg>
+                  Volver a Información Personal
+                </button>
+              </div>
             </div>
 
-            <!-- Submit Button -->
-            <button 
-              type="submit" 
-              id="setupSubmitBtn" 
-              class="w-full py-3 px-6 rounded-xl font-medium text-sm tracking-wide text-white bg-brand-ink dark:bg-brand-orange hover:bg-brand-ink/90 dark:hover:bg-brand-orange/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange dark:focus:ring-brand-yellow shadow-md hover:shadow-lg active:scale-[0.99] transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer mt-1"
-            >
-              <span id="btnText">Completar Perfil y Activar Cuenta</span>
-              <svg id="btnSpinner" class="hidden animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-            </button>
           </form>
 
         </div>
@@ -290,70 +426,77 @@ const fontsUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;60
       &copy; {new Date().getFullYear()} Galería 870. Todos los derechos reservados.
     </footer>
 
-    <!-- Client-side Profile Activation Script -->
+    <!-- =====================================================
+         CLIENT SCRIPT — Wizard logic + API calls
+         ===================================================== -->
     <script>
       import { supabase, setAuthCookies } from '../../lib/supabase';
 
-      const setupProfileForm = document.getElementById('setupProfileForm') as HTMLFormElement | null;
-      const fullNameInput = document.getElementById('fullNameInput') as HTMLInputElement | null;
-      const newPasswordInput = document.getElementById('newPasswordInput') as HTMLInputElement | null;
-      const confirmPasswordInput = document.getElementById('confirmPasswordInput') as HTMLInputElement | null;
-      const setupSubmitBtn = document.getElementById('setupSubmitBtn') as HTMLButtonElement | null;
-      const btnText = document.getElementById('btnText');
-      const btnSpinner = document.getElementById('btnSpinner');
-      const errorAlert = document.getElementById('errorAlert');
-      const errorMessage = document.getElementById('errorMessage');
-      const successContainer = document.getElementById('successContainer');
-      const invalidSessionAlert = document.getElementById('invalidSessionAlert');
-      const accountPill = document.getElementById('accountPill');
-      const accountPillEmail = document.getElementById('accountPillEmail');
+      // ── Elementos del DOM ──
+      const setupProfileForm   = document.getElementById('setupProfileForm') as HTMLFormElement | null;
+      const step1              = document.getElementById('step1') as HTMLElement | null;
+      const step2              = document.getElementById('step2') as HTMLElement | null;
+      const stepperContainer   = document.getElementById('stepperContainer') as HTMLElement | null;
 
-      // Toggles for password visibility
-      const toggleNewPasswordBtn = document.getElementById('toggleNewPasswordBtn');
-      const eyeIcon1 = document.getElementById('eyeIcon1');
-      const eyeOffIcon1 = document.getElementById('eyeOffIcon1');
+      // Stepper elements
+      const stepDot1           = document.getElementById('stepDot1') as HTMLElement | null;
+      const stepDot2           = document.getElementById('stepDot2') as HTMLElement | null;
+      const stepLabel1         = document.getElementById('stepLabel1') as HTMLElement | null;
+      const stepLabel2         = document.getElementById('stepLabel2') as HTMLElement | null;
+      const stepProgressLine   = document.getElementById('stepProgressLine') as HTMLElement | null;
+      const stepCurrentNum     = document.getElementById('stepCurrentNum') as HTMLElement | null;
+      const stepCurrentLabel   = document.getElementById('stepCurrentLabel') as HTMLElement | null;
 
+      // Paso 1
+      const firstNameInput     = document.getElementById('firstNameInput') as HTMLInputElement | null;
+      const lastNameInput      = document.getElementById('lastNameInput') as HTMLInputElement | null;
+      const nextStepBtn        = document.getElementById('nextStepBtn') as HTMLButtonElement | null;
+
+      // Paso 2 — identidad preview
+      const identityInitials   = document.getElementById('identityInitials') as HTMLElement | null;
+      const identityFullName   = document.getElementById('identityFullNameDisplay') as HTMLElement | null;
+      const editIdentityBtn    = document.getElementById('editIdentityBtn') as HTMLButtonElement | null;
+
+      // Paso 2 — contraseñas
+      const newPasswordInput      = document.getElementById('newPasswordInput') as HTMLInputElement | null;
+      const confirmPasswordInput  = document.getElementById('confirmPasswordInput') as HTMLInputElement | null;
+      const setupSubmitBtn        = document.getElementById('setupSubmitBtn') as HTMLButtonElement | null;
+      const prevStepBtn           = document.getElementById('prevStepBtn') as HTMLButtonElement | null;
+      const btnText               = document.getElementById('btnText') as HTMLElement | null;
+      const btnSpinner            = document.getElementById('btnSpinner') as HTMLElement | null;
+
+      // Password strength
+      const strengthSegment1   = document.getElementById('strengthSegment1') as HTMLElement | null;
+      const strengthSegment2   = document.getElementById('strengthSegment2') as HTMLElement | null;
+      const strengthSegment3   = document.getElementById('strengthSegment3') as HTMLElement | null;
+      const strengthLabel      = document.getElementById('strengthLabel') as HTMLElement | null;
+
+      // Toggles visibilidad
+      const toggleNewPasswordBtn    = document.getElementById('toggleNewPasswordBtn');
+      const eyeIcon1                = document.getElementById('eyeIcon1');
+      const eyeOffIcon1             = document.getElementById('eyeOffIcon1');
       const toggleConfirmPasswordBtn = document.getElementById('toggleConfirmPasswordBtn');
-      const eyeIcon2 = document.getElementById('eyeIcon2');
-      const eyeOffIcon2 = document.getElementById('eyeOffIcon2');
+      const eyeIcon2                = document.getElementById('eyeIcon2');
+      const eyeOffIcon2             = document.getElementById('eyeOffIcon2');
 
-      toggleNewPasswordBtn?.addEventListener('click', () => {
-        if (!newPasswordInput) return;
-        const isPassword = newPasswordInput.type === 'password';
-        newPasswordInput.type = isPassword ? 'text' : 'password';
-        eyeIcon1?.classList.toggle('hidden', isPassword);
-        eyeOffIcon1?.classList.toggle('hidden', !isPassword);
-      });
+      // Alertas
+      const errorAlert          = document.getElementById('errorAlert') as HTMLElement | null;
+      const errorMessage        = document.getElementById('errorMessage') as HTMLElement | null;
+      const successContainer    = document.getElementById('successContainer') as HTMLElement | null;
+      const invalidSessionAlert = document.getElementById('invalidSessionAlert') as HTMLElement | null;
+      const accountPill         = document.getElementById('accountPill') as HTMLElement | null;
+      const accountPillEmail    = document.getElementById('accountPillEmail') as HTMLElement | null;
 
-      toggleConfirmPasswordBtn?.addEventListener('click', () => {
-        if (!confirmPasswordInput) return;
-        const isPassword = confirmPasswordInput.type === 'password';
-        confirmPasswordInput.type = isPassword ? 'text' : 'password';
-        eyeIcon2?.classList.toggle('hidden', isPassword);
-        eyeOffIcon2?.classList.toggle('hidden', !isPassword);
-      });
-
+      // ── Helpers de Alerta ──
       function showError(msg: string) {
         if (errorMessage) errorMessage.textContent = msg;
-        if (errorAlert) errorAlert.classList.remove('hidden');
+        errorAlert?.classList.remove('hidden');
+        // Scroll suave al error
+        errorAlert?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }
 
       function hideError() {
-        if (errorAlert) errorAlert.classList.add('hidden');
-      }
-
-      function setLoading(loading: boolean) {
-        if (!setupSubmitBtn) return;
-        setupSubmitBtn.disabled = loading;
-        if (loading) {
-          btnText?.classList.add('opacity-80');
-          if (btnText) btnText.textContent = 'Guardando perfil...';
-          btnSpinner?.classList.remove('hidden');
-        } else {
-          btnText?.classList.remove('opacity-80');
-          if (btnText) btnText.textContent = 'Completar Perfil y Activar Cuenta';
-          btnSpinner?.classList.add('hidden');
-        }
+        errorAlert?.classList.add('hidden');
       }
 
       function showAccountEmail(email: string) {
@@ -363,44 +506,188 @@ const fontsUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;60
         }
       }
 
-      // Check invite session
+      // ── Stepper: actualizar indicador visual ──
+      function goToStep(step: 1 | 2) {
+        hideError();
+
+        if (step === 1) {
+          // Mostrar Paso 1, ocultar Paso 2
+          step1?.classList.remove('hidden');
+          step2?.classList.add('hidden');
+
+          // Stepper visuals
+          if (stepDot1) {
+            stepDot1.className = 'w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-all duration-300 border-[#E4572E] bg-[#E4572E] text-white';
+          }
+          if (stepDot2) {
+            stepDot2.className = 'w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-all duration-300 border-brand-ink/20 dark:border-white/20 bg-transparent text-brand-muted';
+          }
+          if (stepLabel1) stepLabel1.className = 'text-[10px] font-semibold uppercase tracking-wider text-[#E4572E] transition-colors duration-300';
+          if (stepLabel2) stepLabel2.className = 'text-[10px] font-semibold uppercase tracking-wider text-brand-muted transition-colors duration-300';
+          if (stepProgressLine) stepProgressLine.style.width = '0%';
+          if (stepCurrentNum) stepCurrentNum.textContent = '1';
+          if (stepCurrentLabel) stepCurrentLabel.textContent = 'Información Personal';
+
+          // Focus en primer campo
+          setTimeout(() => firstNameInput?.focus(), 50);
+
+        } else {
+          // Paso 2: actualizar el preview de identidad
+          const fn = firstNameInput?.value?.trim() || '';
+          const ln = lastNameInput?.value?.trim() || '';
+          const full = [fn, ln].filter(Boolean).join(' ');
+          const initials = [fn[0], ln[0]].filter(Boolean).join('').toUpperCase() || '?';
+
+          if (identityInitials) identityInitials.textContent = initials;
+          if (identityFullName) identityFullName.textContent = full || '—';
+
+          // Mostrar Paso 2, ocultar Paso 1
+          step1?.classList.add('hidden');
+          step2?.classList.remove('hidden');
+
+          // Stepper visuals — Paso 1 completado (checkmark)
+          if (stepDot1) {
+            stepDot1.className = 'w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-all duration-300 border-[#E4572E] bg-[#E4572E] text-white';
+            stepDot1.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>';
+          }
+          if (stepDot2) {
+            stepDot2.className = 'w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-all duration-300 border-[#E4572E] bg-[#E4572E] text-white';
+            stepDot2.textContent = '2';
+          }
+          if (stepLabel1) stepLabel1.className = 'text-[10px] font-semibold uppercase tracking-wider text-[#E4572E] transition-colors duration-300';
+          if (stepLabel2) stepLabel2.className = 'text-[10px] font-semibold uppercase tracking-wider text-[#E4572E] transition-colors duration-300';
+          if (stepProgressLine) stepProgressLine.style.width = 'calc(100% - 3rem)';
+          if (stepCurrentNum) stepCurrentNum.textContent = '2';
+          if (stepCurrentLabel) stepCurrentLabel.textContent = 'Seguridad y Contraseña';
+
+          // Focus en campo de contraseña
+          setTimeout(() => newPasswordInput?.focus(), 50);
+        }
+      }
+
+      // ── Fuerza de contraseña ──
+      function evaluatePasswordStrength(pwd: string): 0 | 1 | 2 | 3 {
+        if (!pwd) return 0;
+        let score = 0;
+        if (pwd.length >= 6) score++;
+        if (pwd.length >= 10) score++;
+        if (/[A-Z]/.test(pwd) || /[0-9]/.test(pwd) || /[^a-zA-Z0-9]/.test(pwd)) score++;
+        return score as 0 | 1 | 2 | 3;
+      }
+
+      function updateStrengthBar(pwd: string) {
+        const level = evaluatePasswordStrength(pwd);
+        const colors = ['', '#E4572E', '#F2B134', '#2F4B3A'];
+        const labels = ['', 'Contraseña débil', 'Contraseña moderada', 'Contraseña fuerte'];
+        const fill = (el: HTMLElement | null, active: boolean, color: string) => {
+          if (!el) return;
+          el.style.width = active ? '100%' : '0%';
+          el.style.backgroundColor = active ? color : '';
+        };
+        fill(strengthSegment1, level >= 1, colors[level] || colors[1]);
+        fill(strengthSegment2, level >= 2, colors[level] || colors[1]);
+        fill(strengthSegment3, level >= 3, colors[level] || colors[1]);
+        if (strengthLabel) {
+          strengthLabel.textContent = pwd ? labels[level] : '';
+          strengthLabel.style.color = colors[level] || '';
+        }
+      }
+
+      newPasswordInput?.addEventListener('input', () => {
+        updateStrengthBar(newPasswordInput.value);
+      });
+
+      // ── Toggle visibilidad de contraseñas ──
+      toggleNewPasswordBtn?.addEventListener('click', () => {
+        if (!newPasswordInput) return;
+        const show = newPasswordInput.type === 'password';
+        newPasswordInput.type = show ? 'text' : 'password';
+        eyeIcon1?.classList.toggle('hidden', show);
+        eyeOffIcon1?.classList.toggle('hidden', !show);
+      });
+
+      toggleConfirmPasswordBtn?.addEventListener('click', () => {
+        if (!confirmPasswordInput) return;
+        const show = confirmPasswordInput.type === 'password';
+        confirmPasswordInput.type = show ? 'text' : 'password';
+        eyeIcon2?.classList.toggle('hidden', show);
+        eyeOffIcon2?.classList.toggle('hidden', !show);
+      });
+
+      // ── Botón Siguiente (Paso 1 → Paso 2) ──
+      nextStepBtn?.addEventListener('click', () => {
+        hideError();
+        const firstName = firstNameInput?.value?.trim() || '';
+        const lastName  = lastNameInput?.value?.trim() || '';
+
+        if (!firstName) {
+          showError('Por favor ingresa tu nombre antes de continuar.');
+          firstNameInput?.focus();
+          return;
+        }
+        if (!lastName) {
+          showError('Por favor ingresa tu apellido antes de continuar.');
+          lastNameInput?.focus();
+          return;
+        }
+
+        goToStep(2);
+      });
+
+      // ── Botón Volver (Paso 2 → Paso 1) ──
+      prevStepBtn?.addEventListener('click', () => goToStep(1));
+      editIdentityBtn?.addEventListener('click', () => goToStep(1));
+
+      // ── Estado de carga ──
+      function setLoading(loading: boolean) {
+        if (!setupSubmitBtn) return;
+        setupSubmitBtn.disabled = loading;
+        if (loading) {
+          if (btnText) btnText.textContent = 'Guardando perfil...';
+          btnSpinner?.classList.remove('hidden');
+        } else {
+          if (btnText) btnText.textContent = 'Guardar y Entrar al Panel';
+          btnSpinner?.classList.add('hidden');
+        }
+      }
+
+      // ── Sesión Auth ──
       let hasValidSession = false;
 
-      // Listen for auth events (e.g. SIGNED_IN from hash token, INITIAL_SESSION)
+      function prefillFromMeta(meta: Record<string, string> | undefined | null) {
+        if (!meta) return;
+        if (firstNameInput && !firstNameInput.value) {
+          firstNameInput.value = meta.first_name || (meta.full_name ? meta.full_name.split(' ')[0] : '');
+        }
+        if (lastNameInput && !lastNameInput.value) {
+          lastNameInput.value = meta.last_name || (meta.full_name ? meta.full_name.split(' ').slice(1).join(' ') : '');
+        }
+      }
+
       supabase.auth.onAuthStateChange(async (_event, session) => {
         if (session) {
           hasValidSession = true;
           invalidSessionAlert?.classList.add('hidden');
           setAuthCookies(session);
-          if (session.user?.email) {
-            showAccountEmail(session.user.email);
-          }
-          if (session.user?.user_metadata?.full_name && fullNameInput && !fullNameInput.value) {
-            fullNameInput.value = session.user.user_metadata.full_name;
-          }
+          if (session.user?.email) showAccountEmail(session.user.email);
+          prefillFromMeta(session.user?.user_metadata as Record<string, string> | undefined);
         }
       });
 
-      // Verification fallback for hash tokens or existing session
       setTimeout(async () => {
         const { data: { session } } = await supabase.auth.getSession();
-        const hash = window.location.hash || '';
+        const hash   = window.location.hash || '';
         const search = window.location.search || '';
         const hasHashParams = hash && (hash.includes('access_token') || hash.includes('type=invite') || hash.includes('type=recovery'));
-        const hasCodeParam = new URLSearchParams(search).has('code');
+        const hasCodeParam  = new URLSearchParams(search).has('code');
 
         if (session) {
           hasValidSession = true;
           invalidSessionAlert?.classList.add('hidden');
           setAuthCookies(session);
-          if (session.user?.email) {
-            showAccountEmail(session.user.email);
-          }
-          if (session.user?.user_metadata?.full_name && fullNameInput && !fullNameInput.value) {
-            fullNameInput.value = session.user.user_metadata.full_name;
-          }
+          if (session.user?.email) showAccountEmail(session.user.email);
+          prefillFromMeta(session.user?.user_metadata as Record<string, string> | undefined);
         } else if (hasHashParams || hasCodeParam) {
-          // Token is present in URL and being processed by Supabase client
           hasValidSession = true;
           invalidSessionAlert?.classList.add('hidden');
         } else if (!hasValidSession) {
@@ -408,33 +695,28 @@ const fontsUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;60
         }
       }, 700);
 
-      // Handle form submission
+      // ── Envío final del formulario (Paso 2) ──
       setupProfileForm?.addEventListener('submit', async (e) => {
         e.preventDefault();
         hideError();
 
-        const fullName = fullNameInput?.value?.trim() || '';
-        const newPassword = newPasswordInput?.value || '';
+        // Leer valores
+        const firstName       = firstNameInput?.value?.trim() || '';
+        const lastName        = lastNameInput?.value?.trim() || '';
+        const fullName        = [firstName, lastName].filter(Boolean).join(' ');
+        const newPassword     = newPasswordInput?.value || '';
         const confirmPassword = confirmPasswordInput?.value || '';
 
-        // Validation
-        if (!fullName) {
-          showError('Por favor ingresa tu nombre completo.');
-          fullNameInput?.focus();
-          return;
-        }
-
+        // Validar contraseñas
         if (!newPassword || !confirmPassword) {
           showError('Por favor completa todos los campos de contraseña.');
           return;
         }
-
         if (newPassword.length < 6) {
           showError('La contraseña debe tener al menos 6 caracteres.');
           newPasswordInput?.focus();
           return;
         }
-
         if (newPassword !== confirmPassword) {
           showError('Las contraseñas no coinciden. Por favor verifícalas.');
           confirmPasswordInput?.focus();
@@ -444,17 +726,19 @@ const fontsUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;60
         setLoading(true);
 
         try {
-          // 1. Update password and metadata in Supabase Auth
+          // 1. Actualizar contraseña y metadatos en Supabase Auth
           const { data: updateUserData, error: updateUserErr } = await supabase.auth.updateUser({
             password: newPassword,
             data: {
+              first_name: firstName,
+              last_name: lastName,
               full_name: fullName,
               name: fullName,
             },
           });
 
           if (updateUserErr) {
-            console.error('Error al actualizar contraseña en Supabase Auth:', updateUserErr);
+            console.error('Error al actualizar en Supabase Auth:', updateUserErr);
             let friendlyMsg = 'No se pudo activar la cuenta.';
             if (updateUserErr.message.includes('Auth session missing') || updateUserErr.message.includes('jwt')) {
               friendlyMsg = 'El enlace de invitación ha expirado o no es válido. Por favor solicita una nueva invitación.';
@@ -466,16 +750,13 @@ const fontsUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;60
             return;
           }
 
-          // 2. Synchronize current session and cookies
+          // 2. Sincronizar sesión y cookies
           const { data: sessionData } = await supabase.auth.getSession();
           const currentSession = sessionData?.session;
-          if (currentSession) {
-            setAuthCookies(currentSession);
-          }
-
+          if (currentSession) setAuthCookies(currentSession);
           const accessToken = currentSession?.access_token || '';
 
-          // 3. Update public.profiles via backend endpoint (bypasses RLS restrictions with Service Role)
+          // 3. Actualizar public.profiles via endpoint (Service Role, bypasses RLS)
           try {
             const profileResponse = await fetch('/api/admin/profile/update', {
               method: 'POST',
@@ -483,45 +764,40 @@ const fontsUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;60
                 'Content-Type': 'application/json',
                 ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}),
               },
-              body: JSON.stringify({
-                full_name: fullName,
-              }),
+              body: JSON.stringify({ first_name: firstName, last_name: lastName, full_name: fullName }),
             });
-
             if (!profileResponse.ok) {
               console.warn('Endpoint /api/admin/profile/update devolvió status:', profileResponse.status);
             }
           } catch (profileApiErr) {
-            console.warn('Error llamando /api/admin/profile/update, intentando fallback directo:', profileApiErr);
+            console.warn('Error llamando /api/admin/profile/update, usando fallback directo:', profileApiErr);
           }
 
-          // 4. Fallback direct client upsert on public.profiles
+          // 4. Fallback directo al cliente Supabase
           try {
             const activeUser = updateUserData?.user || currentSession?.user;
             if (activeUser?.id) {
-              await supabase
-                .from('profiles')
-                .upsert({
-                  id: activeUser.id,
-                  full_name: fullName,
-                  updated_at: new Date().toISOString(),
-                }, { onConflict: 'id' });
+              await supabase.from('profiles').upsert({
+                id: activeUser.id,
+                first_name: firstName,
+                last_name: lastName,
+                updated_at: new Date().toISOString(),
+              }, { onConflict: 'id' });
             }
-          } catch (directProfileErr) {
-            console.warn('Fallback directo en profiles:', directProfileErr);
+          } catch (directErr) {
+            console.warn('Fallback directo en profiles:', directErr);
           }
 
-          // 5. Success state and redirect to /admin/dashboard
+          // 5. Estado de éxito y redirección
           setupProfileForm.classList.add('hidden');
+          stepperContainer?.classList.add('hidden');
           successContainer?.classList.remove('hidden');
+          setTimeout(() => { window.location.href = '/admin/dashboard'; }, 1400);
 
-          setTimeout(() => {
-            window.location.href = '/admin/dashboard';
-          }, 1400);
-
-        } catch (err: any) {
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : 'Error inesperado';
           console.error('Error inesperado al activar perfil:', err);
-          showError('Ocurrió un error inesperado al activar tu cuenta.');
+          showError(msg || 'Ocurrió un error inesperado al activar tu cuenta.');
           setLoading(false);
         }
       });

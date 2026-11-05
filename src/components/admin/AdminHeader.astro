@@ -116,7 +116,8 @@ const avatarInitial = (userFullName?.[0] || userEmail?.[0] || 'A').toUpperCase()
     const res = await fetch('/api/admin/profile/me');
     if (res.ok) {
       const json = await res.json();
-      const name = json?.full_name || json?.email?.split('@')[0] || '';
+      const combined = [json?.first_name, json?.last_name].filter(Boolean).join(' ');
+      const name = combined || json?.full_name || json?.email?.split('@')[0] || '';
       const initial = (name[0] || 'A').toUpperCase();
       const nameEl = document.getElementById('headerUserName');
       const avatarEl = document.getElementById('headerUserAvatar');

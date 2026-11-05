@@ -97,6 +97,8 @@ export const onRequest = defineMiddleware(async (context, next) => {
   let userPermissions: RolePermissions | null = null;
   let isSuperAdmin = false;
 
+  let userFirstName = '';
+  let userLastName = '';
   let userFullName = '';
 
   if (isAuthenticated && currentUser) {
@@ -109,26 +111,33 @@ export const onRequest = defineMiddleware(async (context, next) => {
     try {
       const { data: profileRow } = await supabaseAdmin
         .from('profiles')
-        .select('full_name')
+        .select('first_name, last_name')
         .eq('id', currentUser.id)
         .maybeSingle();
 
-      if (profileRow?.full_name) {
-        userFullName = profileRow.full_name;
+      if (profileRow?.first_name || profileRow?.last_name) {
+        userFirstName = (profileRow.first_name || '').trim();
+        userLastName = (profileRow.last_name || '').trim();
       } else {
-        // Fallback: metadata name or email prefix
-        const metaName = currentUser.user_metadata?.full_name || currentUser.user_metadata?.name;
-        userFullName = metaName || (currentUser.email?.split('@')[0] ?? '');
+        // Fallback: metadata first_name / last_name
+        userFirstName = (currentUser.user_metadata?.first_name || '').trim();
+        userLastName = (currentUser.user_metadata?.last_name || '').trim();
       }
     } catch {
-      const metaName = currentUser.user_metadata?.full_name || currentUser.user_metadata?.name;
-      userFullName = metaName || (currentUser.email?.split('@')[0] ?? '');
+      userFirstName = (currentUser.user_metadata?.first_name || '').trim();
+      userLastName = (currentUser.user_metadata?.last_name || '').trim();
     }
+
+    const combinedName = [userFirstName, userLastName].filter(Boolean).join(' ');
+    const metaFullName = (currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || '').trim();
+    userFullName = combinedName || metaFullName || (currentUser.email?.split('@')[0] ?? '');
   }
 
   context.locals.role = userRole;
   context.locals.permissions = userPermissions;
   context.locals.isSuperAdmin = isSuperAdmin;
+  context.locals.userFirstName = userFirstName;
+  context.locals.userLastName = userLastName;
   context.locals.userFullName = userFullName;
 
   // Handle unauthenticated requests
