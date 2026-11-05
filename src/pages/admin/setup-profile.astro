@@ -101,40 +101,40 @@ const fontsUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;60
                STEPPER — Indicador visual de progreso
                ===================================================== -->
           <div id="stepperContainer" class="mb-6">
-            <!-- Barra de progreso -->
-            <div class="relative flex items-center justify-between mb-3">
-              <!-- Línea de fondo -->
-              <div class="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-px bg-brand-ink/10 dark:bg-white/10 mx-6"></div>
-              <!-- Línea de progreso activa -->
+            <!-- Barra de progreso simétrica con línea conectora centrada verticalmente -->
+            <div class="relative flex items-center justify-between max-w-xs mx-auto mb-3">
+              <!-- Línea de fondo centrada verticalmente con los círculos (h-8 -> centro a 16px = top-4) -->
+              <div class="absolute left-4 right-4 top-4 -translate-y-1/2 h-0.5 bg-brand-ink/10 dark:bg-white/10 rounded-full"></div>
+              <!-- Línea de progreso activa centrada verticalmente -->
               <div
                 id="stepProgressLine"
-                class="absolute left-6 top-1/2 -translate-y-1/2 h-px bg-[#E4572E] transition-all duration-500"
+                class="absolute left-4 top-4 -translate-y-1/2 h-0.5 bg-[#E4572E] rounded-full transition-all duration-500 ease-out"
                 style="width: 0%"
               ></div>
 
-              <!-- Paso 1 -->
-              <div class="relative z-10 flex flex-col items-center gap-1.5">
+              <!-- Paso 1: IDENTIDAD -->
+              <div class="relative z-10 flex flex-col items-center">
                 <div
                   id="stepDot1"
-                  class="w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-all duration-300 border-[#E4572E] bg-[#E4572E] text-white"
+                  class="w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-all duration-300 border-[#E4572E] bg-[#E4572E] text-white shadow-sm ring-4 ring-brand-card dark:ring-brand-darkCard"
                 >
                   1
                 </div>
-                <span id="stepLabel1" class="text-[10px] font-semibold uppercase tracking-wider text-[#E4572E] transition-colors duration-300">
-                  Identidad
+                <span id="stepLabel1" class="mt-1.5 text-[10px] font-bold uppercase tracking-wider text-[#E4572E] transition-colors duration-300 select-none">
+                  IDENTIDAD
                 </span>
               </div>
 
-              <!-- Paso 2 -->
-              <div class="relative z-10 flex flex-col items-center gap-1.5">
+              <!-- Paso 2: SEGURIDAD -->
+              <div class="relative z-10 flex flex-col items-center">
                 <div
                   id="stepDot2"
-                  class="w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-all duration-300 border-brand-ink/20 dark:border-white/20 bg-transparent text-brand-muted"
+                  class="w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-all duration-300 border-brand-ink/20 dark:border-white/20 bg-brand-card dark:bg-brand-darkCard text-brand-muted shadow-sm ring-4 ring-brand-card dark:ring-brand-darkCard"
                 >
                   2
                 </div>
-                <span id="stepLabel2" class="text-[10px] font-semibold uppercase tracking-wider text-brand-muted transition-colors duration-300">
-                  Seguridad
+                <span id="stepLabel2" class="mt-1.5 text-[10px] font-bold uppercase tracking-wider text-brand-muted transition-colors duration-300 select-none">
+                  SEGURIDAD
                 </span>
               </div>
             </div>
@@ -142,7 +142,7 @@ const fontsUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;60
             <!-- Texto descriptivo del paso actual -->
             <p id="stepTitle" class="text-center text-xs font-medium text-brand-muted">
               Paso <span id="stepCurrentNum">1</span> de 2:
-              <span id="stepCurrentLabel" class="text-brand-ink dark:text-brand-darkInk font-semibold">Información Personal</span>
+              <span id="stepCurrentLabel" class="text-brand-ink dark:text-brand-darkInk font-semibold">Identidad</span>
             </p>
           </div>
 
@@ -213,7 +213,7 @@ const fontsUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;60
               <!-- Nombre -->
               <div>
                 <label for="firstNameInput" class="block text-[11px] font-semibold uppercase tracking-wider text-brand-ink/80 dark:text-brand-darkInk/80 mb-1.5">
-                  Nombre <span class="text-[#E4572E]">*</span>
+                  NOMBRES <span class="text-[#E4572E]">*</span>
                 </label>
                 <div class="relative">
                   <input
@@ -235,7 +235,7 @@ const fontsUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;60
               <!-- Apellido -->
               <div>
                 <label for="lastNameInput" class="block text-[11px] font-semibold uppercase tracking-wider text-brand-ink/80 dark:text-brand-darkInk/80 mb-1.5">
-                  Apellido <span class="text-[#E4572E]">*</span>
+                  APELLIDOS <span class="text-[#E4572E]">*</span>
                 </label>
                 <div class="relative">
                   <input
@@ -270,41 +270,18 @@ const fontsUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;60
             <!-- ── PASO 2: Seguridad y Contraseña ── -->
             <div id="step2" class="hidden space-y-4">
 
-              <!-- Resumen de identidad (read-only preview) -->
-              <div id="identitySummary" class="flex items-center gap-3 p-3 rounded-xl bg-black/5 dark:bg-white/5 border border-brand-ink/10 dark:border-white/10">
-                <div class="w-8 h-8 rounded-full bg-[#E4572E]/15 border border-[#E4572E]/30 flex items-center justify-center text-[#E4572E] text-xs font-bold shrink-0" id="identityInitials">
-                  --
-                </div>
-                <div class="min-w-0">
-                  <p class="text-xs font-semibold text-brand-ink dark:text-brand-darkInk truncate" id="identityFullNameDisplay">—</p>
-                  <p class="text-[10px] text-brand-muted">Ahora establece tu contraseña de acceso</p>
-                </div>
-                <button
-                  type="button"
-                  id="editIdentityBtn"
-                  class="ml-auto text-[10px] font-semibold text-brand-muted hover:text-brand-orange dark:hover:text-brand-yellow transition-colors shrink-0 flex items-center gap-1"
-                  aria-label="Editar nombre"
-                >
-                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                  </svg>
-                  Editar
-                </button>
-              </div>
-
-              <!-- Nueva Contraseña -->
+              <!-- Campo Contraseña -->
               <div>
-                <label for="newPasswordInput" class="block text-[11px] font-semibold uppercase tracking-wider text-brand-ink/80 dark:text-brand-darkInk/80 mb-1.5">
-                  Nueva Contraseña <span class="text-[#E4572E]">*</span>
+                <label for="passwordInput" class="block text-[11px] font-semibold uppercase tracking-wider text-brand-ink/80 dark:text-brand-darkInk/80 mb-1.5">
+                  CONTRASEÑA <span class="text-[#E4572E]">*</span>
                 </label>
                 <div class="relative">
                   <input
                     type="password"
-                    id="newPasswordInput"
-                    name="newPassword"
-                    minlength="6"
+                    id="passwordInput"
+                    name="password"
                     autocomplete="new-password"
-                    placeholder="Mín. 6 caracteres"
+                    placeholder="••••••••"
                     class="w-full px-4 py-2.5 pl-10 pr-10 text-sm rounded-xl bg-white/70 dark:bg-brand-ink/60 border border-brand-ink/15 dark:border-brand-darkCard/80 text-brand-ink dark:text-brand-darkInk placeholder:text-brand-muted/70 focus:outline-none focus:ring-2 focus:ring-brand-orange dark:focus:ring-brand-yellow focus:border-transparent transition-all"
                   />
                   <div class="absolute left-3 top-1/2 -translate-y-1/2 text-brand-muted pointer-events-none">
@@ -314,9 +291,9 @@ const fontsUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;60
                   </div>
                   <button
                     type="button"
-                    id="toggleNewPasswordBtn"
+                    id="togglePasswordBtn"
                     aria-label="Mostrar u ocultar contraseña"
-                    class="absolute right-2.5 top-1/2 -translate-y-1/2 text-brand-muted hover:text-brand-ink dark:hover:text-brand-darkInk transition-colors p-0.5"
+                    class="absolute right-2.5 top-1/2 -translate-y-1/2 text-brand-muted hover:text-brand-ink dark:hover:text-brand-darkInk transition-colors p-0.5 cursor-pointer"
                   >
                     <svg id="eyeIcon1" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -327,32 +304,18 @@ const fontsUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;60
                     </svg>
                   </button>
                 </div>
-                <!-- Indicador de fuerza de contraseña -->
-                <div id="passwordStrengthBar" class="mt-2 flex gap-1 h-1">
-                  <div class="flex-1 rounded-full bg-brand-ink/10 dark:bg-white/10 overflow-hidden">
-                    <div id="strengthSegment1" class="h-full w-0 rounded-full transition-all duration-300"></div>
-                  </div>
-                  <div class="flex-1 rounded-full bg-brand-ink/10 dark:bg-white/10 overflow-hidden">
-                    <div id="strengthSegment2" class="h-full w-0 rounded-full transition-all duration-300"></div>
-                  </div>
-                  <div class="flex-1 rounded-full bg-brand-ink/10 dark:bg-white/10 overflow-hidden">
-                    <div id="strengthSegment3" class="h-full w-0 rounded-full transition-all duration-300"></div>
-                  </div>
-                </div>
-                <p id="strengthLabel" class="text-[10px] text-brand-muted mt-1 h-3 transition-all"></p>
               </div>
 
               <!-- Confirmar Contraseña -->
               <div>
                 <label for="confirmPasswordInput" class="block text-[11px] font-semibold uppercase tracking-wider text-brand-ink/80 dark:text-brand-darkInk/80 mb-1.5">
-                  Confirmar Contraseña <span class="text-[#E4572E]">*</span>
+                  CONFIRMAR CONTRASEÑA <span class="text-[#E4572E]">*</span>
                 </label>
                 <div class="relative">
                   <input
                     type="password"
                     id="confirmPasswordInput"
                     name="confirmPassword"
-                    minlength="6"
                     autocomplete="new-password"
                     placeholder="Repite la contraseña"
                     class="w-full px-4 py-2.5 pl-10 pr-10 text-sm rounded-xl bg-white/70 dark:bg-brand-ink/60 border border-brand-ink/15 dark:border-brand-darkCard/80 text-brand-ink dark:text-brand-darkInk placeholder:text-brand-muted/70 focus:outline-none focus:ring-2 focus:ring-brand-orange dark:focus:ring-brand-yellow focus:border-transparent transition-all"
@@ -365,8 +328,8 @@ const fontsUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;60
                   <button
                     type="button"
                     id="toggleConfirmPasswordBtn"
-                    aria-label="Mostrar u ocultar contraseña"
-                    class="absolute right-2.5 top-1/2 -translate-y-1/2 text-brand-muted hover:text-brand-ink dark:hover:text-brand-darkInk transition-colors p-0.5"
+                    aria-label="Mostrar u ocultar confirmación de contraseña"
+                    class="absolute right-2.5 top-1/2 -translate-y-1/2 text-brand-muted hover:text-brand-ink dark:hover:text-brand-darkInk transition-colors p-0.5 cursor-pointer"
                   >
                     <svg id="eyeIcon2" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -379,8 +342,60 @@ const fontsUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;60
                 </div>
               </div>
 
-              <!-- Botones Paso 2: Volver + Submit -->
-              <div class="flex flex-col gap-2.5 mt-1">
+              <!-- Indicadores de Validación de Seguridad en Tiempo Real -->
+              <div class="p-3.5 rounded-xl bg-black/5 dark:bg-white/[0.04] border border-brand-ink/10 dark:border-white/10 space-y-2.5">
+                <div class="flex items-center justify-between">
+                  <span class="text-[10px] font-bold uppercase tracking-wider text-brand-muted">
+                    Requisitos de seguridad
+                  </span>
+                  <span id="requirementsCounter" class="text-[10px] font-semibold text-brand-muted">0/5 completados</span>
+                </div>
+
+                <ul class="space-y-1.5 text-xs">
+                  <!-- Mínimo 8 caracteres -->
+                  <li id="reqLength" class="flex items-center gap-2 text-brand-muted transition-colors duration-200">
+                    <span class="req-icon w-4 h-4 rounded-full border border-brand-ink/20 dark:border-white/20 flex items-center justify-center shrink-0 transition-all duration-200">
+                      <span class="w-1.5 h-1.5 rounded-full bg-brand-muted/40"></span>
+                    </span>
+                    <span class="text-[11px] leading-tight">Mínimo 8 caracteres</span>
+                  </li>
+
+                  <!-- Al menos una letra mayúscula -->
+                  <li id="reqUpper" class="flex items-center gap-2 text-brand-muted transition-colors duration-200">
+                    <span class="req-icon w-4 h-4 rounded-full border border-brand-ink/20 dark:border-white/20 flex items-center justify-center shrink-0 transition-all duration-200">
+                      <span class="w-1.5 h-1.5 rounded-full bg-brand-muted/40"></span>
+                    </span>
+                    <span class="text-[11px] leading-tight">Al menos una letra mayúscula</span>
+                  </li>
+
+                  <!-- Al menos un número -->
+                  <li id="reqNumber" class="flex items-center gap-2 text-brand-muted transition-colors duration-200">
+                    <span class="req-icon w-4 h-4 rounded-full border border-brand-ink/20 dark:border-white/20 flex items-center justify-center shrink-0 transition-all duration-200">
+                      <span class="w-1.5 h-1.5 rounded-full bg-brand-muted/40"></span>
+                    </span>
+                    <span class="text-[11px] leading-tight">Al menos un número</span>
+                  </li>
+
+                  <!-- Al menos un carácter especial -->
+                  <li id="reqSpecial" class="flex items-center gap-2 text-brand-muted transition-colors duration-200">
+                    <span class="req-icon w-4 h-4 rounded-full border border-brand-ink/20 dark:border-white/20 flex items-center justify-center shrink-0 transition-all duration-200">
+                      <span class="w-1.5 h-1.5 rounded-full bg-brand-muted/40"></span>
+                    </span>
+                    <span class="text-[11px] leading-tight">Al menos un carácter especial (@, #, $, etc.)</span>
+                  </li>
+
+                  <!-- Coincidencia exacta -->
+                  <li id="reqMatch" class="flex items-center gap-2 text-brand-muted transition-colors duration-200">
+                    <span class="req-icon w-4 h-4 rounded-full border border-brand-ink/20 dark:border-white/20 flex items-center justify-center shrink-0 transition-all duration-200">
+                      <span class="w-1.5 h-1.5 rounded-full bg-brand-muted/40"></span>
+                    </span>
+                    <span class="text-[11px] leading-tight">Las contraseñas coinciden exactamente</span>
+                  </li>
+                </ul>
+              </div>
+
+              <!-- Botones Paso 2: Volver (Devolverse) + Submit -->
+              <div class="flex flex-col gap-2.5 mt-2">
                 <!-- Botón principal: Guardar y Entrar -->
                 <button
                   type="submit"
@@ -397,7 +412,7 @@ const fontsUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;60
                   </svg>
                 </button>
 
-                <!-- Botón secundario: Volver -->
+                <!-- Botón secundario: Devolverse -->
                 <button
                   type="button"
                   id="prevStepBtn"
@@ -406,7 +421,7 @@ const fontsUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;60
                   <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                   </svg>
-                  Volver a Información Personal
+                  <span>Devolverse</span>
                 </button>
               </div>
             </div>
@@ -433,65 +448,61 @@ const fontsUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;60
       import { supabase, setAuthCookies } from '../../lib/supabase';
 
       // ── Elementos del DOM ──
-      const setupProfileForm   = document.getElementById('setupProfileForm') as HTMLFormElement | null;
-      const step1              = document.getElementById('step1') as HTMLElement | null;
-      const step2              = document.getElementById('step2') as HTMLElement | null;
-      const stepperContainer   = document.getElementById('stepperContainer') as HTMLElement | null;
+      const setupProfileForm     = document.getElementById('setupProfileForm') as HTMLFormElement | null;
+      const step1                = document.getElementById('step1') as HTMLElement | null;
+      const step2                = document.getElementById('step2') as HTMLElement | null;
+      const stepperContainer     = document.getElementById('stepperContainer') as HTMLElement | null;
 
       // Stepper elements
-      const stepDot1           = document.getElementById('stepDot1') as HTMLElement | null;
-      const stepDot2           = document.getElementById('stepDot2') as HTMLElement | null;
-      const stepLabel1         = document.getElementById('stepLabel1') as HTMLElement | null;
-      const stepLabel2         = document.getElementById('stepLabel2') as HTMLElement | null;
-      const stepProgressLine   = document.getElementById('stepProgressLine') as HTMLElement | null;
-      const stepCurrentNum     = document.getElementById('stepCurrentNum') as HTMLElement | null;
-      const stepCurrentLabel   = document.getElementById('stepCurrentLabel') as HTMLElement | null;
+      const stepDot1             = document.getElementById('stepDot1') as HTMLElement | null;
+      const stepDot2             = document.getElementById('stepDot2') as HTMLElement | null;
+      const stepLabel1           = document.getElementById('stepLabel1') as HTMLElement | null;
+      const stepLabel2           = document.getElementById('stepLabel2') as HTMLElement | null;
+      const stepProgressLine     = document.getElementById('stepProgressLine') as HTMLElement | null;
+      const stepCurrentNum       = document.getElementById('stepCurrentNum') as HTMLElement | null;
+      const stepCurrentLabel     = document.getElementById('stepCurrentLabel') as HTMLElement | null;
 
-      // Paso 1
-      const firstNameInput     = document.getElementById('firstNameInput') as HTMLInputElement | null;
-      const lastNameInput      = document.getElementById('lastNameInput') as HTMLInputElement | null;
-      const nextStepBtn        = document.getElementById('nextStepBtn') as HTMLButtonElement | null;
+      // Paso 1: Nombres y Apellidos
+      const firstNameInput       = document.getElementById('firstNameInput') as HTMLInputElement | null;
+      const lastNameInput        = document.getElementById('lastNameInput') as HTMLInputElement | null;
+      const nextStepBtn          = document.getElementById('nextStepBtn') as HTMLButtonElement | null;
 
-      // Paso 2 — identidad preview
-      const identityInitials   = document.getElementById('identityInitials') as HTMLElement | null;
-      const identityFullName   = document.getElementById('identityFullNameDisplay') as HTMLElement | null;
-      const editIdentityBtn    = document.getElementById('editIdentityBtn') as HTMLButtonElement | null;
+      // Paso 2: Contraseña y Confirmación
+      const passwordInput        = document.getElementById('passwordInput') as HTMLInputElement | null;
+      const confirmPasswordInput = document.getElementById('confirmPasswordInput') as HTMLInputElement | null;
+      const setupSubmitBtn       = document.getElementById('setupSubmitBtn') as HTMLButtonElement | null;
+      const prevStepBtn          = document.getElementById('prevStepBtn') as HTMLButtonElement | null;
+      const btnText              = document.getElementById('btnText') as HTMLElement | null;
+      const btnSpinner           = document.getElementById('btnSpinner') as HTMLElement | null;
 
-      // Paso 2 — contraseñas
-      const newPasswordInput      = document.getElementById('newPasswordInput') as HTMLInputElement | null;
-      const confirmPasswordInput  = document.getElementById('confirmPasswordInput') as HTMLInputElement | null;
-      const setupSubmitBtn        = document.getElementById('setupSubmitBtn') as HTMLButtonElement | null;
-      const prevStepBtn           = document.getElementById('prevStepBtn') as HTMLButtonElement | null;
-      const btnText               = document.getElementById('btnText') as HTMLElement | null;
-      const btnSpinner            = document.getElementById('btnSpinner') as HTMLElement | null;
-
-      // Password strength
-      const strengthSegment1   = document.getElementById('strengthSegment1') as HTMLElement | null;
-      const strengthSegment2   = document.getElementById('strengthSegment2') as HTMLElement | null;
-      const strengthSegment3   = document.getElementById('strengthSegment3') as HTMLElement | null;
-      const strengthLabel      = document.getElementById('strengthLabel') as HTMLElement | null;
+      // Requisitos de Seguridad (Checks en Tiempo Real)
+      const reqLength            = document.getElementById('reqLength') as HTMLElement | null;
+      const reqUpper             = document.getElementById('reqUpper') as HTMLElement | null;
+      const reqNumber            = document.getElementById('reqNumber') as HTMLElement | null;
+      const reqSpecial           = document.getElementById('reqSpecial') as HTMLElement | null;
+      const reqMatch             = document.getElementById('reqMatch') as HTMLElement | null;
+      const requirementsCounter  = document.getElementById('requirementsCounter') as HTMLElement | null;
 
       // Toggles visibilidad
-      const toggleNewPasswordBtn    = document.getElementById('toggleNewPasswordBtn');
-      const eyeIcon1                = document.getElementById('eyeIcon1');
-      const eyeOffIcon1             = document.getElementById('eyeOffIcon1');
+      const togglePasswordBtn        = document.getElementById('togglePasswordBtn');
+      const eyeIcon1                 = document.getElementById('eyeIcon1');
+      const eyeOffIcon1              = document.getElementById('eyeOffIcon1');
       const toggleConfirmPasswordBtn = document.getElementById('toggleConfirmPasswordBtn');
-      const eyeIcon2                = document.getElementById('eyeIcon2');
-      const eyeOffIcon2             = document.getElementById('eyeOffIcon2');
+      const eyeIcon2                 = document.getElementById('eyeIcon2');
+      const eyeOffIcon2              = document.getElementById('eyeOffIcon2');
 
       // Alertas
-      const errorAlert          = document.getElementById('errorAlert') as HTMLElement | null;
-      const errorMessage        = document.getElementById('errorMessage') as HTMLElement | null;
-      const successContainer    = document.getElementById('successContainer') as HTMLElement | null;
-      const invalidSessionAlert = document.getElementById('invalidSessionAlert') as HTMLElement | null;
-      const accountPill         = document.getElementById('accountPill') as HTMLElement | null;
-      const accountPillEmail    = document.getElementById('accountPillEmail') as HTMLElement | null;
+      const errorAlert               = document.getElementById('errorAlert') as HTMLElement | null;
+      const errorMessage             = document.getElementById('errorMessage') as HTMLElement | null;
+      const successContainer         = document.getElementById('successContainer') as HTMLElement | null;
+      const invalidSessionAlert      = document.getElementById('invalidSessionAlert') as HTMLElement | null;
+      const accountPill              = document.getElementById('accountPill') as HTMLElement | null;
+      const accountPillEmail         = document.getElementById('accountPillEmail') as HTMLElement | null;
 
       // ── Helpers de Alerta ──
       function showError(msg: string) {
         if (errorMessage) errorMessage.textContent = msg;
         errorAlert?.classList.remove('hidden');
-        // Scroll suave al error
         errorAlert?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }
 
@@ -515,93 +526,109 @@ const fontsUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;60
           step1?.classList.remove('hidden');
           step2?.classList.add('hidden');
 
-          // Stepper visuals
+          // Stepper visuals — Paso 1 activo
           if (stepDot1) {
-            stepDot1.className = 'w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-all duration-300 border-[#E4572E] bg-[#E4572E] text-white';
+            stepDot1.className = 'w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-all duration-300 border-[#E4572E] bg-[#E4572E] text-white shadow-sm ring-4 ring-brand-card dark:ring-brand-darkCard';
+            stepDot1.innerHTML = '1';
           }
           if (stepDot2) {
-            stepDot2.className = 'w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-all duration-300 border-brand-ink/20 dark:border-white/20 bg-transparent text-brand-muted';
+            stepDot2.className = 'w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-all duration-300 border-brand-ink/20 dark:border-white/20 bg-brand-card dark:bg-brand-darkCard text-brand-muted shadow-sm ring-4 ring-brand-card dark:ring-brand-darkCard';
+            stepDot2.innerHTML = '2';
           }
-          if (stepLabel1) stepLabel1.className = 'text-[10px] font-semibold uppercase tracking-wider text-[#E4572E] transition-colors duration-300';
-          if (stepLabel2) stepLabel2.className = 'text-[10px] font-semibold uppercase tracking-wider text-brand-muted transition-colors duration-300';
+          if (stepLabel1) stepLabel1.className = 'mt-1.5 text-[10px] font-bold uppercase tracking-wider text-[#E4572E] transition-colors duration-300 select-none';
+          if (stepLabel2) stepLabel2.className = 'mt-1.5 text-[10px] font-bold uppercase tracking-wider text-brand-muted transition-colors duration-300 select-none';
           if (stepProgressLine) stepProgressLine.style.width = '0%';
           if (stepCurrentNum) stepCurrentNum.textContent = '1';
-          if (stepCurrentLabel) stepCurrentLabel.textContent = 'Información Personal';
+          if (stepCurrentLabel) stepCurrentLabel.textContent = 'Identidad';
 
-          // Focus en primer campo
           setTimeout(() => firstNameInput?.focus(), 50);
 
         } else {
-          // Paso 2: actualizar el preview de identidad
-          const fn = firstNameInput?.value?.trim() || '';
-          const ln = lastNameInput?.value?.trim() || '';
-          const full = [fn, ln].filter(Boolean).join(' ');
-          const initials = [fn[0], ln[0]].filter(Boolean).join('').toUpperCase() || '?';
-
-          if (identityInitials) identityInitials.textContent = initials;
-          if (identityFullName) identityFullName.textContent = full || '—';
-
           // Mostrar Paso 2, ocultar Paso 1
           step1?.classList.add('hidden');
           step2?.classList.remove('hidden');
 
-          // Stepper visuals — Paso 1 completado (checkmark)
+          // Stepper visuals — Paso 1 completado con check, Paso 2 activo
           if (stepDot1) {
-            stepDot1.className = 'w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-all duration-300 border-[#E4572E] bg-[#E4572E] text-white';
+            stepDot1.className = 'w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-all duration-300 border-[#E4572E] bg-[#E4572E] text-white shadow-sm ring-4 ring-brand-card dark:ring-brand-darkCard';
             stepDot1.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>';
           }
           if (stepDot2) {
-            stepDot2.className = 'w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-all duration-300 border-[#E4572E] bg-[#E4572E] text-white';
-            stepDot2.textContent = '2';
+            stepDot2.className = 'w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-all duration-300 border-[#E4572E] bg-[#E4572E] text-white shadow-sm ring-4 ring-brand-card dark:ring-brand-darkCard';
+            stepDot2.innerHTML = '2';
           }
-          if (stepLabel1) stepLabel1.className = 'text-[10px] font-semibold uppercase tracking-wider text-[#E4572E] transition-colors duration-300';
-          if (stepLabel2) stepLabel2.className = 'text-[10px] font-semibold uppercase tracking-wider text-[#E4572E] transition-colors duration-300';
-          if (stepProgressLine) stepProgressLine.style.width = 'calc(100% - 3rem)';
+          if (stepLabel1) stepLabel1.className = 'mt-1.5 text-[10px] font-bold uppercase tracking-wider text-[#E4572E] transition-colors duration-300 select-none';
+          if (stepLabel2) stepLabel2.className = 'mt-1.5 text-[10px] font-bold uppercase tracking-wider text-[#E4572E] transition-colors duration-300 select-none';
+          if (stepProgressLine) stepProgressLine.style.width = 'calc(100% - 2rem)';
           if (stepCurrentNum) stepCurrentNum.textContent = '2';
-          if (stepCurrentLabel) stepCurrentLabel.textContent = 'Seguridad y Contraseña';
+          if (stepCurrentLabel) stepCurrentLabel.textContent = 'Seguridad';
 
-          // Focus en campo de contraseña
-          setTimeout(() => newPasswordInput?.focus(), 50);
+          validatePasswordRules();
+          setTimeout(() => passwordInput?.focus(), 50);
         }
       }
 
-      // ── Fuerza de contraseña ──
-      function evaluatePasswordStrength(pwd: string): 0 | 1 | 2 | 3 {
-        if (!pwd) return 0;
-        let score = 0;
-        if (pwd.length >= 6) score++;
-        if (pwd.length >= 10) score++;
-        if (/[A-Z]/.test(pwd) || /[0-9]/.test(pwd) || /[^a-zA-Z0-9]/.test(pwd)) score++;
-        return score as 0 | 1 | 2 | 3;
-      }
+      // ── Validación de Contraseña en Tiempo Real ──
+      const checkIconSvg = '<svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>';
+      const neutralBulletSvg = '<span class="w-1.5 h-1.5 rounded-full bg-brand-muted/40"></span>';
 
-      function updateStrengthBar(pwd: string) {
-        const level = evaluatePasswordStrength(pwd);
-        const colors = ['', '#E4572E', '#F2B134', '#2F4B3A'];
-        const labels = ['', 'Contraseña débil', 'Contraseña moderada', 'Contraseña fuerte'];
-        const fill = (el: HTMLElement | null, active: boolean, color: string) => {
-          if (!el) return;
-          el.style.width = active ? '100%' : '0%';
-          el.style.backgroundColor = active ? color : '';
-        };
-        fill(strengthSegment1, level >= 1, colors[level] || colors[1]);
-        fill(strengthSegment2, level >= 2, colors[level] || colors[1]);
-        fill(strengthSegment3, level >= 3, colors[level] || colors[1]);
-        if (strengthLabel) {
-          strengthLabel.textContent = pwd ? labels[level] : '';
-          strengthLabel.style.color = colors[level] || '';
+      function setRequirementState(el: HTMLElement | null, isValid: boolean) {
+        if (!el) return;
+        const iconContainer = el.querySelector('.req-icon');
+        if (isValid) {
+          el.classList.remove('text-brand-muted');
+          el.classList.add('text-emerald-700', 'dark:text-emerald-400', 'font-medium');
+          if (iconContainer) {
+            iconContainer.className = 'req-icon w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/40 flex items-center justify-center shrink-0 transition-all duration-200';
+            iconContainer.innerHTML = checkIconSvg;
+          }
+        } else {
+          el.classList.add('text-brand-muted');
+          el.classList.remove('text-emerald-700', 'dark:text-emerald-400', 'font-medium');
+          if (iconContainer) {
+            iconContainer.className = 'req-icon w-4 h-4 rounded-full border border-brand-ink/20 dark:border-white/20 flex items-center justify-center shrink-0 transition-all duration-200';
+            iconContainer.innerHTML = neutralBulletSvg;
+          }
         }
       }
 
-      newPasswordInput?.addEventListener('input', () => {
-        updateStrengthBar(newPasswordInput.value);
-      });
+      function validatePasswordRules(): boolean {
+        const pwd = passwordInput?.value || '';
+        const confirmPwd = confirmPasswordInput?.value || '';
+
+        const hasMinLength   = pwd.length >= 8;
+        const hasUpperCase   = /[A-Z]/.test(pwd);
+        const hasNumber      = /[0-9]/.test(pwd);
+        const hasSpecialChar = /[!@#$%^&*()_+-=\[\]{};':"\\|,.<>\/?`~]/.test(pwd);
+        const passwordsMatch = pwd.length > 0 && confirmPwd.length > 0 && pwd === confirmPwd;
+
+        setRequirementState(reqLength, hasMinLength);
+        setRequirementState(reqUpper, hasUpperCase);
+        setRequirementState(reqNumber, hasNumber);
+        setRequirementState(reqSpecial, hasSpecialChar);
+        setRequirementState(reqMatch, passwordsMatch);
+
+        const passedCount = [hasMinLength, hasUpperCase, hasNumber, hasSpecialChar, passwordsMatch].filter(Boolean).length;
+        if (requirementsCounter) {
+          requirementsCounter.textContent = `${passedCount}/5 completados`;
+          if (passedCount === 5) {
+            requirementsCounter.className = 'text-[10px] font-bold text-emerald-700 dark:text-emerald-400';
+          } else {
+            requirementsCounter.className = 'text-[10px] font-semibold text-brand-muted';
+          }
+        }
+
+        return hasMinLength && hasUpperCase && hasNumber && hasSpecialChar && passwordsMatch;
+      }
+
+      passwordInput?.addEventListener('input', validatePasswordRules);
+      confirmPasswordInput?.addEventListener('input', validatePasswordRules);
 
       // ── Toggle visibilidad de contraseñas ──
-      toggleNewPasswordBtn?.addEventListener('click', () => {
-        if (!newPasswordInput) return;
-        const show = newPasswordInput.type === 'password';
-        newPasswordInput.type = show ? 'text' : 'password';
+      togglePasswordBtn?.addEventListener('click', () => {
+        if (!passwordInput) return;
+        const show = passwordInput.type === 'password';
+        passwordInput.type = show ? 'text' : 'password';
         eyeIcon1?.classList.toggle('hidden', show);
         eyeOffIcon1?.classList.toggle('hidden', !show);
       });
@@ -621,12 +648,12 @@ const fontsUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;60
         const lastName  = lastNameInput?.value?.trim() || '';
 
         if (!firstName) {
-          showError('Por favor ingresa tu nombre antes de continuar.');
+          showError('Por favor ingresa tus nombres antes de continuar.');
           firstNameInput?.focus();
           return;
         }
         if (!lastName) {
-          showError('Por favor ingresa tu apellido antes de continuar.');
+          showError('Por favor ingresa tus apellidos antes de continuar.');
           lastNameInput?.focus();
           return;
         }
@@ -634,9 +661,8 @@ const fontsUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;60
         goToStep(2);
       });
 
-      // ── Botón Volver (Paso 2 → Paso 1) ──
+      // ── Botón Devolverse (Paso 2 → Paso 1) ──
       prevStepBtn?.addEventListener('click', () => goToStep(1));
-      editIdentityBtn?.addEventListener('click', () => goToStep(1));
 
       // ── Estado de carga ──
       function setLoading(loading: boolean) {
@@ -704,21 +730,49 @@ const fontsUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;60
         const firstName       = firstNameInput?.value?.trim() || '';
         const lastName        = lastNameInput?.value?.trim() || '';
         const fullName        = [firstName, lastName].filter(Boolean).join(' ');
-        const newPassword     = newPasswordInput?.value || '';
+        const password        = passwordInput?.value || '';
         const confirmPassword = confirmPasswordInput?.value || '';
 
-        // Validar contraseñas
-        if (!newPassword || !confirmPassword) {
+        // Validaciones estrictas
+        const hasMinLength   = password.length >= 8;
+        const hasUpperCase   = /[A-Z]/.test(password);
+        const hasNumber      = /[0-9]/.test(password);
+        const hasSpecialChar = /[!@#$%^&*()_+-=\[\]{};':"\\|,.<>\/?`~]/.test(password);
+        const passwordsMatch = password.length > 0 && password === confirmPassword;
+
+        if (!password || !confirmPassword) {
           showError('Por favor completa todos los campos de contraseña.');
+          if (!password) passwordInput?.focus();
+          else confirmPasswordInput?.focus();
           return;
         }
-        if (newPassword.length < 6) {
-          showError('La contraseña debe tener al menos 6 caracteres.');
-          newPasswordInput?.focus();
+
+        if (!hasMinLength) {
+          showError('La contraseña debe tener como mínimo 8 caracteres.');
+          passwordInput?.focus();
           return;
         }
-        if (newPassword !== confirmPassword) {
-          showError('Las contraseñas no coinciden. Por favor verifícalas.');
+
+        if (!hasUpperCase) {
+          showError('La contraseña debe contener al menos una letra mayúscula.');
+          passwordInput?.focus();
+          return;
+        }
+
+        if (!hasNumber) {
+          showError('La contraseña debe contener al menos un número.');
+          passwordInput?.focus();
+          return;
+        }
+
+        if (!hasSpecialChar) {
+          showError('La contraseña debe contener al menos un carácter especial (@, #, $, etc.).');
+          passwordInput?.focus();
+          return;
+        }
+
+        if (!passwordsMatch) {
+          showError('Las contraseñas no coinciden. Por favor verifica que sean exactamente iguales.');
           confirmPasswordInput?.focus();
           return;
         }
@@ -728,7 +782,7 @@ const fontsUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;60
         try {
           // 1. Actualizar contraseña y metadatos en Supabase Auth
           const { data: updateUserData, error: updateUserErr } = await supabase.auth.updateUser({
-            password: newPassword,
+            password,
             data: {
               first_name: firstName,
               last_name: lastName,
