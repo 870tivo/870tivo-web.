@@ -188,7 +188,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       }
     }
 
-    // 6. Configurar la URL de redirección hacia /admin/setup-profile
+    // 6. Configurar la URL de redirección hacia la ruta secreta de activación
     const siteUrl = (import.meta.env.PUBLIC_SITE_URL as string) || 'https://870tivo-web.vercel.app';
     const forwardedHost = request.headers.get('x-forwarded-host') || request.headers.get('host');
     const forwardedProto = request.headers.get('x-forwarded-proto') || 'https';
@@ -197,8 +197,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
       origin = siteUrl;
     }
     const redirectTo = import.meta.env.PROD 
-      ? 'https://870tivo-web.vercel.app/admin/setup-profile' 
-      : `${origin}/admin/setup-profile`;
+      ? 'https://870tivo-web.vercel.app/2416f50b-da02-4a5b-86a8-61ae470ed3bd/setup-profile' 
+      : `${origin}/2416f50b-da02-4a5b-86a8-61ae470ed3bd/setup-profile`;
 
     // 7. Enviar la invitación con Supabase Auth Admin
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.inviteUserByEmail(

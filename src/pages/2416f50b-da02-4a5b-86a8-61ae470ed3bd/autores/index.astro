@@ -14,7 +14,7 @@ import { supabaseAdmin } from '../../../lib/supabase';
 // 1. Verificar sesión de usuario SSR
 const user = Astro.locals.user;
 if (!user?.id) {
-  return Astro.redirect('/admin/login?redirect=/admin/autores');
+  return Astro.redirect('/2416f50b-da02-4a5b-86a8-61ae470ed3bd/login?redirect=/2416f50b-da02-4a5b-86a8-61ae470ed3bd/autores');
 }
 
 // 2. Parámetros de búsqueda

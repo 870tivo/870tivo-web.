@@ -125,7 +125,7 @@ const fontsUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;60
                   Contraseña
                 </label>
                 <a 
-                  href="/admin/forgot-password" 
+                  href="/2416f50b-da02-4a5b-86a8-61ae470ed3bd/forgot-password" 
                   class="text-xs text-brand-muted hover:text-brand-orange dark:hover:text-brand-bg transition-colors"
                 >
                   ¿Olvidaste tu contraseña?
@@ -206,7 +206,7 @@ const fontsUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;60
       supabase.auth.getSession().then(({ data: { session } }) => {
         if (session) {
           setAuthCookies(session);
-          window.location.href = '/admin/dashboard';
+          window.location.href = '/2416f50b-da02-4a5b-86a8-61ae470ed3bd/dashboard';
         }
       });
 
@@ -285,7 +285,7 @@ const fontsUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;60
             if (btnText) btnText.textContent = 'Acceso concedido...';
             // Smooth transition to dashboard
             setTimeout(() => {
-              window.location.href = '/admin/dashboard';
+              window.location.href = '/2416f50b-da02-4a5b-86a8-61ae470ed3bd/dashboard';
             }, 300);
           } else {
             showError('No se pudo establecer la sesión. Intente nuevamente.');

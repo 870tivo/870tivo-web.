@@ -20,7 +20,7 @@ import { GALLERY_CATEGORIES, type GalleryItem } from '../../../types/gallery';
 // 1. Verificar sesión de usuario SSR
 const user = Astro.locals.user;
 if (!user?.id) {
-  return Astro.redirect('/admin/login?redirect=/admin/galeria');
+  return Astro.redirect('/2416f50b-da02-4a5b-86a8-61ae470ed3bd/login?redirect=/2416f50b-da02-4a5b-86a8-61ae470ed3bd/galeria');
 }
 
 // 2. Verificar permisos granulares del módulo 'galeria'
@@ -141,7 +141,7 @@ function formatDate(dateStr: string) {
         No tienes los permisos necesarios para visualizar el catálogo de la galería de arte. Contacta a un administrador para solicitar el permiso <code class="text-amber-400 bg-slate-800 px-1.5 py-0.5 rounded">galeria.read</code>.
       </p>
       <a 
-        href="/admin/dashboard" 
+        href="/2416f50b-da02-4a5b-86a8-61ae470ed3bd/dashboard" 
         class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors"
       >
         Volver al Panel Principal
@@ -501,7 +501,7 @@ function formatDate(dateStr: string) {
               : 'No hay obras que coincidan con los filtros aplicados.'}
           </p>
           <a 
-            href="/admin/galeria" 
+            href="/2416f50b-da02-4a5b-86a8-61ae470ed3bd/galeria" 
             class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#181818] hover:bg-[#222222] text-[#E4572E] text-xs font-semibold transition-colors border border-[#282828]"
           >
             <span>Restablecer Filtros</span>

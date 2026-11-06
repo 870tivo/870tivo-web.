@@ -11,13 +11,13 @@ import type { AdminUserListItem } from '../../../types/roles';
 // 1. SSR Auth & RBAC Guard (Defense in Depth)
 const user = Astro.locals.user;
 if (!user) {
-  return Astro.redirect('/admin/login');
+  return Astro.redirect('/2416f50b-da02-4a5b-86a8-61ae470ed3bd/login');
 }
 const role = Astro.locals.role;
 const permissions = Astro.locals.permissions;
 if (!isUserAdminOrHasAccess(role, permissions)) {
   const msg = encodeURIComponent('Acceso restringido: Se requieren privilegios de Administrador para gestionar usuarios.');
-  return Astro.redirect(`/admin/dashboard?error=access_denied&message=${msg}`);
+  return Astro.redirect(`/2416f50b-da02-4a5b-86a8-61ae470ed3bd/dashboard?error=access_denied&message=${msg}`);
 }
 
 // 2. Fetch available roles
@@ -145,7 +145,7 @@ function getUserInitials(name?: string | null, email?: string | null): string {
     <div class="flex flex-wrap items-center gap-3">
       <Button
         variant="secondary"
-        href="/admin/roles"
+        href="/2416f50b-da02-4a5b-86a8-61ae470ed3bd/roles"
         size="md"
       >
         <svg class="w-4 h-4 text-[#E4572E]" fill="none" stroke="currentColor" viewBox="0 0 24 24">

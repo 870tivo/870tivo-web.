@@ -18,7 +18,7 @@ import { getAuthorInitials, formatPostDate } from '../../../types/posts';
 // 1. Verificar sesión de usuario SSR
 const user = Astro.locals.user;
 if (!user?.id) {
-  return Astro.redirect('/admin/login?redirect=/admin/publicaciones');
+  return Astro.redirect('/2416f50b-da02-4a5b-86a8-61ae470ed3bd/login?redirect=/2416f50b-da02-4a5b-86a8-61ae470ed3bd/publicaciones');
 }
 
 // 2. Parámetros de paginación y búsqueda Server-Side
@@ -433,7 +433,7 @@ function getPageUrl(p: number) {
           </p>
           <div class="mt-4">
             <a 
-              href="/admin/publicaciones" 
+              href="/2416f50b-da02-4a5b-86a8-61ae470ed3bd/publicaciones" 
               class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white dark:bg-[#181818] hover:bg-[#FAF6F0] dark:hover:bg-[#222222] text-[#E4572E] text-xs font-semibold transition-colors border border-[#E5DFD5] dark:border-[#282828]"
             >
               <span>Restablecer Filtros</span>

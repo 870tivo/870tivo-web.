@@ -58,7 +58,7 @@ const avatarInitial = (userFullName?.[0] || userEmail?.[0] || 'A').toUpperCase()
     <div class="flex items-center gap-2 pl-1 pr-1.5 py-1 rounded-xl bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] shadow-xs">
       <!-- User Avatar -->
         <a 
-        href="/admin/profile" 
+        href="/2416f50b-da02-4a5b-86a8-61ae470ed3bd/profile" 
         class="w-7 h-7 rounded-lg bg-[#E4572E] text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-xs hover:opacity-90 transition-opacity"
         id="headerUserAvatar"
         title="Ver mi perfil"
@@ -68,7 +68,7 @@ const avatarInitial = (userFullName?.[0] || userEmail?.[0] || 'A').toUpperCase()
 
       <!-- User Email & Status -->
         <a 
-        href="/admin/profile" 
+        href="/2416f50b-da02-4a5b-86a8-61ae470ed3bd/profile" 
         class="hidden sm:flex flex-col min-w-0 pr-1 hover:opacity-80 transition-opacity"
         title="Ver mi perfil"
       >
@@ -134,11 +134,11 @@ const avatarInitial = (userFullName?.[0] || userEmail?.[0] || 'A').toUpperCase()
       headerLogoutBtn.classList.add('opacity-50', 'pointer-events-none');
       await supabase.auth.signOut();
       clearAuthCookies();
-      window.location.href = '/admin/login';
+      window.location.href = '/2416f50b-da02-4a5b-86a8-61ae470ed3bd/login';
     } catch (err) {
       console.error('Error al cerrar sesión:', err);
       clearAuthCookies();
-      window.location.href = '/admin/login';
+      window.location.href = '/2416f50b-da02-4a5b-86a8-61ae470ed3bd/login';
     }
   });
 </script>
