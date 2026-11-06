@@ -43,7 +43,7 @@ const fontsUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;60
 
     <!-- Top Utility Bar -->
     <header class="w-full px-6 py-4 flex items-center justify-between">
-      <a href="/admin/login" class="flex items-center gap-2 text-xs uppercase tracking-widest text-brand-muted hover:text-brand-orange dark:hover:text-brand-bg transition-colors font-medium">
+      <a href="/2416f50b-da02-4a5b-86a8-61ae470ed3bd/login" class="flex items-center gap-2 text-xs uppercase tracking-widest text-brand-muted hover:text-brand-orange dark:hover:text-brand-bg transition-colors font-medium">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
         </svg>
@@ -158,7 +158,7 @@ const fontsUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;60
                   Para activar tu perfil, debes ingresar utilizando el enlace exclusivo que recibiste por correo electrónico.
                 </p>
                 <a
-                  href="/admin/login"
+                  href="/2416f50b-da02-4a5b-86a8-61ae470ed3bd/login"
                   class="inline-block mt-0.5 text-[11px] font-semibold underline hover:text-brand-orange transition-colors"
                 >
                   Ir a iniciar sesión &rarr;
@@ -195,7 +195,7 @@ const fontsUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;60
               </div>
             </div>
             <a
-              href="/admin/dashboard"
+              href="/2416f50b-da02-4a5b-86a8-61ae470ed3bd/dashboard"
               class="block w-full py-3 px-4 rounded-xl text-center text-xs font-semibold text-white bg-brand-ink dark:bg-brand-orange hover:bg-brand-ink/90 dark:hover:bg-brand-orange/90 transition-all shadow-md hover:shadow-lg"
             >
               Ir al Panel de Administración &rarr;
@@ -846,7 +846,7 @@ const fontsUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;60
           setupProfileForm.classList.add('hidden');
           stepperContainer?.classList.add('hidden');
           successContainer?.classList.remove('hidden');
-          setTimeout(() => { window.location.href = '/admin/dashboard'; }, 1400);
+          setTimeout(() => { window.location.href = '/2416f50b-da02-4a5b-86a8-61ae470ed3bd/dashboard'; }, 1400);
 
         } catch (err: unknown) {
           const msg = err instanceof Error ? err.message : 'Error inesperado';

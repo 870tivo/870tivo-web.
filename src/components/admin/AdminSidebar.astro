@@ -25,7 +25,7 @@ const isProfileActive = activeModule === 'profile';
 >
   <!-- Top: Logo & Branding -->
   <div class="h-16 px-5 border-b border-[#E5DFD5] dark:border-[#282828] flex items-center justify-between">
-    <a href="/admin/dashboard" class="flex items-center gap-3 group">
+    <a href="/2416f50b-da02-4a5b-86a8-61ae470ed3bd/dashboard" class="flex items-center gap-3 group">
       <div class="relative">
         <img 
           src="/assets/logo/870.jpeg" 
@@ -74,7 +74,7 @@ const isProfileActive = activeModule === 'profile';
       <nav class="space-y-1 mt-1">
         <!-- Overview -->
         <a 
-          href="/admin/dashboard" 
+          href="/2416f50b-da02-4a5b-86a8-61ae470ed3bd/dashboard" 
           class={`flex items-center gap-3 px-3 py-2 rounded-xl transition-all ${
             isDashboardActive 
               ? 'bg-[#F5EFE6] dark:bg-[#1E1E1E] text-[#1F1B16] dark:text-white font-medium border border-[#E5DFD5] dark:border-[#282828] shadow-sm' 
@@ -93,7 +93,7 @@ const isProfileActive = activeModule === 'profile';
 
         <!-- Publicaciones (Direct Link) -->
         <a 
-          href="/admin/publicaciones" 
+          href="/2416f50b-da02-4a5b-86a8-61ae470ed3bd/publicaciones" 
           class={`flex items-center gap-3 px-3 py-2 rounded-xl transition-all ${
             isEditorialActive 
               ? 'bg-[#F5EFE6] dark:bg-[#1E1E1E] text-[#1F1B16] dark:text-white font-medium border border-[#E5DFD5] dark:border-[#282828] shadow-sm' 
@@ -111,7 +111,7 @@ const isProfileActive = activeModule === 'profile';
 
         <!-- Autores (Direct Link) -->
         <a 
-          href="/admin/autores" 
+          href="/2416f50b-da02-4a5b-86a8-61ae470ed3bd/autores" 
           class={`flex items-center gap-3 px-3 py-2 rounded-xl transition-all ${
             isAuthorsActive 
               ? 'bg-[#F5EFE6] dark:bg-[#1E1E1E] text-[#1F1B16] dark:text-white font-medium border border-[#E5DFD5] dark:border-[#282828] shadow-sm' 
@@ -129,7 +129,7 @@ const isProfileActive = activeModule === 'profile';
 
         <!-- Galería & Proyectos (Direct Link) -->
         <a 
-          href="/admin/galeria" 
+          href="/2416f50b-da02-4a5b-86a8-61ae470ed3bd/galeria" 
           class={`flex items-center gap-3 px-3 py-2 rounded-xl transition-all ${
             isGalleryActive 
               ? 'bg-[#F5EFE6] dark:bg-[#1E1E1E] text-[#1F1B16] dark:text-white font-medium border border-[#E5DFD5] dark:border-[#282828] shadow-sm' 
@@ -156,7 +156,7 @@ const isProfileActive = activeModule === 'profile';
       <nav class="space-y-1 mt-1">
         <!-- Gestión de Roles -->
         <a 
-          href="/admin/roles" 
+          href="/2416f50b-da02-4a5b-86a8-61ae470ed3bd/roles" 
           class={`flex items-center gap-3 px-3 py-2 rounded-xl transition-all ${
             isRolesActive 
               ? 'bg-[#F5EFE6] dark:bg-[#1E1E1E] text-[#1F1B16] dark:text-white font-medium border border-[#E5DFD5] dark:border-[#282828] shadow-sm' 
@@ -174,7 +174,7 @@ const isProfileActive = activeModule === 'profile';
 
         <!-- Gestión de Usuarios -->
         <a 
-          href="/admin/usuarios" 
+          href="/2416f50b-da02-4a5b-86a8-61ae470ed3bd/usuarios" 
           class={`flex items-center gap-3 px-3 py-2 rounded-xl transition-all ${
             isUsersActive 
               ? 'bg-[#F5EFE6] dark:bg-[#1E1E1E] text-[#1F1B16] dark:text-white font-medium border border-[#E5DFD5] dark:border-[#282828] shadow-sm' 
@@ -224,7 +224,7 @@ const isProfileActive = activeModule === 'profile';
   <div class="p-3 border-t border-[#E5DFD5] dark:border-[#282828] bg-[#FAF6F0] dark:bg-[#111111]">
     <div class={`p-2.5 rounded-xl border transition-all flex items-center justify-between gap-2.5 ${isProfileActive ? 'bg-[#F5EFE6] dark:bg-[#1E1E1E] border-[#E4572E]/50 shadow-sm' : 'bg-white dark:bg-[#181818] border-[#E5DFD5] dark:border-[#282828]'}`}>
       <a 
-        href="/admin/profile" 
+        href="/2416f50b-da02-4a5b-86a8-61ae470ed3bd/profile" 
         class="flex items-center gap-2.5 min-w-0 flex-1 group cursor-pointer"
         title="Ver y editar mi perfil de usuario"
       >
@@ -319,11 +319,11 @@ const isProfileActive = activeModule === 'profile';
       sidebarLogoutBtn.classList.add('opacity-50', 'pointer-events-none');
       await supabase.auth.signOut();
       clearAuthCookies();
-      window.location.href = '/admin/login';
+      window.location.href = '/2416f50b-da02-4a5b-86a8-61ae470ed3bd/login';
     } catch (e) {
       console.error('Error al cerrar sesión:', e);
       clearAuthCookies();
-      window.location.href = '/admin/login';
+      window.location.href = '/2416f50b-da02-4a5b-86a8-61ae470ed3bd/login';
     }
   });
 </script>
