@@ -728,13 +728,8 @@ function getUserInitials(name?: string | null, email?: string | null): string {
   inviteUserForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    const inviteFirstNameInput = document.getElementById('inviteFirstNameInput') as HTMLInputElement | null;
-    const inviteLastNameInput = document.getElementById('inviteLastNameInput') as HTMLInputElement | null;
-
     const email = inviteEmailInput?.value.trim() || '';
     const roleId = inviteRoleSelect?.value.trim() || '';
-    const firstName = inviteFirstNameInput?.value.trim() || '';
-    const lastName = inviteLastNameInput?.value.trim() || '';
 
     if (!email) {
       if (inviteModalError && inviteModalErrorMsg) {
@@ -749,8 +744,6 @@ function getUserInitials(name?: string | null, email?: string | null): string {
     if (submitInviteBtn) submitInviteBtn.disabled = true;
     if (inviteEmailInput) inviteEmailInput.disabled = true;
     if (inviteRoleSelect) inviteRoleSelect.disabled = true;
-    if (inviteFirstNameInput) inviteFirstNameInput.disabled = true;
-    if (inviteLastNameInput) inviteLastNameInput.disabled = true;
     inviteBtnIcon?.classList.add('hidden');
     inviteBtnSpinner?.classList.remove('hidden');
     if (inviteBtnText) inviteBtnText.textContent = 'Enviando...';
@@ -760,7 +753,7 @@ function getUserInitials(name?: string | null, email?: string | null): string {
       const response = await fetch('/api/admin/users/invite', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, roleId, first_name: firstName, last_name: lastName }),
+        body: JSON.stringify({ email, roleId }),
       });
 
       const result = await response.json();
@@ -802,10 +795,6 @@ function getUserInitials(name?: string | null, email?: string | null): string {
       if (submitInviteBtn) submitInviteBtn.disabled = false;
       if (inviteEmailInput) inviteEmailInput.disabled = false;
       if (inviteRoleSelect) inviteRoleSelect.disabled = false;
-      const inviteFirstNameInput = document.getElementById('inviteFirstNameInput') as HTMLInputElement | null;
-      const inviteLastNameInput = document.getElementById('inviteLastNameInput') as HTMLInputElement | null;
-      if (inviteFirstNameInput) inviteFirstNameInput.disabled = false;
-      if (inviteLastNameInput) inviteLastNameInput.disabled = false;
       inviteBtnSpinner?.classList.add('hidden');
       inviteBtnIcon?.classList.remove('hidden');
       if (inviteBtnText) inviteBtnText.textContent = 'Enviar Invitación';
