@@ -8,13 +8,13 @@ import Modal from '../../../components/common/Modal.astro';
 // 1. SSR Auth & RBAC Guard (Defense in Depth)
 const user = Astro.locals.user;
 if (!user) {
-  return Astro.redirect('/admin/login');
+  return Astro.redirect('/2416f50b-da02-4a5b-86a8-61ae470ed3bd/login');
 }
 const role = Astro.locals.role;
 const permissions = Astro.locals.permissions;
 if (!isUserAdminOrHasAccess(role, permissions)) {
   const msg = encodeURIComponent('Acceso restringido: Se requieren privilegios de Administrador para gestionar roles.');
-  return Astro.redirect(`/admin/dashboard?error=access_denied&message=${msg}`);
+  return Astro.redirect(`/2416f50b-da02-4a5b-86a8-61ae470ed3bd/dashboard?error=access_denied&message=${msg}`);
 }
 
 // Server-side fetching of roles
@@ -48,7 +48,7 @@ const totalUsersWithRoles = roles.reduce((acc, r) => acc + (r.user_count || 0), 
     <!-- Quick Action Buttons -->
     <div class="flex items-center gap-3">
       <Button 
-        href="/admin/usuarios"
+        href="/2416f50b-da02-4a5b-86a8-61ae470ed3bd/usuarios"
         variant="secondary"
         size="md"
       >

@@ -31,7 +31,7 @@ export const prerender = false;
 const currentUser = Astro.locals.user;
 
 if (!currentUser) {
-  return Astro.redirect('/admin/login');
+  return Astro.redirect('/2416f50b-da02-4a5b-86a8-61ae470ed3bd/login');
 }
 
 // 2. Consultar perfil en public.profiles
@@ -152,7 +152,7 @@ const createdAtFormatted = currentUser.created_at
         <!-- Quick Action / Status Badges -->
         <div class="flex items-center gap-3">
           <a 
-            href="/admin/dashboard" 
+            href="/2416f50b-da02-4a5b-86a8-61ae470ed3bd/dashboard" 
             class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#FAF6F0] hover:bg-neutral-100 dark:bg-[#181818] dark:hover:bg-[#222222] text-xs font-medium text-neutral-700 hover:text-[#1F1B16] dark:text-neutral-300 dark:hover:text-white border border-[#E5DFD5] dark:border-[#282828] hover:border-[#E4572E]/40 transition-all"
           >
             <span>Volver a Overview</span>
@@ -386,7 +386,7 @@ const createdAtFormatted = currentUser.created_at
               </div>
 
               <a 
-                href="/admin/roles" 
+                href="/2416f50b-da02-4a5b-86a8-61ae470ed3bd/roles" 
                 class="hidden sm:inline-flex items-center gap-1 text-[11px] font-semibold text-[#E4572E] hover:text-[#F2B134] transition-colors uppercase tracking-wider shrink-0"
               >
                 <span>Ver Matriz</span>

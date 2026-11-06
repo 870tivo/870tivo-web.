@@ -13,7 +13,7 @@ import { supabaseAdmin } from '../../lib/supabase';
 // 1. Contexto de autenticación Server-Side
 const user = Astro.locals.user;
 if (!user?.id) {
-  return Astro.redirect('/admin/login');
+  return Astro.redirect('/2416f50b-da02-4a5b-86a8-61ae470ed3bd/login');
 }
 
 const role = Astro.locals.role;
@@ -141,7 +141,7 @@ const totalStaticPages = staticPages.length;
 
         <!-- Botón de acción principal directo: Crear Publicación -->
         <a 
-          href="/admin/publicaciones?new=1" 
+          href="/2416f50b-da02-4a5b-86a8-61ae470ed3bd/publicaciones?new=1" 
           class="inline-flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-xl bg-[#E4572E] hover:bg-[#CF4821] text-white shadow-sm transition-all cursor-pointer select-none active:translate-y-0.5"
           id="btnCrearPublicacionHeader"
           title="Crear una nueva publicación editorial"
@@ -160,7 +160,7 @@ const totalStaticPages = staticPages.length;
     
     <!-- KPI 1: Publicaciones Registradas -->
     <a 
-      href="/admin/publicaciones" 
+      href="/2416f50b-da02-4a5b-86a8-61ae470ed3bd/publicaciones" 
       class="group block p-5 rounded-2xl bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] hover:border-[#E4572E]/60 dark:hover:border-[#E4572E]/60 transition-all shadow-xs"
     >
       <div class="flex items-center justify-between mb-3">
@@ -183,7 +183,7 @@ const totalStaticPages = staticPages.length;
 
     <!-- KPI 2: Equipo Editorial / Autores activos -->
     <a 
-      href="/admin/autores" 
+      href="/2416f50b-da02-4a5b-86a8-61ae470ed3bd/autores" 
       class="group block p-5 rounded-2xl bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] hover:border-[#F2B134]/70 dark:hover:border-[#F2B134]/70 transition-all shadow-xs"
     >
       <div class="flex items-center justify-between mb-3">
@@ -230,7 +230,7 @@ const totalStaticPages = staticPages.length;
 
     <!-- KPI 4: Estado del Sistema de Seguridad -->
     <a 
-      href="/admin/roles" 
+      href="/2416f50b-da02-4a5b-86a8-61ae470ed3bd/roles" 
       class="group block p-5 rounded-2xl bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] hover:border-[#2F4B3A]/70 dark:hover:border-[#2F4B3A]/70 transition-all shadow-xs"
     >
       <div class="flex items-center justify-between mb-3">
@@ -296,7 +296,7 @@ const totalStaticPages = staticPages.length;
 
         <div class="pt-5 mt-5 border-t border-[#FAF6F0]/10 flex items-center justify-between gap-3">
           <a 
-            href="/admin/publicaciones" 
+            href="/2416f50b-da02-4a5b-86a8-61ae470ed3bd/publicaciones" 
             class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#E4572E] hover:bg-[#CF4821] text-white text-xs font-semibold shadow-xs transition-colors"
           >
             <span>Gestionar Publicaciones</span>
@@ -331,7 +331,7 @@ const totalStaticPages = staticPages.length;
 
         <div class="pt-5 mt-5 border-t border-[#FAF6F0]/10 flex items-center justify-between gap-3">
           <a 
-            href="/admin/autores" 
+            href="/2416f50b-da02-4a5b-86a8-61ae470ed3bd/autores" 
             class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#FAF6F0]/10 hover:bg-[#FAF6F0]/20 text-[#FAF6F0] text-xs font-semibold border border-[#FAF6F0]/15 transition-colors"
           >
             <span>Gestionar Autores</span>
@@ -514,13 +514,13 @@ const totalStaticPages = staticPages.length;
 
       <div class="flex items-center gap-2.5 shrink-0">
         <a 
-          href="/admin/roles" 
+          href="/2416f50b-da02-4a5b-86a8-61ae470ed3bd/roles" 
           class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#FAF6F0]/10 hover:bg-[#FAF6F0]/20 text-[#FAF6F0] text-xs font-semibold border border-[#FAF6F0]/15 transition-colors"
         >
           <span>Matriz de Roles</span>
         </a>
         <a 
-          href="/admin/reset-password" 
+          href="/2416f50b-da02-4a5b-86a8-61ae470ed3bd/reset-password" 
           class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#FAF6F0]/10 hover:bg-[#FAF6F0]/20 text-[#FAF6F0] text-xs font-semibold border border-[#FAF6F0]/15 transition-colors"
         >
           <span>Cambiar Contraseña</span>

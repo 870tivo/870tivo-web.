@@ -59,8 +59,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
       origin = siteUrl;
     }
     const redirectTo = import.meta.env.PROD 
-      ? 'https://870tivo-web.vercel.app/admin/setup-profile' 
-      : `${origin}/admin/setup-profile`;
+      ? 'https://870tivo-web.vercel.app/2416f50b-da02-4a5b-86a8-61ae470ed3bd/setup-profile' 
+      : `${origin}/2416f50b-da02-4a5b-86a8-61ae470ed3bd/setup-profile`;
 
     // 1. Intentar reenviar invitación oficial vía inviteUserByEmail
     const { error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
