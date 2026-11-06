@@ -3,20 +3,34 @@ import { supabase, supabaseAdmin } from './lib/supabase';
 import { getUserRoleAndPermissions, isUserAdminOrHasAccess } from './lib/auth';
 import type { Role, RolePermissions } from './types/roles';
 
-// Explicit public routes inside /admin that do not require an active session
+/**
+ * UUID secreto asignado para ofuscar el panel de administración.
+ * Todas las rutas de administración residen bajo este prefijo.
+ */
+const ADMIN_UUID = '2416f50b-da02-4a5b-86a8-61ae470ed3bd';
+const ADMIN_PATH = `/${ADMIN_UUID}`;
+
+/**
+ * Rutas públicas dentro del panel de administración que no requieren sesión activa.
+ */
 const PUBLIC_ADMIN_ROUTES = [
-  '/admin/login',
-  '/admin/forgot-password',
-  '/admin/reset-password',
-  '/admin/setup-profile',
+  `${ADMIN_PATH}/login`,
+  `${ADMIN_PATH}/forgot-password`,
+  `${ADMIN_PATH}/reset-password`,
+  `${ADMIN_PATH}/setup-profile`,
 ];
 
-// Critical administrative routes requiring elevated Admin privileges
+/**
+ * Rutas administrativas críticas que requieren privilegios elevados (Super Admin / Admin).
+ */
 const CRITICAL_ADMIN_PREFIXES = [
-  '/admin/roles',
-  '/admin/usuarios',
+  `${ADMIN_PATH}/roles`,
+  `${ADMIN_PATH}/usuarios`,
 ];
 
+/**
+ * Endpoints de la API interna que requieren privilegios de Administrador.
+ */
 const CRITICAL_API_ADMIN_PREFIXES = [
   '/api/admin/roles',
   '/api/admin/users',
@@ -26,20 +40,48 @@ export const onRequest = defineMiddleware(async (context, next) => {
   const { url, cookies, redirect, request } = context;
   const pathname = url.pathname.replace(/\/$/, '') || '/';
 
-  // Support direct /login navigation by redirecting to canonical /admin/login
-  if (pathname === '/login') {
-    return redirect('/admin/login');
+  // =========================================================================
+  // 1. OFUSCACIÓN DE SEGURIDAD: RESPUESTA 404 INMEDIATA PARA RUTAS /admin
+  // =========================================================================
+  // Si cualquier atacante, escáner o bot intenta acceder a rutas estándar
+  // de administración (ej: /admin, /admin/, /admin/users, /admin/dashboard, /login),
+  // se responde con HTTP 404 de inmediato para ocultar por completo su existencia.
+  if (
+    pathname === '/admin' || 
+    pathname.startsWith('/admin/') || 
+    pathname === '/login'
+  ) {
+    return new Response('Not Found', {
+      status: 404,
+      statusText: 'Not Found',
+      headers: {
+        'Content-Type': 'text/plain; charset=utf-8',
+        'X-Robots-Tag': 'noindex, nofollow',
+      },
+    });
   }
 
-  // Intercept routes under /admin and /api/admin
-  if (!pathname.startsWith('/admin') && !pathname.startsWith('/api/admin')) {
+  // =========================================================================
+  // 2. FILTRADO DE RUTAS
+  // =========================================================================
+  // Si la petición no se dirige a la ruta administrativa secreta ni a la API interna,
+  // se delega inmediatamente al siguiente manejador para no incurrir en sobrecoste SSR.
+  const isAdminRoute = pathname === ADMIN_PATH || pathname.startsWith(`${ADMIN_PATH}/`);
+  const isApiAdminRoute = pathname.startsWith('/api/admin');
+
+  if (!isAdminRoute && !isApiAdminRoute) {
     return next();
   }
 
   const isPublicAdminRoute = PUBLIC_ADMIN_ROUTES.includes(pathname);
   const isApiRoute = pathname.startsWith('/api');
 
-  // Retrieve auth tokens securely from HTTP cookies
+  // =========================================================================
+  // 3. RECUPERACIÓN Y VALIDACIÓN DE SESIÓN (SUPABASE AUTH)
+  // =========================================================================
+  // Compatible con Supabase Auth configurado en sessionStorage en el navegador.
+  // El cliente web sincroniza los tokens mediante cookies (sb-access-token y sb-refresh-token),
+  // permitiendo validación en SSR y cierre de sesión seguro al cerrar la pestaña o expirar.
   const accessToken = cookies.get('sb-access-token')?.value;
   const refreshToken = cookies.get('sb-refresh-token')?.value;
 
@@ -48,13 +90,14 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   if (accessToken) {
     try {
-      // Validate token cryptographically with Supabase auth server
+      // Validación criptográfica del access token con el servidor de Supabase
       const { data, error } = await supabase.auth.getUser(accessToken);
+
       if (data?.user && !error) {
         isAuthenticated = true;
         currentUser = data.user;
       } else if (refreshToken) {
-        // Access token might be expired, attempt session refresh using refresh token
+        // En caso de expiración del access token, intentar renovación con el refresh token
         const { data: refreshData, error: refreshError } = await supabase.auth.setSession({
           access_token: accessToken,
           refresh_token: refreshToken,
@@ -64,7 +107,8 @@ export const onRequest = defineMiddleware(async (context, next) => {
           isAuthenticated = true;
           currentUser = refreshData.user;
 
-          // Update cookies securely with new session tokens
+          // Sincronizar nuevas cookies manteniendo httpOnly: false para interoperabilidad
+          // fluida con sessionStorage y la función client-side clearAuthCookies()
           cookies.set('sb-access-token', refreshData.session.access_token, {
             path: '/',
             maxAge: refreshData.session.expires_in,
@@ -75,7 +119,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
           cookies.set('sb-refresh-token', refreshData.session.refresh_token, {
             path: '/',
-            maxAge: 60 * 60 * 24 * 7, // 7 days
+            maxAge: 60 * 60 * 24 * 7, // 7 días
             sameSite: 'lax',
             secure: import.meta.env.PROD,
             httpOnly: false,
@@ -83,16 +127,23 @@ export const onRequest = defineMiddleware(async (context, next) => {
         }
       }
     } catch (err) {
-      console.error('Middleware Supabase auth validation error:', err);
+      console.error('[Middleware] Error en la validación de Supabase Auth:', err);
       isAuthenticated = false;
       currentUser = null;
     }
   }
 
-  // Populate user in locals
+  // Si no se pudo validar la sesión y existían cookies corruptas o inválidas, limpiarlas
+  if (!isAuthenticated && accessToken) {
+    cookies.delete('sb-access-token', { path: '/' });
+    cookies.delete('sb-refresh-token', { path: '/' });
+  }
+
+  // =========================================================================
+  // 4. INYECCIÓN EN CONTEXTO LOCAL (Astro.locals)
+  // =========================================================================
   context.locals.user = currentUser;
 
-  // Retrieve role and granular permissions if user is authenticated
   let userRole: Role | null = null;
   let userPermissions: RolePermissions | null = null;
   let isSuperAdmin = false;
@@ -102,12 +153,13 @@ export const onRequest = defineMiddleware(async (context, next) => {
   let userFullName = '';
 
   if (isAuthenticated && currentUser) {
+    // Obtener rol y permisos granulares de la base de datos
     const roleDetails = await getUserRoleAndPermissions(currentUser.id);
     userRole = roleDetails.role;
     userPermissions = roleDetails.permissions;
     isSuperAdmin = roleDetails.isSuperAdmin;
 
-    // Fetch display name from public.profiles (non-blocking, best-effort)
+    // Obtener nombres para la interfaz desde public.profiles con fallback a user_metadata
     try {
       const { data: profileRow } = await supabaseAdmin
         .from('profiles')
@@ -119,7 +171,6 @@ export const onRequest = defineMiddleware(async (context, next) => {
         userFirstName = (profileRow.first_name || '').trim();
         userLastName = (profileRow.last_name || '').trim();
       } else {
-        // Fallback: metadata first_name / last_name
         userFirstName = (currentUser.user_metadata?.first_name || '').trim();
         userLastName = (currentUser.user_metadata?.last_name || '').trim();
       }
@@ -140,7 +191,9 @@ export const onRequest = defineMiddleware(async (context, next) => {
   context.locals.userLastName = userLastName;
   context.locals.userFullName = userFullName;
 
-  // Handle unauthenticated requests
+  // =========================================================================
+  // 5. CONTROL DE ACCESO PARA USUARIOS NO AUTENTICADOS
+  // =========================================================================
   if (!isAuthenticated && !isPublicAdminRoute) {
     if (isApiRoute) {
       return new Response(
@@ -149,32 +202,39 @@ export const onRequest = defineMiddleware(async (context, next) => {
           error: 'Unauthorized', 
           message: 'No autorizado. Se requiere iniciar sesión.' 
         }),
-        { status: 401, headers: { 'Content-Type': 'application/json' } }
+        { 
+          status: 401, 
+          headers: { 'Content-Type': 'application/json' } 
+        }
       );
     }
-    // Web: redirect to login
-    return redirect('/admin/login');
+    // Redirigir al inicio de sesión secreto
+    return redirect(`${ADMIN_PATH}/login`);
   }
 
-  // Authenticated user accessing /admin/login -> redirect to /admin/dashboard
-  if (isAuthenticated && pathname === '/admin/login') {
-    return redirect('/admin/dashboard');
+  // =========================================================================
+  // 6. REDIRECCIONES DE CONVENIENCIA PARA USUARIOS YA AUTENTICADOS
+  // =========================================================================
+  // Si un usuario con sesión activa intenta ir al login secreto o a la raíz secreta,
+  // redirigirlo automáticamente al panel principal (dashboard).
+  if (isAuthenticated && (pathname === `${ADMIN_PATH}/login` || pathname === ADMIN_PATH)) {
+    return redirect(`${ADMIN_PATH}/dashboard`);
   }
 
-  // Authenticated user accessing /admin root -> redirect to /admin/dashboard
-  if (isAuthenticated && pathname === '/admin') {
-    return redirect('/admin/dashboard');
-  }
-
-  // RBAC: Guard critical admin routes (/admin/roles, /admin/usuarios, /api/admin/roles, /api/admin/users)
-  const isCriticalPageRoute = CRITICAL_ADMIN_PREFIXES.some(prefix => pathname === prefix || pathname.startsWith(`${prefix}/`));
-  const isCriticalApiRoute = CRITICAL_API_ADMIN_PREFIXES.some(prefix => pathname === prefix || pathname.startsWith(`${prefix}/`));
+  // =========================================================================
+  // 7. CONTROL DE ACCESO BASADO EN ROLES (RBAC)
+  // =========================================================================
+  const isCriticalPageRoute = CRITICAL_ADMIN_PREFIXES.some(
+    prefix => pathname === prefix || pathname.startsWith(`${prefix}/`)
+  );
+  const isCriticalApiRoute = CRITICAL_API_ADMIN_PREFIXES.some(
+    prefix => pathname === prefix || pathname.startsWith(`${prefix}/`)
+  );
 
   if (isCriticalPageRoute || isCriticalApiRoute) {
     const hasAdminAccess = isUserAdminOrHasAccess(userRole, userPermissions);
 
     if (!hasAdminAccess) {
-      // If API or request explicitly accepts JSON, return 403 Forbidden
       const acceptsJson = request.headers.get('accept')?.includes('application/json');
       if (isCriticalApiRoute || acceptsJson) {
         return new Response(
@@ -183,15 +243,18 @@ export const onRequest = defineMiddleware(async (context, next) => {
             error: 'Forbidden',
             message: 'Acceso restringido: Se requieren privilegios de Administrador para acceder a esta sección.',
           }),
-          { status: 403, headers: { 'Content-Type': 'application/json' } }
+          { 
+            status: 403, 
+            headers: { 'Content-Type': 'application/json' } 
+          }
         );
       }
 
-      // Web: redirect to dashboard with access restriction message
+      // Redirección con mensaje de acceso denegado hacia el dashboard administrativo
       const restrictedMessage = encodeURIComponent(
         'Acceso restringido: Se requieren privilegios de Administrador para gestionar roles y usuarios.'
       );
-      return redirect(`/admin/dashboard?error=access_denied&message=${restrictedMessage}`);
+      return redirect(`${ADMIN_PATH}/dashboard?error=access_denied&message=${restrictedMessage}`);
     }
   }
 
