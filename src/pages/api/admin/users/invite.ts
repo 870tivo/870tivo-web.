@@ -7,66 +7,157 @@ export const prerender = false;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /**
- * POST /api/admin/users/invite
- * Envía una invitación por correo a un nuevo usuario vía Supabase Auth Admin,
- * guarda first_name y last_name en user_metadata y public.profiles,
- * y le asigna el rol inicial seleccionado en 'public.user_roles'.
+ * Función auxiliar para estandarizar las respuestas JSON
  */
-export const POST: APIRoute = async ({ request, locals }) => {
-  if (!locals.user) {
-    return new Response(JSON.stringify({ success: false, message: 'No autenticado.' }), {
-      status: 401,
-      headers: { 'Content-Type': 'application/json' },
-    });
+function jsonResponse(
+  body: { success: boolean; message: string; code?: string; [key: string]: any },
+  status = 200
+): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
+/**
+ * Mapeo y traducción organizada de errores generados por Supabase Auth
+ */
+function parseSupabaseAuthError(authError: any, email: string): { message: string; status: number; code: string } {
+  const errorMsgLower = (authError?.message || '').toLowerCase();
+  const rawStatus = authError?.status;
+
+  // 1. Usuario ya registrado o duplicado
+  if (
+    errorMsgLower.includes('already been registered') ||
+    errorMsgLower.includes('already exists') ||
+    errorMsgLower.includes('unique constraint') ||
+    rawStatus === 422
+  ) {
+    return {
+      code: 'USER_ALREADY_REGISTERED',
+      status: 409,
+      message: `El usuario con el correo «${email}» ya se encuentra registrado en el sistema.`,
+    };
   }
 
-  if (!isUserAdminOrHasAccess(locals.role, locals.permissions)) {
-    return new Response(JSON.stringify({ success: false, message: 'Acceso denegado: Privilegios de administrador requeridos.' }), {
+  // 2. Error en base de datos de Supabase (común en triggers como handle_new_user)
+  if (
+    errorMsgLower.includes('database error saving new user') ||
+    errorMsgLower.includes('database error creating new user')
+  ) {
+    return {
+      code: 'DATABASE_TRIGGER_ERROR',
+      status: 500,
+      message:
+        'Error en la base de datos de Supabase al registrar el usuario. Asegúrate de haber ejecutado el script "scripts/fix-invite-and-profiles-trigger.sql" en el SQL Editor de Supabase.',
+    };
+  }
+
+  // 3. Límite de tasa de solicitudes (Rate Limit / Throttling)
+  if (
+    errorMsgLower.includes('rate limit') ||
+    errorMsgLower.includes('too many requests') ||
+    rawStatus === 429
+  ) {
+    return {
+      code: 'RATE_LIMIT_EXCEEDED',
+      status: 429,
+      message: 'Se ha excedido el límite de envíos de invitaciones. Por favor, espera unos minutos antes de intentar de nuevo.',
+    };
+  }
+
+  // 4. Formato de correo inválido detectado por el servidor Auth
+  if (errorMsgLower.includes('invalid') && errorMsgLower.includes('email')) {
+    return {
+      code: 'INVALID_EMAIL_FORMAT',
+      status: 400,
+      message: 'El servidor de autenticación rechazó el formato de la dirección de correo proporcionada.',
+    };
+  }
+
+  // 5. Error en el proveedor de correo / SMTP
+  if (
+    errorMsgLower.includes('smtp') ||
+    errorMsgLower.includes('mail') ||
+    errorMsgLower.includes('transport')
+  ) {
+    return {
+      code: 'SMTP_PROVIDER_ERROR',
+      status: 502,
+      message: 'Error en el servidor de correo al enviar la invitación. Verifica la configuración SMTP en el panel de Supabase.',
+    };
+  }
+
+  // 6. Registro deshabilitado
+  if (errorMsgLower.includes('signup') && errorMsgLower.includes('disabled')) {
+    return {
+      code: 'SIGNUP_DISABLED',
       status: 403,
-      headers: { 'Content-Type': 'application/json' },
-    });
+      message: 'El registro e invitación de nuevos colaboradores está deshabilitado en la configuración del proyecto Supabase.',
+    };
+  }
+
+  // Error genérico con mensaje original o fallback amigable
+  return {
+    code: 'AUTH_INVITE_ERROR',
+    status: rawStatus && rawStatus >= 400 && rawStatus < 600 ? rawStatus : 400,
+    message: authError?.message || 'Ocurrió un error al enviar el correo de invitación.',
+  };
+}
+
+/**
+ * POST /api/admin/users/invite
+ * 
+ * Flujo de ejecución:
+ * 1. Validación de sesión y privilegios de administrador.
+ * 2. Validación y sanitización del cuerpo de la petición (correo y rol).
+ * 3. Validación de permisos de jerarquía (solo Super Admin puede invitar Super Admin).
+ * 4. Envío de la invitación mediante Supabase Auth Admin (Service Role).
+ * 5. Asignación del rol inicial en la tabla 'public.user_roles'.
+ * 6. Inicialización de registro base en 'public.profiles'.
+ */
+export const POST: APIRoute = async ({ request, locals }) => {
+  // 1. Control de autenticación
+  if (!locals.user) {
+    return jsonResponse(
+      { success: false, code: 'UNAUTHORIZED', message: 'No autenticado. Por favor, inicia sesión para continuar.' },
+      401
+    );
+  }
+
+  // 2. Control de autorización de administrador
+  if (!isUserAdminOrHasAccess(locals.role, locals.permissions)) {
+    return jsonResponse(
+      { success: false, code: 'FORBIDDEN', message: 'Acceso denegado: Se requieren privilegios de administrador.' },
+      403
+    );
   }
 
   try {
+    // 3. Procesar y parsear el payload JSON
     let body: any;
     try {
       body = await request.json();
     } catch {
-      return new Response(
-        JSON.stringify({ success: false, message: 'Cuerpo de solicitud inválido (JSON esperado).' }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      return jsonResponse(
+        { success: false, code: 'BAD_REQUEST', message: 'Cuerpo de solicitud inválido (se esperaba un formato JSON válido).' },
+        400
       );
     }
 
-    const { email, roleId, first_name, last_name, full_name } = body || {};
+    const { email, roleId } = body || {};
 
-    // 1. Validar correo electrónico
+    // 4. Validar formato de correo electrónico
     if (!email || typeof email !== 'string' || !EMAIL_REGEX.test(email.trim())) {
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          message: 'Por favor, proporciona un correo electrónico válido.' 
-        }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      return jsonResponse(
+        { success: false, code: 'INVALID_EMAIL', message: 'Por favor, proporciona una dirección de correo electrónico válida.' },
+        400
       );
     }
 
     const normalizedEmail = email.trim().toLowerCase();
 
-    // Validar y normalizar first_name y last_name
-    let firstName = typeof first_name === 'string' ? first_name.trim() : '';
-    let lastName = typeof last_name === 'string' ? last_name.trim() : '';
-
-    // Compatibilidad: si se envía full_name en lugar de first_name/last_name
-    if (!firstName && !lastName && typeof full_name === 'string' && full_name.trim()) {
-      const parts = full_name.trim().split(/\s+/);
-      firstName = parts[0] || '';
-      lastName = parts.slice(1).join(' ') || '';
-    }
-
-    const combinedFullName = [firstName, lastName].filter(Boolean).join(' ');
-
-    // 2. Si se proporcionó un rol, validar que exista en el catálogo de roles
+    // 5. Validar existencia del rol (si fue seleccionado)
     let targetRole: { id: string; name: string } | null = null;
     if (roleId && typeof roleId === 'string' && roleId.trim() !== '') {
       const { data: roleData, error: roleErr } = await supabaseAdmin
@@ -76,30 +167,28 @@ export const POST: APIRoute = async ({ request, locals }) => {
         .maybeSingle();
 
       if (roleErr || !roleData) {
-        return new Response(
-          JSON.stringify({ 
-            success: false, 
-            message: 'El rol seleccionado no es válido o no existe en el catálogo.' 
-          }),
-          { status: 404, headers: { 'Content-Type': 'application/json' } }
+        return jsonResponse(
+          { success: false, code: 'ROLE_NOT_FOUND', message: 'El rol seleccionado no es válido o no existe en el catálogo.' },
+          404
         );
       }
       targetRole = roleData;
 
-      // Validación de seguridad estricta: Solo un Super Administrador puede invitar usuarios con rol Super Administrador
+      // Validación estricta: Solo un Super Administrador puede invitar a otro Super Administrador
       const requesterIsSuperAdmin = Boolean(locals.isSuperAdmin || locals.role?.name === 'Super Administrador');
       if (targetRole.name === 'Super Administrador' && !requesterIsSuperAdmin) {
-        return new Response(
-          JSON.stringify({ 
-            success: false, 
-            message: 'Acceso denegado: Solo un Super Administrador puede invitar usuarios con el rol de Super Administrador.' 
-          }),
-          { status: 403, headers: { 'Content-Type': 'application/json' } }
+        return jsonResponse(
+          {
+            success: false,
+            code: 'FORBIDDEN_ROLE_ASSIGNMENT',
+            message: 'Acceso denegado: Solo un Super Administrador puede invitar colaboradores con el rol de Super Administrador.',
+          },
+          403
         );
       }
     }
 
-    // 3. Ejecutar invitación vía Supabase Auth Admin (Service Role)
+    // 6. Configurar la URL de redirección hacia /admin/setup-profile
     const siteUrl = (import.meta.env.PUBLIC_SITE_URL as string) || 'https://870tivo-web.vercel.app';
     const forwardedHost = request.headers.get('x-forwarded-host') || request.headers.get('host');
     const forwardedProto = request.headers.get('x-forwarded-proto') || 'https';
@@ -111,66 +200,35 @@ export const POST: APIRoute = async ({ request, locals }) => {
       ? 'https://870tivo-web.vercel.app/admin/setup-profile' 
       : `${origin}/admin/setup-profile`;
 
-    const userMetadata: Record<string, any> = {
-      first_name: firstName,
-      last_name: lastName,
-    };
-    if (combinedFullName) {
-      userMetadata.full_name = combinedFullName;
-      userMetadata.name = combinedFullName;
-    }
-
+    // 7. Enviar la invitación con Supabase Auth Admin
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
       normalizedEmail,
-      {
-        redirectTo,
-        data: userMetadata,
-      }
+      { redirectTo }
     );
 
     if (authError) {
       console.error('Error al invitar usuario en Supabase Auth:', authError);
-
-      const errorMsgLower = (authError.message || '').toLowerCase();
-      const isAlreadyRegistered = 
-        errorMsgLower.includes('already been registered') ||
-        errorMsgLower.includes('already exists') ||
-        errorMsgLower.includes('unique constraint') ||
-        authError.status === 422;
-
-      if (isAlreadyRegistered) {
-        return new Response(
-          JSON.stringify({
-            success: false,
-            message: `El usuario con el correo «${normalizedEmail}» ya se encuentra registrado en el sistema.`,
-          }),
-          { status: 409, headers: { 'Content-Type': 'application/json' } }
-        );
-      }
-
-      return new Response(
-        JSON.stringify({
-          success: false,
-          message: authError.message || 'Error al enviar la invitación por correo.',
-        }),
-        { status: authError.status || 400, headers: { 'Content-Type': 'application/json' } }
+      const parsedError = parseSupabaseAuthError(authError, normalizedEmail);
+      return jsonResponse(
+        { success: false, code: parsedError.code, message: parsedError.message },
+        parsedError.status
       );
     }
 
     const invitedUser = authData?.user;
     if (!invitedUser || !invitedUser.id) {
-      return new Response(
-        JSON.stringify({
+      return jsonResponse(
+        {
           success: false,
-          message: 'No se pudo obtener el identificador del usuario invitado.',
-        }),
-        { status: 500, headers: { 'Content-Type': 'application/json' } }
+          code: 'AUTH_USER_MISSING',
+          message: 'No se pudo obtener el identificador del usuario creado por Supabase Auth.',
+        },
+        500
       );
     }
 
-    // 4. Asignar rol inicial en public.user_roles si fue especificado
+    // 8. Asignar rol inicial en la tabla public.user_roles
     if (targetRole) {
-      // Eliminar cualquier posible asignación residual previa por seguridad
       await supabaseAdmin
         .from('user_roles')
         .delete()
@@ -186,54 +244,57 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
       if (insertRoleErr) {
         console.error('Error asignando rol inicial al usuario invitado:', insertRoleErr);
-        return new Response(
-          JSON.stringify({
+        return jsonResponse(
+          {
             success: false,
+            code: 'ROLE_ASSIGNMENT_FAILED',
             message: `Invitación enviada a ${normalizedEmail}, pero falló la asignación del rol «${targetRole.name}»: ${insertRoleErr.message}`,
-          }),
-          { status: 500, headers: { 'Content-Type': 'application/json' } }
+          },
+          500
         );
       }
     }
 
-    // 5. Inicializar o sincronizar el perfil en public.profiles con first_name y last_name
+    // 9. Inicializar fila básica en public.profiles para el nuevo usuario
     const { error: profileInitErr } = await supabaseAdmin
       .from('profiles')
-      .upsert({
-        id: invitedUser.id,
-        first_name: firstName,
-        last_name: lastName,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'id' });
+      .upsert(
+        {
+          id: invitedUser.id,
+          first_name: '',
+          last_name: '',
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'id' }
+      );
 
     if (profileInitErr) {
-      console.warn('Aviso al inicializar perfil en public.profiles para usuario invitado:', profileInitErr.message);
+      console.warn('Aviso no crítico al inicializar perfil en public.profiles:', profileInitErr.message);
     }
 
-    return new Response(
-      JSON.stringify({
+    // 10. Respuesta exitosa
+    return jsonResponse(
+      {
         success: true,
         message: `Invitación enviada exitosamente a ${normalizedEmail}`,
         user: {
           id: invitedUser.id,
           email: normalizedEmail,
-          first_name: firstName || null,
-          last_name: lastName || null,
-          full_name: combinedFullName || null,
           roleId: targetRole?.id || null,
           roleName: targetRole?.name || null,
         },
-      }),
-      { status: 200, headers: { 'Content-Type': 'application/json' } }
+      },
+      200
     );
   } catch (err: any) {
     console.error('Error inesperado en endpoint de invitación:', err);
-    return new Response(
-      JSON.stringify({
+    return jsonResponse(
+      {
         success: false,
+        code: 'INTERNAL_SERVER_ERROR',
         message: err?.message || 'Error interno del servidor al procesar la invitación.',
-      }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
+      },
+      500
     );
   }
 };
