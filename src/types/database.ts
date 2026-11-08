@@ -55,21 +55,33 @@ export interface Database {
         Row: {
           id: string;
           name: string;
+          slug: string | null;
+          bio: string | null;
+          avatar_url: string | null;
           social_url: string | null;
+          social_links: Json | null;
           created_at: string;
           updated_at: string;
         };
         Insert: {
           id?: string;
           name: string;
+          slug?: string | null;
+          bio?: string | null;
+          avatar_url?: string | null;
           social_url?: string | null;
+          social_links?: Json | null;
           created_at?: string;
           updated_at?: string;
         };
         Update: {
           id?: string;
           name?: string;
+          slug?: string | null;
+          bio?: string | null;
+          avatar_url?: string | null;
           social_url?: string | null;
+          social_links?: Json | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -249,3 +261,17 @@ export type ProfileUpdate = TablesUpdate<'profiles'>;
 
 export type EmailSubscriberRow    = Tables<'email_subscribers'>;
 export type EmailSubscriberInsert = TablesInsert<'email_subscribers'>;
+
+export type AuthorRow    = Tables<'authors'>;
+export type AuthorInsert = TablesInsert<'authors'>;
+export type AuthorUpdate = TablesUpdate<'authors'>;
+
+export interface AuthorSocialLinks {
+  instagram?: string;
+  twitter?: string;
+  x?: string;
+  website?: string;
+  tiktok?: string;
+  email?: string;
+  [key: string]: string | undefined;
+}

@@ -9,11 +9,12 @@ interface Props {
   title: string;
   author: string;
   authorHandle: string;
+  authorSlug?: string;
   date: string;
   description?: string;
 }
 
-const { title, author, authorHandle, date, description } = Astro.props;
+const { title, author, authorHandle, authorSlug, date, description } = Astro.props;
 ---
 
 <BaseLayout title={`${title} - 870tivo`} description={description}>
@@ -23,7 +24,7 @@ const { title, author, authorHandle, date, description } = Astro.props;
       <slot />
     </ArticleBody>
     <div class="max-w-3xl mx-auto px-4 md:px-6 w-full">
-      <AuthorCard author={author} authorHandle={authorHandle} />
+      <AuthorCard author={author} authorHandle={authorHandle} authorSlug={authorSlug} />
     </div>
     <CommentSection client:visible />
   </main>
