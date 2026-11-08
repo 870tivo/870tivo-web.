@@ -1,35 +1,215 @@
 ---
+const CORREO_OFICIAL = 'mailto:CORREO_OFICIAL_DEL_COLECTIVO?subject=Envio%20de%20obra%20o%20proyecto';
 ---
+
 <footer class="bg-brand-card/40 dark:bg-brand-darkCard border-t border-brand-ink/10 dark:border-white/5 overflow-hidden relative transition-colors">
-  <!-- Top Contact Bar -->
   <div class="container mx-auto px-4 md:px-6">
-    <div class="flex flex-col md:flex-row items-center justify-between gap-6 py-12 md:py-20 border-b border-brand-ink/10 dark:border-white/10">
-      <div class="text-center md:text-left">
-        <h2 class="font-serif text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight text-brand-ink dark:text-white mb-2 md:mb-4">
-          ¡Contacta a 870tivo!
-        </h2>
-        <p class="text-brand-ink/70 dark:text-brand-muted font-medium text-sm md:text-base tracking-wide">
-          870colectivo@gmail.com
-        </p>
+
+    <!-- ── Bloque superior: Aviso por correo + Envía tu obra ── -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-16 py-16 md:py-24 border-b border-brand-ink/10 dark:border-white/10">
+
+      <!-- Bloque izquierdo: Suscripción amigable -->
+      <div class="flex flex-col gap-5">
+        <div>
+          <span class="text-[10px] font-bold uppercase tracking-[0.3em] text-brand-orange dark:text-brand-orange block mb-3">
+            Publicaciones
+          </span>
+          <h2 class="font-serif text-2xl md:text-3xl font-bold tracking-tight text-brand-ink dark:text-white leading-snug">
+            Recibe un aviso por correo<br class="hidden sm:block" /> en cada nueva publicación
+          </h2>
+          <p class="mt-2 text-sm text-brand-muted max-w-xs">
+            Sin spam. Solo cuando algo nuevo aparece en 870tivo.
+          </p>
+        </div>
+
+        <!-- Formulario de suscripción -->
+        <form
+          id="form-suscripcion"
+          class="flex flex-col sm:flex-row items-stretch gap-2 max-w-sm"
+          novalidate
+        >
+          <label for="input-correo" class="sr-only">Tu correo electrónico</label>
+          <input
+            id="input-correo"
+            name="email"
+            type="email"
+            required
+            autocomplete="email"
+            placeholder="tu@correo.com"
+            class="
+              flex-1 min-w-0 px-4 py-3
+              text-sm font-medium
+              bg-brand-bg dark:bg-brand-ink
+              text-brand-ink dark:text-brand-darkInk
+              placeholder:text-brand-muted/60
+              border border-brand-ink/20 dark:border-white/10
+              rounded-sm
+              focus:outline-none focus:ring-2 focus:ring-brand-orange/50
+              transition-colors
+            "
+          />
+          <button
+            type="submit"
+            id="btn-suscribir"
+            class="
+              shrink-0 px-6 py-3
+              bg-brand-ink dark:bg-brand-bg
+              text-brand-bg dark:text-brand-ink
+              text-xs font-bold uppercase tracking-[0.2em]
+              rounded-sm
+              hover:bg-brand-orange dark:hover:bg-brand-orange
+              hover:text-white dark:hover:text-white
+              transition-all duration-200
+              disabled:opacity-50 disabled:cursor-not-allowed
+            "
+          >
+            Avisarme
+          </button>
+        </form>
+
+        <!-- Feedback del formulario -->
+        <p
+          id="msg-suscripcion"
+          role="status"
+          aria-live="polite"
+          class="text-xs font-medium hidden"
+        ></p>
       </div>
-      
-      <a href="mailto:870colectivo@gmail.com" class="inline-flex items-center justify-center bg-brand-orange text-white dark:text-brand-ink dark:bg-brand-bg font-bold text-sm md:text-base uppercase tracking-[0.2em] px-8 py-4 rounded-sm hover:brightness-105 hover:-translate-y-0.5 transition-all duration-300 shadow-lg shadow-brand-orange/20 dark:shadow-brand-bg/10">
-        CONTÁCTANOS
-      </a>
+
+      <!-- Bloque derecho: Envía tu obra -->
+      <div class="flex flex-col justify-center md:items-end gap-4 md:text-right">
+        <div>
+          <span class="text-[10px] font-bold uppercase tracking-[0.3em] text-brand-orange dark:text-brand-orange block mb-3">
+            Colectivo
+          </span>
+          <h2 class="font-serif text-2xl md:text-3xl font-bold tracking-tight text-brand-ink dark:text-white leading-snug">
+            ¿Tienes una obra<br class="hidden sm:block" /> o proyecto?
+          </h2>
+          <p class="mt-2 text-sm text-brand-muted max-w-xs md:ml-auto">
+            870tivo es un espacio abierto. Escríbenos y cuéntanos tu propuesta.
+          </p>
+        </div>
+        <a
+          href={CORREO_OFICIAL}
+          class="
+            self-start md:self-end
+            inline-flex items-center gap-2
+            bg-brand-orange text-white
+            font-bold text-xs uppercase tracking-[0.2em]
+            px-7 py-4 rounded-sm
+            hover:brightness-105 hover:-translate-y-0.5
+            transition-all duration-300
+            shadow-lg shadow-brand-orange/20
+          "
+        >
+          <!-- Ícono sobre -->
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+            <polyline points="22,6 12,13 2,6"></polyline>
+          </svg>
+          Envía tu obra
+        </a>
+      </div>
+
     </div>
-    
-    <!-- Bottom Social & Copyright -->
-    <div class="flex flex-col md:flex-row items-center justify-between gap-8 py-8">
+
+    <!-- ── Bloque inferior: Redes + Copyright ── -->
+    <div class="flex flex-col md:flex-row items-center justify-between gap-6 py-8">
       <div class="flex items-center gap-8 md:gap-12">
-        <a href="https://instagram.com/870tivo" target="_blank" rel="noopener noreferrer" class="text-[10px] md:text-xs font-bold text-brand-ink/70 dark:text-brand-muted hover:text-brand-orange dark:hover:text-brand-bg uppercase tracking-[0.2em] transition-colors">@870tivo</a>
-        <a href="https://instagram.com/870raw" target="_blank" rel="noopener noreferrer" class="text-[10px] md:text-xs font-bold text-brand-ink/70 dark:text-brand-muted hover:text-brand-orange dark:hover:text-brand-bg uppercase tracking-[0.2em] transition-colors">@870raw</a>
-        <a href="#" class="text-[10px] md:text-xs font-bold text-brand-ink/70 dark:text-brand-muted hover:text-brand-orange dark:hover:text-brand-bg uppercase tracking-[0.2em] transition-colors">YouTube</a>
+        <a
+          href="https://instagram.com/870tivo"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="text-[10px] md:text-xs font-bold text-brand-ink/70 dark:text-brand-muted hover:text-brand-orange dark:hover:text-brand-bg uppercase tracking-[0.2em] transition-colors"
+        >
+          @870tivo
+        </a>
+        <a
+          href="https://instagram.com/870raw"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="text-[10px] md:text-xs font-bold text-brand-ink/70 dark:text-brand-muted hover:text-brand-orange dark:hover:text-brand-bg uppercase tracking-[0.2em] transition-colors"
+        >
+          @870raw
+        </a>
+        <a
+          href="#"
+          class="text-[10px] md:text-xs font-bold text-brand-ink/70 dark:text-brand-muted hover:text-brand-orange dark:hover:text-brand-bg uppercase tracking-[0.2em] transition-colors"
+        >
+          YouTube
+        </a>
       </div>
-      
+
       <p class="text-[10px] md:text-xs font-medium text-brand-ink/60 dark:text-brand-muted/70 uppercase tracking-[0.1em]">
         &copy; {new Date().getFullYear()} 870tivo. Todos los derechos reservados.
       </p>
     </div>
+
   </div>
+
+  <!-- Línea editorial inferior -->
   <div class="absolute bottom-0 left-0 w-full h-[2px] bg-editorial-primary opacity-80"></div>
 </footer>
+
+<script>
+  // ── Lógica de suscripción por correo ──────────────────────────────────────
+  const form   = document.getElementById('form-suscripcion') as HTMLFormElement | null;
+  const input  = document.getElementById('input-correo')     as HTMLInputElement | null;
+  const btn    = document.getElementById('btn-suscribir')    as HTMLButtonElement | null;
+  const msgEl  = document.getElementById('msg-suscripcion')  as HTMLParagraphElement | null;
+
+  type FeedbackState = 'success' | 'error' | 'duplicate';
+
+  const FEEDBACK: Record<FeedbackState, { text: string; classes: string }> = {
+    success:   { text: '✓ Listo. Te avisamos en cada nueva publicación.',  classes: 'text-green-600 dark:text-green-400' },
+    error:     { text: '✗ Algo salió mal. Intenta de nuevo más tarde.',    classes: 'text-red-500 dark:text-red-400' },
+    duplicate: { text: '· Ya estás en la lista. ¡Gracias por tu interés!', classes: 'text-brand-muted' },
+  };
+
+  function showFeedback(state: FeedbackState): void {
+    if (!msgEl) return;
+    const { text, classes } = FEEDBACK[state];
+    msgEl.textContent = text;
+    msgEl.className = `text-xs font-medium ${classes}`;
+    msgEl.classList.remove('hidden');
+  }
+
+  function setLoading(loading: boolean): void {
+    if (!btn || !input) return;
+    btn.disabled   = loading;
+    input.disabled = loading;
+    btn.textContent = loading ? 'Enviando…' : 'Avisarme';
+  }
+
+  form?.addEventListener('submit', async (e: SubmitEvent) => {
+    e.preventDefault();
+    if (!input || !msgEl) return;
+
+    const email = input.value.trim();
+    if (!email) return;
+
+    setLoading(true);
+    msgEl.classList.add('hidden');
+
+    try {
+      const res = await fetch('/api/public/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+
+      if (res.status === 409) {
+        showFeedback('duplicate');
+      } else if (res.ok) {
+        showFeedback('success');
+        input.value = '';
+      } else {
+        showFeedback('error');
+      }
+    } catch {
+      showFeedback('error');
+    } finally {
+      setLoading(false);
+    }
+  });
+</script>

@@ -170,6 +170,52 @@ export interface Database {
           }
         ];
       };
+      /**
+       * email_subscribers
+       * Registros voluntarios de correo para avisos de nuevas publicaciones.
+       * No requiere autenticación. Accesible con anon key + RLS policy de INSERT.
+       *
+       * ── SQL de migración ────────────────────────────────────────────────────
+       * Ejecutar en Supabase Dashboard → SQL Editor:
+       *
+       * CREATE TABLE public.email_subscribers (
+       *   id         uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+       *   email      text        NOT NULL UNIQUE,
+       *   confirmed  boolean     NOT NULL DEFAULT false,
+       *   created_at timestamptz NOT NULL DEFAULT now()
+       * );
+       *
+       * ALTER TABLE public.email_subscribers ENABLE ROW LEVEL SECURITY;
+       *
+       * -- Permite INSERT público (anon) sin exponer datos existentes
+       * CREATE POLICY "public_insert_subscribers"
+       *   ON public.email_subscribers
+       *   FOR INSERT
+       *   TO anon
+       *   WITH CHECK (true);
+       * ────────────────────────────────────────────────────────────────────────
+       */
+      email_subscribers: {
+        Row: {
+          id: string;
+          email: string;
+          confirmed: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          email: string;
+          confirmed?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          email?: string;
+          confirmed?: boolean;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;
@@ -201,3 +247,5 @@ export type ProfileRow = Tables<'profiles'>;
 export type ProfileInsert = TablesInsert<'profiles'>;
 export type ProfileUpdate = TablesUpdate<'profiles'>;
 
+export type EmailSubscriberRow    = Tables<'email_subscribers'>;
+export type EmailSubscriberInsert = TablesInsert<'email_subscribers'>;

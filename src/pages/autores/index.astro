@@ -1,0 +1,190 @@
+---
+/**
+ * src/pages/autores/index.astro
+ * Vista pública del directorio de autores y colaboradores de 870tivo.
+ * Consume la tabla `public.authors` de Supabase con anon key (lectura pública).
+ * No requiere autenticación.
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { supabase } from '../../lib/supabase';
+import type { Tables } from '../../types/database';
+
+type Author = Tables<'authors'>;
+
+// ── Fetch SSR desde Supabase (anon key, lectura pública) ─────────────────────
+const { data: authorsData, error } = await supabase
+  .from('authors')
+  .select('id, name, social_url, created_at')
+  .order('name', { ascending: true });
+
+if (error) {
+  console.error('[/autores] Error al obtener autores:', error.message);
+}
+
+const authors: Author[] = (authorsData ?? []) as Author[];
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+function getInitials(name: string): string {
+  const parts = name.trim().split(/\s+/);
+  if (parts.length >= 2) {
+    return (parts[0][0]! + parts[parts.length - 1]![0]!).toUpperCase();
+  }
+  return name.slice(0, 2).toUpperCase();
+}
+
+/**
+ * Convierte una URL social en un handle legible.
+ * instagram.com/870tivo → @870tivo
+ * https://ejemplo.com   → ejemplo.com
+ */
+function toReadableHandle(url: string): string {
+  try {
+    const { hostname, pathname } = new URL(url);
+    const slug = pathname.replace(/^\//, '').split('/')[0] ?? '';
+    if (['instagram.com', 'twitter.com', 'x.com', 'tiktok.com'].some((h) => hostname.includes(h))) {
+      return slug ? `@${slug}` : hostname;
+    }
+    return hostname.replace(/^www\./, '');
+  } catch {
+    return url;
+  }
+}
+---
+
+<BaseLayout
+  title="Autores — 870tivo"
+  description="Directorio de autores, redactores y colaboradores del colectivo cultural 870tivo."
+>
+  <main class="flex-grow bg-brand-bg dark:bg-brand-ink transition-colors">
+    <div class="container mx-auto px-4 md:px-6 py-12 md:py-20">
+
+      <!-- ── Encabezado editorial ── -->
+      <header class="mb-14 md:mb-20 border-b border-brand-ink/10 dark:border-white/10 pb-10">
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div>
+            <span class="text-brand-orange dark:text-brand-orange text-[10px] md:text-xs font-bold uppercase tracking-[0.35em] mb-3 block">
+              Directorio
+            </span>
+            <h1 class="font-serif text-4xl md:text-5xl lg:text-7xl font-bold text-brand-ink dark:text-white tracking-tighter leading-none">
+              Autores
+            </h1>
+            <p class="mt-4 text-brand-muted text-sm md:text-base max-w-md leading-relaxed">
+              Firmas, redactores y colaboradores que dan voz a 870tivo.
+            </p>
+          </div>
+
+          <!-- Contador -->
+          {authors.length > 0 && (
+            <div class="shrink-0 flex items-center gap-3 text-brand-orange dark:text-brand-bg">
+              <div class="w-12 h-12 border border-brand-orange/40 dark:border-brand-bg/40 flex items-center justify-center rotate-45 bg-brand-orange/10 dark:bg-brand-bg/10 shrink-0">
+                <span class="-rotate-45 font-sans tracking-tighter text-brand-ink dark:text-brand-bg font-black text-xs">
+                  {authors.length}
+                </span>
+              </div>
+              <span class="text-xs uppercase tracking-widest font-bold text-brand-ink dark:text-brand-bg">
+                {authors.length === 1 ? 'Autor' : 'Autores'}
+              </span>
+            </div>
+          )}
+        </div>
+      </header>
+
+      <!-- ── Estado vacío ── -->
+      {authors.length === 0 && (
+        <div class="flex flex-col items-center justify-center py-24 text-center gap-5">
+          <div class="w-16 h-16 border border-brand-ink/15 dark:border-white/10 rounded-sm flex items-center justify-center text-brand-muted">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+          </div>
+          <div>
+            <p class="font-serif text-xl font-bold text-brand-ink dark:text-white">
+              Próximamente
+            </p>
+            <p class="mt-2 text-sm text-brand-muted max-w-xs">
+              El directorio de autores estará disponible pronto.
+            </p>
+          </div>
+        </div>
+      )}
+
+      <!-- ── Grilla de autores ── -->
+      {authors.length > 0 && (
+        <ul
+          class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-px bg-brand-ink/8 dark:bg-white/5 border border-brand-ink/8 dark:border-white/5"
+          role="list"
+          aria-label="Directorio de autores"
+        >
+          {authors.map((author) => {
+            const initials   = getInitials(author.name);
+            const hasLink    = Boolean(author.social_url);
+            const handle     = hasLink ? toReadableHandle(author.social_url!) : null;
+
+            return (
+              <li
+                role="listitem"
+                class="group bg-brand-bg dark:bg-brand-ink hover:bg-brand-card dark:hover:bg-brand-darkCard transition-colors duration-200"
+              >
+                <div class="p-6 md:p-8 flex flex-col gap-5 h-full">
+
+                  <!-- Avatar iniciales -->
+                  <div
+                    class="w-14 h-14 rounded-sm bg-brand-orange/10 dark:bg-brand-orange/15 border border-brand-orange/20 dark:border-brand-orange/25 flex items-center justify-center shrink-0"
+                    aria-hidden="true"
+                  >
+                    <span class="font-serif font-bold text-lg text-brand-orange select-none">
+                      {initials}
+                    </span>
+                  </div>
+
+                  <!-- Nombre -->
+                  <div class="flex-1 min-w-0">
+                    <h2 class="font-serif text-lg md:text-xl font-bold text-brand-ink dark:text-white leading-snug tracking-tight group-hover:text-brand-orange dark:group-hover:text-brand-bg transition-colors">
+                      {author.name}
+                    </h2>
+                    <p class="mt-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-brand-muted">
+                      Colaborador 870tivo
+                    </p>
+                  </div>
+
+                  <!-- Enlace social -->
+                  {hasLink ? (
+                    <a
+                      href={author.social_url!}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="
+                        self-start inline-flex items-center gap-1.5
+                        text-[11px] font-bold uppercase tracking-[0.15em]
+                        text-brand-muted hover:text-brand-orange dark:hover:text-brand-bg
+                        border-b border-transparent hover:border-brand-orange dark:hover:border-brand-bg
+                        transition-all pb-px
+                      "
+                      aria-label={`Perfil social de ${author.name}`}
+                    >
+                      <!-- Ícono enlace -->
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                        <polyline points="15 3 21 3 21 9"></polyline>
+                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                      </svg>
+                      {handle}
+                    </a>
+                  ) : (
+                    <span class="self-start text-[11px] text-brand-muted/50 italic">
+                      Sin enlace social
+                    </span>
+                  )}
+
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
+    </div>
+  </main>
+</BaseLayout>
+
