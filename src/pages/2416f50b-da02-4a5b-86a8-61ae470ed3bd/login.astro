@@ -100,6 +100,19 @@ const fontsUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;60
             </div>
           </div>
 
+          <!-- Timeout Banner (visible cuando ?reason=timeout) -->
+          <div id="timeoutAlert" class="hidden mb-6 p-4 rounded-xl text-sm bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400">
+            <div class="flex items-start gap-3">
+              <svg class="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div class="flex-1">
+                <p class="font-medium">Sesión cerrada por inactividad</p>
+                <p class="text-xs mt-0.5 opacity-80">Tu sesión se cerró automáticamente tras 30 minutos sin actividad. Inicia sesión para continuar.</p>
+              </div>
+            </div>
+          </div>
+
           <!-- Form -->
           <form id="loginForm" class="space-y-5" novalidate>
             <div>
@@ -186,31 +199,40 @@ const fontsUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;60
       &copy; {new Date().getFullYear()} Galería 870. Todos los derechos reservados.
     </footer>
 
-    <!-- Client-side Auth Script -->
+    <!-- Client-side Auth Script (rate limiting vía endpoint SSR) -->
     <script>
       import { supabase, setAuthCookies } from '../../lib/supabase';
 
-      const loginForm = document.getElementById('loginForm') as HTMLFormElement | null;
-      const emailInput = document.getElementById('email') as HTMLInputElement | null;
-      const passwordInput = document.getElementById('password') as HTMLInputElement | null;
-      const submitBtn = document.getElementById('submitBtn') as HTMLButtonElement | null;
-      const btnText = document.getElementById('btnText');
-      const btnSpinner = document.getElementById('btnSpinner');
-      const errorAlert = document.getElementById('errorAlert');
-      const errorMessage = document.getElementById('errorMessage');
-      const togglePasswordBtn = document.getElementById('togglePassword');
-      const eyeIcon = document.getElementById('eyeIcon');
-      const eyeOffIcon = document.getElementById('eyeOffIcon');
+      const LOGIN_API_URL  = '/api/admin/auth/login';
+      const DASHBOARD_URL  = '/2416f50b-da02-4a5b-86a8-61ae470ed3bd/dashboard';
 
-      // Check if already authenticated on client load
+      const loginForm       = document.getElementById('loginForm')       as HTMLFormElement   | null;
+      const emailInput      = document.getElementById('email')           as HTMLInputElement  | null;
+      const passwordInput   = document.getElementById('password')        as HTMLInputElement  | null;
+      const submitBtn       = document.getElementById('submitBtn')       as HTMLButtonElement | null;
+      const btnText         = document.getElementById('btnText');
+      const btnSpinner      = document.getElementById('btnSpinner');
+      const errorAlert      = document.getElementById('errorAlert');
+      const errorMessage    = document.getElementById('errorMessage');
+      const togglePasswordBtn = document.getElementById('togglePassword');
+      const eyeIcon         = document.getElementById('eyeIcon');
+      const eyeOffIcon      = document.getElementById('eyeOffIcon');
+
+      // ── Redirigir si ya hay sesión activa ────────────────────────────────────
       supabase.auth.getSession().then(({ data: { session } }) => {
         if (session) {
           setAuthCookies(session);
-          window.location.href = '/2416f50b-da02-4a5b-86a8-61ae470ed3bd/dashboard';
+          window.location.href = DASHBOARD_URL;
         }
       });
 
-      // Toggle password visibility
+      // ── Banner de sesión expirada por inactividad ────────────────────────────
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('reason') === 'timeout') {
+        document.getElementById('timeoutAlert')?.classList.remove('hidden');
+      }
+
+      // ── Toggle visibilidad de contraseña ─────────────────────────────────────
       togglePasswordBtn?.addEventListener('click', () => {
         if (!passwordInput) return;
         const isPassword = passwordInput.type === 'password';
@@ -219,16 +241,17 @@ const fontsUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;60
         eyeOffIcon?.classList.toggle('hidden', !isPassword);
       });
 
-      function showError(msg: string) {
+      // ── Helpers de UI ────────────────────────────────────────────────────────
+      function showError(msg: string): void {
         if (errorMessage) errorMessage.textContent = msg;
-        if (errorAlert) errorAlert.classList.remove('hidden');
+        errorAlert?.classList.remove('hidden');
       }
 
-      function hideError() {
-        if (errorAlert) errorAlert.classList.add('hidden');
+      function hideError(): void {
+        errorAlert?.classList.add('hidden');
       }
 
-      function setLoading(loading: boolean) {
+      function setLoading(loading: boolean): void {
         if (!submitBtn) return;
         submitBtn.disabled = loading;
         if (loading) {
@@ -242,57 +265,88 @@ const fontsUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;60
         }
       }
 
-      loginForm?.addEventListener('submit', async (e) => {
+      /**
+       * Bloquea el formulario y muestra countdown hasta que expire el bloqueo.
+       * Reanuda el formulario automáticamente cuando el tiempo expira.
+       */
+      function applyBlockedState(blockedUntil: number): void {
+        const tick = () => {
+          const remaining = Math.max(0, blockedUntil - Date.now());
+          if (remaining <= 0) {
+            setLoading(false);
+            if (btnText) btnText.textContent = 'Iniciar Sesión';
+            return;
+          }
+          const mins = Math.floor(remaining / 60_000);
+          const secs = String(Math.floor((remaining % 60_000) / 1_000)).padStart(2, '0');
+          if (btnText) btnText.textContent = `Bloqueado — ${mins}:${secs}`;
+          setTimeout(tick, 1_000);
+        };
+        setLoading(true);
+        tick();
+      }
+
+      // ── Submit del formulario → delegación al endpoint SSR ───────────────────
+      loginForm?.addEventListener('submit', async (e: Event) => {
         e.preventDefault();
         hideError();
 
-        const email = emailInput?.value.trim();
-        const password = passwordInput?.value;
+        const email    = emailInput?.value.trim()   ?? '';
+        const password = passwordInput?.value        ?? '';
 
         if (!email || !password) {
-          showError('Por favor complete todos los campos.');
+          showError('Por favor completa todos los campos.');
           return;
         }
 
         setLoading(true);
 
         try {
-          const { data, error } = await supabase.auth.signInWithPassword({
-            email,
-            password,
+          // ── Llamada al endpoint SSR con rate limiting ──────────────────────
+          const res  = await fetch(LOGIN_API_URL, {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ email, password }),
           });
 
-          if (error) {
-            let userFriendlyMsg = 'Credenciales inválidas. Verifique su correo o contraseña.';
-            if (error.message.includes('Invalid login credentials')) {
-              userFriendlyMsg = 'El correo electrónico o la contraseña ingresados son incorrectos.';
-            } else if (error.message.includes('Email not confirmed')) {
-              userFriendlyMsg = 'El correo electrónico aún no ha sido confirmado en Supabase.';
-            } else if (error.status === 429) {
-              userFriendlyMsg = 'Demasiados intentos fallidos. Intente nuevamente en unos minutos.';
-            } else if (error.message) {
-              userFriendlyMsg = error.message;
-            }
-            showError(userFriendlyMsg);
-            setLoading(false);
+          const json = await res.json() as {
+            success:      boolean;
+            message:      string;
+            code?:        string;
+            accessToken?: string;
+            refreshToken?: string;
+            expiresIn?:   number;
+            isBlocked?:   boolean;
+            blockedUntil?: number;
+            attemptsLeft?: number;
+            failureCount?: number;
+          };
+
+          // ── Éxito → sincronizar cookies y navegar al dashboard ─────────────
+          if (json.success && json.accessToken && json.refreshToken) {
+            setAuthCookies({
+              access_token:  json.accessToken,
+              refresh_token: json.refreshToken,
+              expires_in:    json.expiresIn ?? 3600,
+            });
+            if (btnText) btnText.textContent = 'Acceso concedido...';
+            setTimeout(() => { window.location.href = DASHBOARD_URL; }, 300);
             return;
           }
 
-          if (data.session) {
-            // Synchronize cookies for server middleware validation
-            setAuthCookies(data.session);
-
-            if (btnText) btnText.textContent = 'Acceso concedido...';
-            // Smooth transition to dashboard
-            setTimeout(() => {
-              window.location.href = '/2416f50b-da02-4a5b-86a8-61ae470ed3bd/dashboard';
-            }, 300);
-          } else {
-            showError('No se pudo establecer la sesión. Intente nuevamente.');
-            setLoading(false);
+          // ── Bloqueo total (5 intentos agotados) ───────────────────────────
+          if (json.isBlocked && json.blockedUntil) {
+            showError(json.message);
+            applyBlockedState(json.blockedUntil);
+            return;
           }
-        } catch (err: any) {
-          console.error('Error during login:', err);
+
+          // ── Error de credenciales / rate limit previo ─────────────────────
+          showError(json.message ?? 'Error al iniciar sesión. Intenta nuevamente.');
+          setLoading(false);
+
+        } catch (err: unknown) {
+          console.error('[login] Error inesperado:', err);
           showError('Ocurrió un error inesperado al conectar con el servidor.');
           setLoading(false);
         }
