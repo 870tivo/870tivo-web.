@@ -1,0 +1,183 @@
+---
+/**
+ * AdminSessionGuard.astro
+ *
+ * Componente cliente de seguridad para el panel administrativo.
+ * Implementa auto-logout por inactividad (30 minutos) con:
+ *   - Escucha de eventos globales de actividad del usuario.
+ *   - Banner de advertencia 2 minutos antes del cierre de sesión.
+ *   - Cierre de sesión seguro via supabase.auth.signOut() + limpieza de cookies y sessionStorage.
+ *   - Redirección a la página de login con ?reason=timeout.
+ *   - Banner de sesión expirada cuando se llega al login tras un timeout.
+ *
+ * Uso: Incluir una única vez en AdminLayout.astro.
+ */
+
+---
+
+{/* ─── Banner de sesión expirada (visible solo cuando ?reason=timeout) ─── */}
+<div
+  id="session-timeout-banner"
+  role="alert"
+  aria-live="assertive"
+  class="hidden fixed top-4 left-1/2 -translate-x-1/2 z-[9999] w-full max-w-md px-5 py-3.5 rounded-xl shadow-2xl border border-amber-500/40 bg-amber-950/90 backdrop-blur-md text-amber-200 text-sm flex items-center gap-3 transition-all duration-300"
+>
+  <svg class="w-5 h-5 shrink-0 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+      d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+  </svg>
+  <span>Tu sesión se cerró automáticamente por <strong>30 minutos de inactividad</strong>. Inicia sesión nuevamente.</span>
+  <button
+    id="session-timeout-banner-close"
+    aria-label="Cerrar aviso"
+    class="ml-auto shrink-0 text-amber-400 hover:text-white transition-colors"
+  >
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+    </svg>
+  </button>
+</div>
+
+{/* ─── Banner de advertencia de cierre inminente (visible 2 min antes) ─── */}
+<div
+  id="session-warning-banner"
+  role="alert"
+  aria-live="polite"
+  class="hidden fixed bottom-6 right-6 z-[9999] max-w-sm px-5 py-4 rounded-xl shadow-2xl border border-orange-500/40 bg-[#1a1200]/95 backdrop-blur-md text-orange-200 text-sm flex items-start gap-3 transition-all duration-300"
+>
+  <svg class="w-5 h-5 shrink-0 mt-0.5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>
+  <div class="flex-1">
+    <p class="font-semibold text-orange-300">Sesión a punto de expirar</p>
+    <p class="text-xs mt-0.5 text-orange-200/80">Tu sesión se cerrará en <strong id="session-countdown">2:00</strong> por inactividad. Mueve el cursor para continuar.</p>
+  </div>
+  <button
+    id="session-warning-banner-close"
+    aria-label="Cerrar advertencia"
+    class="shrink-0 text-orange-400 hover:text-white transition-colors mt-0.5"
+  >
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+    </svg>
+  </button>
+</div>
+
+<script>
+  import { supabase, clearAuthCookies } from '../../lib/supabase';
+
+  // ─── Configuración de tiempos ───────────────────────────────────────────────
+  const INACTIVITY_TIMEOUT_MS  = 30 * 60 * 1000; // 30 minutos
+  const WARNING_BEFORE_MS      =  2 * 60 * 1000; // Aviso 2 minutos antes
+  const COUNTDOWN_TICK_MS      = 1_000;           // Intervalo del countdown
+  const ADMIN_LOGIN_URL        = '/2416f50b-da02-4a5b-86a8-61ae470ed3bd/login';
+  const ACTIVITY_EVENTS        = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'] as const;
+
+  // ─── Referencias DOM ────────────────────────────────────────────────────────
+  const warningBanner   = document.getElementById('session-warning-banner');
+  const timeoutBanner   = document.getElementById('session-timeout-banner');
+  const countdownEl     = document.getElementById('session-countdown');
+  const closeBannerBtn  = document.getElementById('session-timeout-banner-close');
+  const closeWarningBtn = document.getElementById('session-warning-banner-close');
+
+  // ─── Estado interno ─────────────────────────────────────────────────────────
+  let logoutTimer:    ReturnType<typeof setTimeout>  | null = null;
+  let warningTimer:   ReturnType<typeof setTimeout>  | null = null;
+  let countdownTimer: ReturnType<typeof setInterval> | null = null;
+  let isWarningVisible = false;
+
+  // ─── Cierre de sesión seguro ────────────────────────────────────────────────
+  async function performLogout(): Promise<void> {
+    clearAllTimers();
+
+    try {
+      await supabase.auth.signOut();
+    } catch {
+      // signOut puede fallar si el token ya expiró; continuamos de todas formas.
+    }
+
+    clearAuthCookies();
+    sessionStorage.clear();
+
+    window.location.href = `${ADMIN_LOGIN_URL}?reason=timeout`;
+  }
+
+  // ─── Limpiar todos los timers activos ───────────────────────────────────────
+  function clearAllTimers(): void {
+    if (logoutTimer)    clearTimeout(logoutTimer);
+    if (warningTimer)   clearTimeout(warningTimer);
+    if (countdownTimer) clearInterval(countdownTimer);
+    logoutTimer    = null;
+    warningTimer   = null;
+    countdownTimer = null;
+  }
+
+  // ─── Ocultar banner de advertencia ──────────────────────────────────────────
+  function hideWarningBanner(): void {
+    warningBanner?.classList.add('hidden');
+    if (countdownTimer) clearInterval(countdownTimer);
+    countdownTimer = null;
+    isWarningVisible = false;
+  }
+
+  // ─── Mostrar banner de advertencia con countdown ────────────────────────────
+  function showWarningBanner(): void {
+    if (isWarningVisible) return;
+    isWarningVisible = true;
+
+    warningBanner?.classList.remove('hidden');
+
+    let remaining = WARNING_BEFORE_MS / 1000; // segundos restantes
+
+    function updateCountdown(): void {
+      remaining = Math.max(0, remaining - 1);
+      const mins = Math.floor(remaining / 60);
+      const secs = String(remaining % 60).padStart(2, '0');
+      if (countdownEl) countdownEl.textContent = `${mins}:${secs}`;
+    }
+
+    updateCountdown();
+    countdownTimer = setInterval(updateCountdown, COUNTDOWN_TICK_MS);
+  }
+
+  // ─── Reiniciar el temporizador de inactividad ────────────────────────────────
+  function resetInactivityTimer(): void {
+    clearAllTimers();
+    hideWarningBanner();
+
+    // Aviso 2 min antes del logout
+    warningTimer = setTimeout(showWarningBanner, INACTIVITY_TIMEOUT_MS - WARNING_BEFORE_MS);
+    // Logout automático a los 30 min
+    logoutTimer  = setTimeout(performLogout,     INACTIVITY_TIMEOUT_MS);
+  }
+
+  // ─── Throttle para no saturar con eventos rápidos (ej: mousemove) ───────────
+  let throttleLock = false;
+  function handleActivity(): void {
+    if (throttleLock) return;
+    throttleLock = true;
+    resetInactivityTimer();
+    setTimeout(() => { throttleLock = false; }, 500);
+  }
+
+  // ─── Registrar listeners de actividad ───────────────────────────────────────
+  for (const event of ACTIVITY_EVENTS) {
+    document.addEventListener(event, handleActivity, { passive: true });
+  }
+
+  // ─── Cierre manual del banner de advertencia ────────────────────────────────
+  closeWarningBtn?.addEventListener('click', () => {
+    hideWarningBanner();
+    // No reiniciamos el timer: el logout sigue en marcha.
+    // El usuario solo cerró el banner pero no interactuó "de verdad".
+  });
+
+  // ─── Cierre manual del banner de sesión expirada ────────────────────────────
+  closeBannerBtn?.addEventListener('click', () => {
+    timeoutBanner?.classList.add('hidden');
+  });
+
+  // ─── Arrancar el temporizador al cargar ──────────────────────────────────────
+  resetInactivityTimer();
+</script>
