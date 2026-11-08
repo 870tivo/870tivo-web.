@@ -13,6 +13,9 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[];
 
+/** Categorías oficiales para las actividades de 870tivo */
+export type ActivityCategory = 'ciclos-cine' | 'club-lectura' | 'talleres' | 'encuentros';
+
 export interface Database {
   public: {
     Tables: {
@@ -228,6 +231,54 @@ export interface Database {
         };
         Relationships: [];
       };
+      activities: {
+        Row: {
+          id: string;
+          slug: string;
+          title: string;
+          category: ActivityCategory;
+          description: string | null;
+          content: string | null;
+          event_date: string;
+          location: string;
+          cover_url: string | null;
+          status: 'publicado' | 'borrador' | 'archivado';
+          is_published: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          slug: string;
+          title: string;
+          category: ActivityCategory;
+          description?: string | null;
+          content?: string | null;
+          event_date: string;
+          location?: string;
+          cover_url?: string | null;
+          status?: 'publicado' | 'borrador' | 'archivado';
+          is_published?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          slug?: string;
+          title?: string;
+          category?: ActivityCategory;
+          description?: string | null;
+          content?: string | null;
+          event_date?: string;
+          location?: string;
+          cover_url?: string | null;
+          status?: 'publicado' | 'borrador' | 'archivado';
+          is_published?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;
@@ -265,6 +316,54 @@ export type EmailSubscriberInsert = TablesInsert<'email_subscribers'>;
 export type AuthorRow    = Tables<'authors'>;
 export type AuthorInsert = TablesInsert<'authors'>;
 export type AuthorUpdate = TablesUpdate<'authors'>;
+
+export type ActivityRow    = Tables<'activities'>;
+export type ActivityInsert = TablesInsert<'activities'>;
+export type ActivityUpdate = TablesUpdate<'activities'>;
+
+export interface ActivityCategoryMeta {
+  slug: ActivityCategory;
+  label: string;
+  tagline: string;
+  description: string;
+  badgeClass: string;
+  accentColor: string;
+}
+
+export const ACTIVITY_CATEGORIES: Record<ActivityCategory, ActivityCategoryMeta> = {
+  'ciclos-cine': {
+    slug: 'ciclos-cine',
+    label: 'Ciclos de Cine',
+    tagline: 'Proyecciones y conversaciones',
+    description: 'Espacios de visionado crítico, diálogo cinematográfico y memoria audiovisual.',
+    badgeClass: 'bg-brand-orange/15 text-brand-orange border-brand-orange/30 dark:bg-brand-orange/20 dark:text-brand-orange',
+    accentColor: '#E4572E',
+  },
+  'club-lectura': {
+    slug: 'club-lectura',
+    label: 'Club de Lectura',
+    tagline: 'Lecturas y diálogos literarios',
+    description: 'Encuentros alrededor de la palabra escrita, textos contemporáneos y debates literarios.',
+    badgeClass: 'bg-brand-forest/15 text-brand-forest border-brand-forest/30 dark:bg-brand-forest/25 dark:text-brand-forest dark:border-brand-forest/40',
+    accentColor: '#2F4B3A',
+  },
+  'talleres': {
+    slug: 'talleres',
+    label: 'Talleres',
+    tagline: 'Formación creativa y técnica',
+    description: 'Laboratorios prácticos de creación, artes gráficas, escritura y experimentación técnica.',
+    badgeClass: 'bg-brand-mustard/20 text-brand-ink dark:text-brand-mustard border-brand-mustard/40 dark:bg-brand-mustard/15',
+    accentColor: '#F2B134',
+  },
+  'encuentros': {
+    slug: 'encuentros',
+    label: 'Encuentros',
+    tagline: 'Eventos y jornadas diversas',
+    description: 'Jornadas culturales, ferias independientes, conciertos acústicos y micrófonos abiertos.',
+    badgeClass: 'bg-brand-ink/10 text-brand-ink border-brand-ink/20 dark:bg-white/10 dark:text-brand-darkInk dark:border-white/20',
+    accentColor: '#1F1B16',
+  },
+};
 
 export interface AuthorSocialLinks {
   instagram?: string;
