@@ -1,0 +1,128 @@
+---
+/**
+ * src/components/actividades/ActivityCard.astro
+ * Tarjeta editorial para eventos y actividades del colectivo 870tivo.
+ * Presenta fecha, hora, ubicación, categoría con acento de color y enlace a la ficha.
+ */
+import { Calendar, Clock, MapPin, ArrowRight } from 'lucide-astro';
+import type { ActivityRow } from '../../types/database';
+import { ACTIVITY_CATEGORIES } from '../../types/database';
+
+interface Props {
+  activity: ActivityRow;
+}
+
+const { activity } = Astro.props;
+
+const categoryMeta = ACTIVITY_CATEGORIES[activity.category] ?? {
+  slug: activity.category,
+  label: activity.category,
+  tagline: '',
+  description: '',
+  badgeClass: 'bg-brand-ink/10 text-brand-ink border-brand-ink/20 dark:bg-white/10 dark:text-brand-darkInk',
+  accentColor: '#E4572E',
+};
+
+// Formato de fecha y hora en español
+const dateObj = new Date(activity.event_date);
+const isValidDate = !isNaN(dateObj.getTime());
+
+const formattedDate = isValidDate
+  ? new Intl.DateTimeFormat('es-CO', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    }).format(dateObj)
+  : 'Fecha por confirmar';
+
+const formattedTime = isValidDate
+  ? new Intl.DateTimeFormat('es-CO', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    }).format(dateObj)
+  : '';
+
+// Capitalizar primera letra de la fecha
+const capitalizedDate = formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
+const coverSrc = activity.cover_url || '/assets/logo/870.jpeg';
+---
+
+<article
+  class="group relative flex flex-col bg-brand-card/60 dark:bg-brand-darkCard rounded-sm border border-brand-ink/10 dark:border-white/10 overflow-hidden hover:border-brand-orange/40 dark:hover:border-brand-mustard/40 hover:shadow-lg transition-all duration-300"
+  data-category={activity.category}
+>
+  <!-- ── Portada / Imagen ── -->
+  <a
+    href={`/actividades/${activity.slug}`}
+    class="relative block aspect-[16/10] overflow-hidden bg-brand-ink/5 dark:bg-neutral-900"
+    tabindex="-1"
+    aria-hidden="true"
+  >
+    <img
+      src={coverSrc}
+      alt={activity.title}
+      loading="lazy"
+      class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
+    />
+    <div class="absolute inset-0 bg-gradient-to-t from-brand-ink/60 via-transparent to-transparent opacity-40 group-hover:opacity-20 transition-opacity"></div>
+    
+    <!-- Badge de categoría superpuesto -->
+    <div class="absolute top-3 left-3">
+      <span class={`inline-block px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider rounded-sm border backdrop-blur-md ${categoryMeta.badgeClass}`}>
+        {categoryMeta.label}
+      </span>
+    </div>
+  </a>
+
+  <!-- ── Contenido Editorial ── -->
+  <div class="p-5 md:p-6 flex flex-col flex-grow justify-between">
+    <div>
+      <!-- Metadatos de Fecha y Ubicación -->
+      <div class="flex flex-wrap items-center gap-y-1.5 gap-x-4 text-xs text-brand-muted dark:text-brand-darkMuted mb-3">
+        <span class="inline-flex items-center gap-1.5 font-medium">
+          <Calendar class="w-3.5 h-3.5 text-brand-orange dark:text-brand-mustard shrink-0" />
+          <span>{capitalizedDate}</span>
+        </span>
+        {formattedTime && (
+          <span class="inline-flex items-center gap-1.5">
+            <Clock class="w-3.5 h-3.5 text-brand-muted/70 shrink-0" />
+            <span>{formattedTime}</span>
+          </span>
+        )}
+      </div>
+
+      <!-- Título -->
+      <h2 class="font-serif font-bold text-xl md:text-2xl text-brand-ink dark:text-brand-darkInk group-hover:text-brand-orange dark:group-hover:text-brand-mustard transition-colors leading-tight mb-2.5">
+        <a href={`/actividades/${activity.slug}`} class="focus:outline-none focus:underline">
+          {activity.title}
+        </a>
+      </h2>
+
+      <!-- Sinopsis -->
+      {activity.description && (
+        <p class="text-sm text-brand-ink/70 dark:text-brand-darkMuted line-clamp-3 leading-relaxed mb-4">
+          {activity.description}
+        </p>
+      )}
+    </div>
+
+    <!-- ── Pie de tarjeta: Lugar y Enlace ── -->
+    <div class="pt-4 mt-auto border-t border-brand-ink/10 dark:border-white/10 flex items-center justify-between text-xs">
+      <span class="inline-flex items-center gap-1 text-brand-muted dark:text-brand-darkMuted truncate max-w-[65%]">
+        <MapPin class="w-3.5 h-3.5 text-brand-orange/80 dark:text-brand-mustard/80 shrink-0" />
+        <span class="truncate">{activity.location}</span>
+      </span>
+
+      <a
+        href={`/actividades/${activity.slug}`}
+        class="inline-flex items-center gap-1 font-semibold text-brand-orange dark:text-brand-mustard hover:translate-x-0.5 transition-transform shrink-0"
+      >
+        <span>Detalles</span>
+        <ArrowRight class="w-3.5 h-3.5" />
+      </a>
+    </div>
+  </div>
+</article>
+
