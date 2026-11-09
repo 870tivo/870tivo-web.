@@ -3,7 +3,7 @@
  * src/pages/autores/index.astro
  * Vista pública del directorio de autores y colaboradores de 870tivo.
  * Consume la tabla `public.authors` de Supabase con anon key (lectura pública).
- * No requiere autenticación.
+ * Enlaza cada autor hacia su perfil individual `/autores/[slug]`.
  */
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { supabase } from '../../lib/supabase';
@@ -14,7 +14,7 @@ type Author = Tables<'authors'>;
 // ── Fetch SSR desde Supabase (anon key, lectura pública) ─────────────────────
 const { data: authorsData, error } = await supabase
   .from('authors')
-  .select('id, name, social_url, created_at')
+  .select('id, name, slug, bio, avatar_url, social_url, social_links, created_at')
   .order('name', { ascending: true });
 
 if (error) {
@@ -25,7 +25,7 @@ const authors: Author[] = (authorsData ?? []) as Author[];
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function getInitials(name: string): string {
-  const parts = name.trim().split(/\s+/);
+  const parts = name.trim().split(/\s+/).filter(Boolean);
   if (parts.length >= 2) {
     return (parts[0][0]! + parts[parts.length - 1]![0]!).toUpperCase();
   }
@@ -55,7 +55,7 @@ function toReadableHandle(url: string): string {
   title="Autores — 870tivo"
   description="Directorio de autores, redactores y colaboradores del colectivo cultural 870tivo."
 >
-  <main class="flex-grow bg-brand-bg dark:bg-brand-ink transition-colors">
+  <main class="flex-grow bg-brand-bg dark:bg-brand-ink transition-colors min-h-[85vh]">
     <div class="container mx-auto px-4 md:px-6 py-12 md:py-20">
 
       <!-- ── Encabezado editorial ── -->
@@ -69,7 +69,7 @@ function toReadableHandle(url: string): string {
               Autores
             </h1>
             <p class="mt-4 text-brand-muted text-sm md:text-base max-w-md leading-relaxed">
-              Firmas, redactores y colaboradores que dan voz a 870tivo.
+              Firmas, redactores y colaboradores que dan voz al colectivo 870tivo.
             </p>
           </div>
 
@@ -118,64 +118,111 @@ function toReadableHandle(url: string): string {
         >
           {authors.map((author) => {
             const initials   = getInitials(author.name);
+            const profileUrl = `/autores/${author.slug || author.id}`;
             const hasLink    = Boolean(author.social_url);
             const handle     = hasLink ? toReadableHandle(author.social_url!) : null;
 
             return (
               <li
                 role="listitem"
-                class="group bg-brand-bg dark:bg-brand-ink hover:bg-brand-card dark:hover:bg-brand-darkCard transition-colors duration-200"
+                class="group bg-brand-bg dark:bg-brand-ink hover:bg-brand-card dark:hover:bg-brand-darkCard transition-all duration-200"
               >
-                <div class="p-6 md:p-8 flex flex-col gap-5 h-full">
+                <div class="p-6 md:p-8 flex flex-col justify-between gap-6 h-full">
 
-                  <!-- Avatar iniciales -->
-                  <div
-                    class="w-14 h-14 rounded-sm bg-brand-orange/10 dark:bg-brand-orange/15 border border-brand-orange/20 dark:border-brand-orange/25 flex items-center justify-center shrink-0"
-                    aria-hidden="true"
-                  >
-                    <span class="font-serif font-bold text-lg text-brand-orange select-none">
-                      {initials}
-                    </span>
-                  </div>
-
-                  <!-- Nombre -->
-                  <div class="flex-1 min-w-0">
-                    <h2 class="font-serif text-lg md:text-xl font-bold text-brand-ink dark:text-white leading-snug tracking-tight group-hover:text-brand-orange dark:group-hover:text-brand-bg transition-colors">
-                      {author.name}
-                    </h2>
-                    <p class="mt-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-brand-muted">
-                      Colaborador 870tivo
-                    </p>
-                  </div>
-
-                  <!-- Enlace social -->
-                  {hasLink ? (
+                  <div class="flex flex-col gap-4">
+                    <!-- Avatar con enlace al perfil -->
                     <a
-                      href={author.social_url!}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      class="
-                        self-start inline-flex items-center gap-1.5
-                        text-[11px] font-bold uppercase tracking-[0.15em]
-                        text-brand-muted hover:text-brand-orange dark:hover:text-brand-bg
-                        border-b border-transparent hover:border-brand-orange dark:hover:border-brand-bg
-                        transition-all pb-px
-                      "
-                      aria-label={`Perfil social de ${author.name}`}
+                      href={profileUrl}
+                      class="self-start relative group/avatar focus:outline-none"
+                      aria-label={`Ver perfil de ${author.name}`}
                     >
-                      <!-- Ícono enlace -->
-                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                        <polyline points="15 3 21 3 21 9"></polyline>
-                        <line x1="10" y1="14" x2="21" y2="3"></line>
-                      </svg>
-                      {handle}
+                      {author.avatar_url ? (
+                        <div class="w-16 h-16 rounded-xl overflow-hidden ring-2 ring-brand-orange/30 ring-offset-2 ring-offset-brand-bg dark:ring-offset-brand-ink bg-neutral-900 shrink-0">
+                          <img
+                            src={author.avatar_url}
+                            alt={`Retrato de ${author.name}`}
+                            class="w-full h-full object-cover transition-transform duration-300 group-hover/avatar:scale-105"
+                            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                          />
+                          <div class="hidden w-full h-full bg-brand-orange/10 dark:bg-brand-orange/15 items-center justify-center">
+                            <span class="font-serif font-bold text-lg text-brand-orange select-none">
+                              {initials}
+                            </span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div
+                          class="w-16 h-16 rounded-xl bg-brand-orange/10 dark:bg-brand-orange/15 border border-brand-orange/20 dark:border-brand-orange/25 ring-2 ring-brand-orange/20 ring-offset-2 ring-offset-brand-bg dark:ring-offset-brand-ink flex items-center justify-center shrink-0 group-hover/avatar:border-brand-orange/40 transition-colors"
+                          aria-hidden="true"
+                        >
+                          <span class="font-serif font-bold text-lg text-brand-orange select-none">
+                            {initials}
+                          </span>
+                        </div>
+                      )}
                     </a>
-                  ) : (
-                    <span class="self-start text-[11px] text-brand-muted/50 italic">
-                      Sin enlace social
-                    </span>
-                  )}
+
+                    <!-- Nombre y Rol -->
+                    <div class="min-w-0">
+                      <h2 class="font-serif text-lg md:text-xl font-bold text-brand-ink dark:text-white leading-snug tracking-tight">
+                        <a
+                          href={profileUrl}
+                          class="hover:text-brand-orange dark:hover:text-brand-orange transition-colors focus:outline-none"
+                        >
+                          {author.name}
+                        </a>
+                      </h2>
+                      <p class="mt-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-brand-muted">
+                        Colaborador 870tivo
+                      </p>
+
+                      <!-- Extracto de bio si existe -->
+                      {author.bio && (
+                        <p class="mt-2.5 text-xs text-brand-muted line-clamp-2 leading-relaxed">
+                          {author.bio}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <!-- Pie de tarjeta: enlace social y ver perfil -->
+                  <div class="pt-4 border-t border-brand-ink/5 dark:border-white/5 flex items-center justify-between gap-3 text-xs">
+                    {hasLink ? (
+                      <a
+                        href={author.social_url!}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="
+                          inline-flex items-center gap-1.5
+                          text-[11px] font-bold uppercase tracking-[0.15em]
+                          text-brand-muted hover:text-brand-orange dark:hover:text-brand-orange
+                          transition-colors
+                        "
+                        aria-label={`Perfil social de ${author.name}`}
+                      >
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                          <polyline points="15 3 21 3 21 9"></polyline>
+                          <line x1="10" y1="14" x2="21" y2="3"></line>
+                        </svg>
+                        {handle}
+                      </a>
+                    ) : (
+                      <span class="text-[11px] text-brand-muted/50 italic">
+                        870tivo
+                      </span>
+                    )}
+
+                    <!-- Enlace a la Ficha -->
+                    <a
+                      href={profileUrl}
+                      class="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-[0.15em] text-brand-orange hover:text-brand-ink dark:hover:text-white transition-colors"
+                      aria-label={`Ver ficha completa de ${author.name}`}
+                    >
+                      <span>Ficha</span>
+                      <span>&rarr;</span>
+                    </a>
+                  </div>
 
                 </div>
               </li>
@@ -187,4 +234,3 @@ function toReadableHandle(url: string): string {
     </div>
   </main>
 </BaseLayout>
-

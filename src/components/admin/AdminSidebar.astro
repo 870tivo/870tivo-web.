@@ -1,7 +1,7 @@
 ---
 interface Props {
   currentPath?: string;
-  activeModule?: 'dashboard' | 'publicaciones' | 'autores' | 'galeria' | 'usuarios' | 'roles' | string;
+  activeModule?: 'dashboard' | 'publicaciones' | 'actividades' | 'autores' | 'galeria' | 'usuarios' | 'roles' | string;
   userEmail?: string;
   userFullName?: string;
 }
@@ -11,6 +11,7 @@ const { activeModule = 'dashboard', userEmail = '', userFullName: _userFullName 
 // Group active checks to auto-expand relevant section on SSR
 const isDashboardActive = activeModule === 'dashboard';
 const isEditorialActive = activeModule === 'publicaciones';
+const isActivitiesActive = activeModule === 'actividades';
 const isAuthorsActive = activeModule === 'autores';
 const isGalleryActive = activeModule === 'galeria';
 const isUsersActive = activeModule === 'usuarios';
@@ -106,6 +107,24 @@ const isProfileActive = activeModule === 'profile';
           <span class="truncate">Publicaciones</span>
           {isEditorialActive && (
             <span class="ml-auto w-1.5 h-1.5 rounded-full bg-[#F2B134]"></span>
+          )}
+        </a>
+
+        <!-- Actividades & Eventos (Direct Link) -->
+        <a 
+          href="/2416f50b-da02-4a5b-86a8-61ae470ed3bd/actividades" 
+          class={`flex items-center gap-3 px-3 py-2 rounded-xl transition-all ${
+            isActivitiesActive 
+              ? 'bg-[#F5EFE6] dark:bg-[#1E1E1E] text-[#1F1B16] dark:text-white font-medium border border-[#E5DFD5] dark:border-[#282828] shadow-sm' 
+              : 'text-[#78716A] dark:text-neutral-400 hover:text-[#1F1B16] dark:hover:text-white hover:bg-[#F5EFE6] dark:hover:bg-white/5'
+          }`}
+        >
+          <svg class={`w-4 h-4 shrink-0 ${isActivitiesActive ? 'text-[#E4572E]' : 'text-[#78716A] dark:text-neutral-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          <span class="truncate">Actividades & Eventos</span>
+          {isActivitiesActive && (
+            <span class="ml-auto w-1.5 h-1.5 rounded-full bg-[#E4572E]"></span>
           )}
         </a>
 

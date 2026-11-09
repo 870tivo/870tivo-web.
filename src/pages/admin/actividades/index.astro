@@ -1,0 +1,12 @@
+---
+/**
+ * src/pages/admin/actividades/index.astro
+ * Punto de entrada administrativo para la gestión de Actividades del colectivo cultural 870tivo.
+ * Redirige canónicamente hacia la ruta administrativa protegida y ofuscada del sistema.
+ */
+export const prerender = false;
+
+const search = Astro.url.search;
+return Astro.redirect(`/2416f50b-da02-4a5b-86a8-61ae470ed3bd/actividades${search}`);
+---
+

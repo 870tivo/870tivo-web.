@@ -1,0 +1,160 @@
+---
+/**
+ * src/pages/autores/[slug].astro
+ * Ficha individual de autor con Server-Side Rendering (SSR).
+ * Renderiza el perfil enriquecido del autor, sus redes sociales y todas
+ * las obras, ensayos y textos asociados en el colectivo 870tivo.
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import AuthorHero from '../../components/autores/AuthorHero.astro';
+import AuthorWorksGrid from '../../components/autores/AuthorWorksGrid.astro';
+import { supabase } from '../../lib/supabase';
+import type { AuthorRow } from '../../types/database';
+import type { SupabasePost } from '../../types/posts';
+
+export const prerender = false;
+
+const { slug } = Astro.params;
+
+if (!slug) {
+  return Astro.redirect('/autores');
+}
+
+// 1. Consultar autor en Supabase por slug
+let author: AuthorRow | null = null;
+
+const { data: authorBySlug } = await supabase
+  .from('authors')
+  .select('*')
+  .eq('slug', slug)
+  .maybeSingle();
+
+if (authorBySlug) {
+  author = authorBySlug as AuthorRow;
+} else {
+  // Búsqueda de respaldo por UUID en caso de navegación con ID legado
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug);
+  if (isUuid) {
+    const { data: authorById } = await supabase
+      .from('authors')
+      .select('*')
+      .eq('id', slug)
+      .maybeSingle();
+
+    if (authorById) {
+      if (authorById.slug) {
+        return Astro.redirect(`/autores/${authorById.slug}`, 301);
+      }
+      author = authorById as AuthorRow;
+    }
+  }
+}
+
+// Si el autor no existe, responder 404
+if (!author) {
+  Astro.response.status = 404;
+}
+
+// 2. Si el autor existe, consultar sus publicaciones en `public.posts`
+let authorPosts: SupabasePost[] = [];
+let galleryCount = 0;
+
+if (author) {
+  // A. Publicaciones vinculadas por author_id
+  const { data: postsById } = await supabase
+    .from('posts')
+    .select('id, title, slug, subtitle, category, author, author_social_url, cover_image, read_time, created_at')
+    .eq('status', 'publicado')
+    .eq('author_id', author.id)
+    .order('created_at', { ascending: false });
+
+  // B. Publicaciones vinculadas por coincidencia de nombre
+  const { data: postsByName } = await supabase
+    .from('posts')
+    .select('id, title, slug, subtitle, category, author, author_social_url, cover_image, read_time, created_at')
+    .eq('status', 'publicado')
+    .ilike('author', author.name)
+    .order('created_at', { ascending: false });
+
+  // Unificar y deduplicar por ID
+  const map = new Map<string, SupabasePost>();
+  for (const post of (postsById || [])) {
+    map.set(post.id, post as SupabasePost);
+  }
+  for (const post of (postsByName || [])) {
+    map.set(post.id, post as SupabasePost);
+  }
+
+  authorPosts = Array.from(map.values()).sort(
+    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
+
+  // C. Obras en galería vinculadas por nombre (si existen)
+  const { count } = await supabase
+    .from('gallery')
+    .select('*', { count: 'exact', head: true })
+    .eq('visible', true)
+    .ilike('artist', `%${author.name}%`);
+
+  galleryCount = count || 0;
+}
+
+const pageTitle = author
+  ? `${author.name} — Perfil de Autor | 870tivo`
+  : 'Autor no encontrado — 870tivo';
+
+const pageDescription = author?.bio
+  ? author.bio.slice(0, 160)
+  : author
+  ? `Ficha y textos de ${author.name} en el colectivo cultural 870tivo.`
+  : 'El autor solicitado no se encuentra en el directorio de 870tivo.';
+---
+
+<BaseLayout title={pageTitle} description={pageDescription}>
+  <main class="flex-grow bg-brand-bg dark:bg-brand-ink transition-colors min-h-[80vh]">
+    <div class="container mx-auto px-4 md:px-6 py-10 md:py-16">
+      {author ? (
+        <>
+          <AuthorHero
+            name={author.name}
+            bio={author.bio}
+            avatarUrl={author.avatar_url}
+            socialUrl={author.social_url}
+            socialLinks={author.social_links}
+            worksCount={authorPosts.length}
+            galleryCount={galleryCount}
+            memberSince={author.created_at}
+          />
+
+          <AuthorWorksGrid
+            posts={authorPosts}
+            authorName={author.name}
+          />
+        </>
+      ) : (
+        <div class="py-24 text-center max-w-lg mx-auto">
+          <div class="w-16 h-16 mx-auto mb-6 border border-brand-orange/30 bg-brand-orange/10 rounded-2xl flex items-center justify-center text-brand-orange">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <span class="text-xs font-bold uppercase tracking-[0.3em] text-brand-orange block mb-2">
+            Error 404
+          </span>
+          <h1 class="font-serif text-3xl sm:text-4xl font-bold text-brand-ink dark:text-white mb-4">
+            Autor no encontrado
+          </h1>
+          <p class="text-sm text-brand-muted mb-8 leading-relaxed">
+            El perfil del autor que estás buscando no existe o fue trasladado a otra dirección dentro del colectivo.
+          </p>
+          <a
+            href="/autores"
+            class="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-brand-orange hover:bg-brand-orange/90 text-white font-bold text-xs uppercase tracking-widest transition-colors shadow-sm"
+          >
+            &larr; Volver al Directorio de Autores
+          </a>
+        </div>
+      )}
+    </div>
+  </main>
+</BaseLayout>

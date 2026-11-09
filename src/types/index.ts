@@ -8,4 +8,5 @@ export * from './profile';
 export * from './roles';
 export * from './gallery';
 export * from './posts';
+export * from './activities';
 
