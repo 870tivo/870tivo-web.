@@ -130,7 +130,7 @@ Un espacio de intercambio libre para artistas, creadores gráficos y vecinos del
 // ── 1. Consultar actividad en Supabase por slug ──────────────────────────────
 let activity: ActivityRow | null = null;
 
-const { data: dbActivity, error: dbError } = await supabase
+const { data: dbActivity } = await supabase
   .from('activities')
   .select('*')
   .eq('slug', slug)
@@ -237,7 +237,7 @@ const coverSrc = activity?.cover_url || '/assets/logo/870.jpeg';
   <main class="flex-grow bg-brand-bg dark:bg-brand-ink transition-colors pb-24">
     {activity ? (
       <div>
-        <!-- ── Migas de pan / Breadcrumb & Retorno ── -->
+        {/* Migas de pan / Breadcrumb y Retorno */}
         <nav aria-label="Migas de pan" class="border-b border-brand-ink/10 dark:border-white/10 py-3 bg-brand-card/30 dark:bg-brand-darkCard/30">
           <div class="container mx-auto px-4 md:px-6 flex items-center justify-between text-xs">
             <div class="flex items-center gap-2 text-brand-muted dark:text-brand-darkMuted truncate">
@@ -267,10 +267,10 @@ const coverSrc = activity?.cover_url || '/assets/logo/870.jpeg';
           </div>
         </nav>
 
-        <!-- ── Encabezado Hero Editorial ── -->
+        {/* Encabezado Hero Editorial */}
         <header class="border-b border-brand-ink/10 dark:border-white/10 pt-10 md:pt-14 pb-10 bg-brand-card/50 dark:bg-brand-darkCard/50">
           <div class="container mx-auto px-4 md:px-6 max-w-5xl">
-            <!-- Badge de Categoría Oficial -->
+            {/* Badge de Categoría Oficial */}
             <div class="mb-4">
               <a
                 href={`/actividades?categoria=${activity.category}`}
@@ -281,27 +281,27 @@ const coverSrc = activity?.cover_url || '/assets/logo/870.jpeg';
               </a>
             </div>
 
-            <!-- Título Principal -->
+            {/* Título Principal */}
             <h1 class="font-serif text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-brand-ink dark:text-brand-darkInk tracking-tight leading-[1.1] mb-6">
               {activity.title}
             </h1>
 
-            <!-- Sinopsis / Resumen -->
+            {/* Sinopsis / Resumen */}
             {activity.description && (
               <p class="text-base sm:text-lg md:text-xl text-brand-ink/80 dark:text-brand-darkMuted leading-relaxed font-sans max-w-4xl mb-8">
                 {activity.description}
               </p>
             )}
 
-            <!-- Tira Rápida de Datos Clave -->
+            {/* Tira Rápida de Datos Clave */}
             <div class="flex flex-wrap items-center gap-y-3 gap-x-6 pt-6 border-t border-brand-ink/10 dark:border-white/10 text-sm">
-              <!-- Fecha -->
+              {/* Fecha */}
               <div class="inline-flex items-center gap-2 text-brand-ink dark:text-brand-darkInk font-medium">
                 <Calendar class="w-4 h-4 text-brand-orange dark:text-brand-mustard shrink-0" />
                 <span>{capitalizedFullDate}</span>
               </div>
 
-              <!-- Hora -->
+              {/* Hora */}
               {eventTime && (
                 <div class="inline-flex items-center gap-2 text-brand-muted dark:text-brand-darkMuted">
                   <Clock class="w-4 h-4 text-brand-orange/80 dark:text-brand-mustard/80 shrink-0" />
@@ -309,7 +309,7 @@ const coverSrc = activity?.cover_url || '/assets/logo/870.jpeg';
                 </div>
               )}
 
-              <!-- Ubicación -->
+              {/* Ubicación */}
               <div class="inline-flex items-center gap-2 text-brand-muted dark:text-brand-darkMuted">
                 <MapPin class="w-4 h-4 text-brand-orange/80 dark:text-brand-mustard/80 shrink-0" />
                 <span>{activity.location}</span>
@@ -318,13 +318,13 @@ const coverSrc = activity?.cover_url || '/assets/logo/870.jpeg';
           </div>
         </header>
 
-        <!-- ── Cuerpo Principal: Portada + Contenido + Sidebar de Acción ── -->
+        {/* Cuerpo Principal: Portada + Contenido + Sidebar de Acción */}
         <div class="container mx-auto px-4 md:px-6 max-w-5xl pt-10 md:pt-14">
           <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
             
-            <!-- Columna Primaria (Contenido y Portada) -->
+            {/* Columna Primaria (Contenido y Portada) */}
             <div class="lg:col-span-8 flex flex-col gap-8">
-              <!-- Imagen de Portada -->
+              {/* Imagen de Portada */}
               <div class="relative w-full aspect-[16/10] bg-brand-ink/5 dark:bg-neutral-900 rounded-sm border border-brand-ink/10 dark:border-white/10 overflow-hidden shadow-md">
                 <img
                   src={coverSrc}
@@ -333,7 +333,7 @@ const coverSrc = activity?.cover_url || '/assets/logo/870.jpeg';
                 />
               </div>
 
-              <!-- Contenido Editorial / Descripción Extensa -->
+              {/* Contenido Editorial / Descripción Extensa */}
               {renderedContent ? (
                 <article
                   class="prose prose-lg dark:prose-invert max-w-none text-brand-ink/90 dark:text-brand-darkInk/90 font-sans leading-relaxed
@@ -350,9 +350,9 @@ const coverSrc = activity?.cover_url || '/assets/logo/870.jpeg';
               )}
             </div>
 
-            <!-- Columna Lateral (Ficha del Evento y Botones de Acción) -->
+            {/* Columna Lateral (Ficha del Evento y Botones de Acción) */}
             <aside class="lg:col-span-4 lg:sticky lg:top-24 flex flex-col gap-6">
-              <!-- Tarjeta de Ficha Resumida -->
+              {/* Tarjeta de Ficha Resumida */}
               <div class="p-6 bg-brand-card dark:bg-brand-darkCard border border-brand-ink/10 dark:border-white/10 rounded-sm shadow-sm">
                 <h3 class="font-serif font-bold text-lg text-brand-ink dark:text-brand-darkInk pb-3 mb-4 border-b border-brand-ink/10 dark:border-white/10">
                   Ficha del Encuentro
@@ -397,9 +397,9 @@ const coverSrc = activity?.cover_url || '/assets/logo/870.jpeg';
                   </div>
                 </dl>
 
-                <!-- ── Botones de Llamado a la Acción (CTA) ── -->
+                {/* Botones de Llamado a la Acción (CTA) */}
                 <div class="mt-6 pt-5 border-t border-brand-ink/10 dark:border-white/10 flex flex-col gap-2.5">
-                  <!-- Añadir a Google Calendar -->
+                  {/* Añadir a Google Calendar */}
                   <a
                     href={gcalUrl}
                     target="_blank"
@@ -411,7 +411,7 @@ const coverSrc = activity?.cover_url || '/assets/logo/870.jpeg';
                     <ExternalLink class="w-3 h-3 opacity-70" />
                   </a>
 
-                  <!-- Botón de Compartir Evento -->
+                  {/* Botón de Compartir Evento */}
                   <button
                     type="button"
                     id="btn-share-activity"
@@ -422,7 +422,7 @@ const coverSrc = activity?.cover_url || '/assets/logo/870.jpeg';
                     <span id="share-label">Compartir evento</span>
                   </button>
 
-                  <!-- Contacto / Dudas -->
+                  {/* Contacto / Dudas */}
                   <a
                     href={`mailto:contacto@870tivo.com?subject=Consulta%20sobre%20${encodeURIComponent(activity.title)}`}
                     class="w-full inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-medium text-brand-muted dark:text-brand-darkMuted hover:text-brand-ink dark:hover:text-brand-darkInk transition-colors"
@@ -435,7 +435,7 @@ const coverSrc = activity?.cover_url || '/assets/logo/870.jpeg';
             </aside>
           </div>
 
-          <!-- ── Sección: Otras Actividades Recomendadas ── -->
+          {/* Sección: Otras Actividades Recomendadas */}
           {relatedActivities.length > 0 && (
             <section class="mt-16 md:mt-24 pt-12 border-t border-brand-ink/10 dark:border-white/10">
               <div class="flex items-center justify-between mb-8">
@@ -467,8 +467,8 @@ const coverSrc = activity?.cover_url || '/assets/logo/870.jpeg';
         </div>
       </div>
     ) : (
-      <!-- ── Estado 404: Actividad no encontrada ── -->
       <div class="container mx-auto px-4 md:px-6 py-24 text-center max-w-lg">
+        {/* Estado 404: Actividad no encontrada */}
         <span class="text-xs font-bold uppercase tracking-[0.25em] text-brand-orange dark:text-brand-mustard block mb-3">
           Error 404
         </span>
