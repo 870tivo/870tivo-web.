@@ -1,0 +1,331 @@
+---
+/**
+ * src/pages/actividades/index.astro
+ * Directorio público de actividades y agenda cultural de 870tivo.
+ * Soporta filtrado interactivo por categoría con pestañas, sincronización con URL (query params)
+ * y renderizado editorial responsivo con modo oscuro.
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ActivityCard from '../../components/actividades/ActivityCard.astro';
+import { supabase } from '../../lib/supabase';
+import type { ActivityRow, ActivityCategory } from '../../types/database';
+import { ACTIVITY_CATEGORIES } from '../../types/database';
+import { Calendar, Filter, Sparkles } from 'lucide-astro';
+
+export const prerender = false;
+
+// ── Categoría activa desde Query Param (SSR) ──────────────────────────────────
+const initialCategory = (Astro.url.searchParams.get('categoria') ?? 'todas').toLowerCase();
+
+// ── Consulta a Supabase (anon key, lectura pública RLS) ──────────────────────
+const { data: rawActivities, error } = await supabase
+  .from('activities')
+  .select('*')
+  .eq('is_published', true)
+  .eq('status', 'publicado')
+  .order('event_date', { ascending: true });
+
+if (error) {
+  console.warn('[/actividades] Aviso: No se pudieron obtener actividades desde Supabase (posiblemente la tabla aún no esté migrada en la base de datos remota):', error.message);
+}
+
+// ── Fallback de cortesía en caso de que la tabla aún no se haya ejecutado en Supabase ──
+const FALLBACK_ACTIVITIES: ActivityRow[] = [
+  {
+    id: 'seed-1',
+    slug: 'ciclo-cine-la-vendedora-de-rosas',
+    title: 'Ciclo de Cine Colombiano: La Vendedora de Rosas',
+    category: 'ciclos-cine',
+    description: 'Proyección especial y conversatorio alrededor de la obra icónica de Víctor Gaviria y el neorrealismo urbano.',
+    content: 'En este encuentro nos sumergiremos en las calles de Medellín a través de la mirada descarnada y poética de Víctor Gaviria. Contaremos con un panel de conversación posterior sobre el impacto del cine con actores naturales y la representación de las juventudes en el audiovisual nacional.',
+    event_date: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
+    location: 'Sala Audiovisual 870tivo',
+    cover_url: '/assets/logo/870.jpeg',
+    status: 'publicado',
+    is_published: true,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: 'seed-2',
+    slug: 'club-lectura-voces-memoria',
+    title: 'Club de Lectura: Voces de la Memoria y la Ficción',
+    category: 'club-lectura',
+    description: 'Lecturas y diálogos literarios en torno a relatos contemporáneos y narrativas territoriales.',
+    content: 'Una tarde dedicada a desmenuzar las páginas de la literatura latinoamericana reciente. Compartiremos reflexiones, pasajes clave y café mientras exploramos cómo la ficción reconstruye la memoria colectiva.',
+    event_date: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
+    location: 'Biblioteca Comunitaria 870',
+    cover_url: '/assets/logo/870.jpeg',
+    status: 'publicado',
+    is_published: true,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: 'seed-3',
+    slug: 'taller-serigrafia-cartelismo',
+    title: 'Taller Práctico: Serigrafía y Cartelismo Popular',
+    category: 'talleres',
+    description: 'Formación creativa y técnica en artes gráficas, grabado artesanal e intervención visual urbana.',
+    content: 'Aprende los fundamentos de la serigrafía tradicional, desde el tensado y preparación de mallas hasta la estampación manual sobre papel y textil.',
+    event_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+    location: 'Taller de Artes Gráficas 870',
+    cover_url: '/assets/logo/870.jpeg',
+    status: 'publicado',
+    is_published: true,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: 'seed-4',
+    slug: 'encuentro-dialogos-inmateriales',
+    title: 'Encuentro Abierto: Diálogos Inmateriales y Noche Acústica',
+    category: 'encuentros',
+    description: 'Jornada interdisciplinar con fanzines independientes, lecturas poéticas y música en vivo.',
+    content: 'Un espacio de intercambio libre para artistas, creadores y público general con muestra editorial independiente y sesiones acústicas.',
+    event_date: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString(),
+    location: 'Patio Central 870tivo',
+    cover_url: '/assets/logo/870.jpeg',
+    status: 'publicado',
+    is_published: true,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+];
+
+const activities: ActivityRow[] = (rawActivities && rawActivities.length > 0)
+  ? (rawActivities as ActivityRow[])
+  : FALLBACK_ACTIVITIES;
+
+// Categorías disponibles
+const categoryKeys: ActivityCategory[] = ['ciclos-cine', 'club-lectura', 'talleres', 'encuentros'];
+---
+
+<BaseLayout
+  title="Actividades y Encuentros - 870tivo"
+  description="Agenda cultural, ciclos de cine, club de lectura, talleres formativos y encuentros del colectivo 870tivo."
+>
+  <main class="flex-grow bg-brand-bg dark:bg-brand-ink transition-colors pb-20">
+    <!-- ── Hero Editorial de Actividades ── -->
+    <section class="border-b border-brand-ink/10 dark:border-white/10 pt-12 md:pt-16 pb-10 bg-brand-card/40 dark:bg-brand-darkCard/40">
+      <div class="container mx-auto px-4 md:px-6">
+        <div class="max-w-3xl">
+          <div class="inline-flex items-center gap-2 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.25em] text-brand-orange dark:text-brand-mustard bg-brand-orange/10 dark:bg-brand-mustard/10 rounded-sm mb-4">
+            <Sparkles class="w-3.5 h-3.5" />
+            <span>Encuentro Inmaterial · Agenda Cultural</span>
+          </div>
+
+          <h1 class="font-serif text-4xl sm:text-5xl md:text-6xl font-bold text-brand-ink dark:text-brand-darkInk tracking-tight leading-none mb-4">
+            Actividades
+          </h1>
+
+          <p class="text-base sm:text-lg text-brand-muted dark:text-brand-darkMuted leading-relaxed font-sans">
+            Proyecciones cinematográficas, círculos de lectura, talleres formativos y jornadas abiertas. Espacios vivos de creación, conversación y memoria colectiva en el colectivo 870tivo.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Barra de Filtros / Tabs ── -->
+    <section class="sticky top-[72px] z-40 backdrop-blur-md bg-brand-bg/95 dark:bg-brand-ink/95 border-b border-brand-ink/10 dark:border-white/10 py-3 shadow-xs">
+      <div class="container mx-auto px-4 md:px-6">
+        <div class="flex items-center gap-2 overflow-x-auto no-scrollbar py-1" id="filter-tabs" role="tablist" aria-label="Filtrar por categoría">
+          <span class="text-xs font-semibold uppercase tracking-wider text-brand-muted dark:text-brand-darkMuted hidden sm:flex items-center gap-1.5 mr-2 shrink-0">
+            <Filter class="w-3.5 h-3.5 text-brand-orange dark:text-brand-mustard" />
+            <span>Categoría:</span>
+          </span>
+
+          <!-- Tab: Todas -->
+          <button
+            type="button"
+            role="tab"
+            data-category-tab="todas"
+            aria-selected={initialCategory === 'todas' ? 'true' : 'false'}
+            class="filter-tab-btn shrink-0 px-4 py-2 text-xs font-medium rounded-sm transition-all duration-200 cursor-pointer border"
+          >
+            Todas ({activities.length})
+          </button>
+
+          <!-- Tabs por categoría oficial -->
+          {categoryKeys.map((catKey) => {
+            const meta = ACTIVITY_CATEGORIES[catKey];
+            const count = activities.filter((a) => a.category === catKey).length;
+            const isSelected = initialCategory === catKey;
+
+            return (
+              <button
+                type="button"
+                role="tab"
+                data-category-tab={catKey}
+                aria-selected={isSelected ? 'true' : 'false'}
+                class="filter-tab-btn shrink-0 px-4 py-2 text-xs font-medium rounded-sm transition-all duration-200 cursor-pointer border"
+              >
+                {meta.label} ({count})
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Listado y Grid de Actividades ── -->
+    <section class="container mx-auto px-4 md:px-6 pt-8 md:pt-12">
+      <!-- Grid de tarjetas -->
+      <div
+        id="activities-grid"
+        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8"
+      >
+        {activities.map((activity) => (
+          <div class="activity-card-wrapper" data-category={activity.category}>
+            <ActivityCard activity={activity} />
+          </div>
+        ))}
+      </div>
+
+      <!-- Estado vacío cuando ninguna actividad coincide con el filtro -->
+      <div
+        id="empty-state"
+        class="hidden py-16 px-6 text-center max-w-md mx-auto border border-dashed border-brand-ink/15 dark:border-white/15 rounded-sm my-8"
+      >
+        <Calendar class="w-10 h-10 mx-auto text-brand-muted/60 mb-3" />
+        <h3 class="font-serif font-bold text-xl text-brand-ink dark:text-brand-darkInk mb-1">
+          No hay actividades programadas
+        </h3>
+        <p class="text-sm text-brand-muted dark:text-brand-darkMuted mb-6 leading-relaxed">
+          Actualmente no hay encuentros agendados en esta categoría. Te invitamos a consultar las demás categorías o volver pronto.
+        </p>
+        <button
+          type="button"
+          id="btn-reset-filters"
+          class="inline-flex items-center justify-center px-4 py-2 text-xs font-semibold uppercase tracking-wider bg-brand-orange text-white dark:bg-brand-mustard dark:text-brand-ink rounded-sm hover:opacity-90 transition-opacity cursor-pointer"
+        >
+          Ver todas las actividades
+        </button>
+      </div>
+    </section>
+  </main>
+</BaseLayout>
+
+<style>
+  /* Ocultar barra de desplazamiento manteniendo funcionalidad táctil */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+</style>
+
+<script>
+  // ── Interactividad de Filtrado en Cliente ──────────────────────────────────────
+  function initCategoryFilters() {
+    const tabButtons = document.querySelectorAll<HTMLButtonElement>('.filter-tab-btn');
+    const cardWrappers = document.querySelectorAll<HTMLElement>('.activity-card-wrapper');
+    const emptyState = document.getElementById('empty-state');
+    const resetBtn = document.getElementById('btn-reset-filters');
+
+    const ACTIVE_CLASSES = [
+      'bg-brand-orange',
+      'text-white',
+      'border-brand-orange',
+      'dark:bg-brand-mustard',
+      'dark:text-brand-ink',
+      'dark:border-brand-mustard',
+      'font-semibold',
+      'shadow-xs',
+    ];
+
+    const INACTIVE_CLASSES = [
+      'bg-brand-card/70',
+      'dark:bg-brand-darkCard',
+      'text-brand-ink/80',
+      'dark:text-brand-darkMuted',
+      'border-brand-ink/10',
+      'dark:border-white/10',
+      'hover:border-brand-orange/40',
+      'dark:hover:border-white/30',
+      'hover:text-brand-ink',
+      'dark:hover:text-brand-darkInk',
+    ];
+
+    function applyFilter(category: string, updateUrl = true) {
+      const selected = (category || 'todas').toLowerCase();
+      let visibleCount = 0;
+
+      // Actualizar estado visual de los botones de pestañas
+      tabButtons.forEach((btn) => {
+        const btnCategory = btn.getAttribute('data-category-tab') || 'todas';
+        const isCurrent = btnCategory === selected;
+        btn.setAttribute('aria-selected', String(isCurrent));
+
+        if (isCurrent) {
+          btn.classList.add(...ACTIVE_CLASSES);
+          btn.classList.remove(...INACTIVE_CLASSES);
+        } else {
+          btn.classList.remove(...ACTIVE_CLASSES);
+          btn.classList.add(...INACTIVE_CLASSES);
+        }
+      });
+
+      // Filtrar tarjetas
+      cardWrappers.forEach((wrapper) => {
+        const cardCategory = wrapper.getAttribute('data-category');
+        if (selected === 'todas' || cardCategory === selected) {
+          wrapper.style.display = '';
+          visibleCount++;
+        } else {
+          wrapper.style.display = 'none';
+        }
+      });
+
+      // Mostrar u ocultar estado vacío
+      if (emptyState) {
+        if (visibleCount === 0) {
+          emptyState.classList.remove('hidden');
+        } else {
+          emptyState.classList.add('hidden');
+        }
+      }
+
+      // Sincronizar URL sin recargar
+      if (updateUrl) {
+        const url = new URL(window.location.href);
+        if (selected === 'todas') {
+          url.searchParams.delete('categoria');
+        } else {
+          url.searchParams.set('categoria', selected);
+        }
+        window.history.replaceState({ category: selected }, '', url.toString());
+      }
+    }
+
+    // Event listeners en botones de pestañas
+    tabButtons.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const category = btn.getAttribute('data-category-tab') || 'todas';
+        applyFilter(category, true);
+      });
+    });
+
+    // Botón de restablecer dentro del empty state
+    resetBtn?.addEventListener('click', () => {
+      applyFilter('todas', true);
+    });
+
+    // Soporte para botones Atrás/Adelante del navegador
+    window.addEventListener('popstate', () => {
+      const currentCategory = new URL(window.location.href).searchParams.get('categoria') || 'todas';
+      applyFilter(currentCategory, false);
+    });
+
+    // Inicializar con la categoría presente en la URL al cargar
+    const initialUrlCategory = new URL(window.location.href).searchParams.get('categoria') || 'todas';
+    applyFilter(initialUrlCategory, false);
+  }
+
+  // Ejecutar tanto en la carga inicial como en navegaciones de Astro
+  document.addEventListener('DOMContentLoaded', initCategoryFilters);
+  document.addEventListener('astro:page-load', initCategoryFilters);
+</script>
+

@@ -4,13 +4,13 @@ import SearchModal from './SearchModal';
 
 /**
  * Menú de actividades del colectivo.
- * Agrupa los encuentros culturales periódicos de 870tivo.
+ * Agrupa los encuentros culturales periódicos de 870tivo según sus 4 categorías oficiales.
  */
 const actividadesItems = [
-  { label: 'Ciclos de Cine', href: '/cine-club', description: 'Proyecciones y conversaciones' },
-  { label: 'Club de Lectura', href: '/club-de-lectura', description: 'Lecturas y diálogos literarios' },
-  { label: 'Talleres', href: '/talleres', description: 'Formación creativa y técnica' },
-  { label: 'Encuentros', href: '/encuentros', description: 'Eventos y jornadas diversas' },
+  { label: 'Ciclos de Cine', href: '/actividades?categoria=ciclos-cine', description: 'Proyecciones y conversaciones' },
+  { label: 'Club de Lectura', href: '/actividades?categoria=club-lectura', description: 'Lecturas y diálogos literarios' },
+  { label: 'Talleres', href: '/actividades?categoria=talleres', description: 'Formación creativa y técnica' },
+  { label: 'Encuentros', href: '/actividades?categoria=encuentros', description: 'Eventos y jornadas diversas' },
 ];
 ---
 
@@ -111,6 +111,16 @@ const actividadesItems = [
               </li>
             ))}
           </ul>
+
+          <div class="px-4 py-2.5 border-t border-brand-ink/10 dark:border-white/10 bg-brand-ink/[0.02] dark:bg-white/[0.02]">
+            <a
+              href="/actividades"
+              class="text-[11px] font-semibold tracking-wider uppercase text-brand-orange dark:text-brand-mustard hover:underline flex items-center justify-between"
+            >
+              <span>Ver todas las actividades</span>
+              <span>→</span>
+            </a>
+          </div>
         </div>
       </div>
 
@@ -202,6 +212,9 @@ const actividadesItems = [
               {item.label}
             </a>
           ))}
+          <a href="/actividades" class="mobile-nav-link text-sm font-semibold text-brand-orange dark:text-brand-mustard">
+            Ver todas las actividades →
+          </a>
         </div>
       </div>
 
