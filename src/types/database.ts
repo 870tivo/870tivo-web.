@@ -244,6 +244,8 @@ export interface Database {
           cover_url: string | null;
           status: 'publicado' | 'borrador' | 'archivado';
           is_published: boolean;
+          tags?: string[] | null;
+          metadata?: Json | null;
           created_at: string;
           updated_at: string;
         };
@@ -259,6 +261,8 @@ export interface Database {
           cover_url?: string | null;
           status?: 'publicado' | 'borrador' | 'archivado';
           is_published?: boolean;
+          tags?: string[] | null;
+          metadata?: Json | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -274,6 +278,8 @@ export interface Database {
           cover_url?: string | null;
           status?: 'publicado' | 'borrador' | 'archivado';
           is_published?: boolean;
+          tags?: string[] | null;
+          metadata?: Json | null;
           created_at?: string;
           updated_at?: string;
         };

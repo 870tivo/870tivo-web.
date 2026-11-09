@@ -1,7 +1,7 @@
 /**
  * Módulos disponibles en el sistema 870tivo
  */
-export type SystemModule = 'publicaciones' | 'galeria' | 'usuarios';
+export type SystemModule = 'publicaciones' | 'galeria' | 'usuarios' | 'actividades';
 
 /**
  * Acciones CRUD estándar en el sistema
@@ -14,7 +14,7 @@ export interface BaseModuleActions {
 }
 
 /**
- * Acciones para módulos que soportan interruptores de visibilidad en el Dashboard (publicaciones, galería)
+ * Acciones para módulos que soportan interruptores de visibilidad en el Dashboard (publicaciones, galería, actividades)
  */
 export interface ContentModuleActions extends BaseModuleActions {
   toggle_visibility: boolean;
@@ -26,8 +26,9 @@ export interface ContentModuleActions extends BaseModuleActions {
 export interface RolePermissions {
   publicaciones: ContentModuleActions;
   galeria: ContentModuleActions;
+  actividades?: ContentModuleActions;
   usuarios: BaseModuleActions;
-  [moduleKey: string]: BaseModuleActions | ContentModuleActions;
+  [moduleKey: string]: BaseModuleActions | ContentModuleActions | undefined;
 }
 
 /**

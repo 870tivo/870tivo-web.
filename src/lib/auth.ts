@@ -60,6 +60,13 @@ export const FULL_SUPERADMIN_PERMISSIONS: RolePermissions = {
     delete: true,
     toggle_visibility: true,
   },
+  actividades: {
+    read: true,
+    create: true,
+    update: true,
+    delete: true,
+    toggle_visibility: true,
+  },
   usuarios: {
     read: true,
     create: true,
