@@ -1,0 +1,1233 @@
+---
+/**
+ * src/components/admin/ActivityEditorModal.astro
+ * Modal y Formulario Especializado para Creación y Edición de Actividades Culturales.
+ * 
+ * Incluye:
+ * - Campos comunes (Título, Slug autogenerado, Fecha/Hora, Ubicación, Sinopsis, Markdown, Tags, Estado).
+ * - Drag & Drop con preview para afiches en proporción 16:10 (bucket 'activities').
+ * - Secciones especializadas reactivas por categoría:
+ *   🎬 Ciclos de Cine (Director, Año, Duración, País, Trailer)
+ *   📚 Club de Lectura (Título del libro, Autor(a), Lecturas asignadas)
+ *   🛠️ Talleres (Facilitador, Nivel, Materiales, Aforo)
+ *   🗣️ Encuentros (Invitados, Formato del evento)
+ */
+---
+
+<!-- MODAL OVERLAY -->
+<div
+  id="activityEditorModal"
+  class="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/80 backdrop-blur-xs opacity-0 pointer-events-none transition-all duration-300"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="activityModalTitle"
+>
+  <!-- MODAL CARD / CANVAS EDITORIAL -->
+  <div
+    id="activityEditorModalCard"
+    class="relative w-full max-w-4xl max-h-[92vh] flex flex-col rounded-3xl bg-[#FAF6F0] dark:bg-[#141414] border border-[#E5DFD5] dark:border-[#282828] shadow-2xl transform scale-95 transition-all duration-300 overflow-hidden text-[#1F1B16] dark:text-[#FAF6F0]"
+  >
+    <!-- ── MODAL HEADER ── -->
+    <div class="px-6 sm:px-8 py-5 border-b border-[#E5DFD5] dark:border-[#282828] bg-white dark:bg-[#141414] flex items-center justify-between gap-4 shrink-0 transition-colors">
+      <div class="min-w-0">
+        <div class="flex items-center gap-2.5 mb-1.5 flex-wrap">
+          <span class="text-[11px] uppercase tracking-widest font-serif font-bold text-[#78716A] dark:text-neutral-400">
+            Agenda Cultural 870tivo &bull; Programación
+          </span>
+          <span class="text-[10px] px-2 py-0.5 rounded-full bg-[#2F4B3A]/10 dark:bg-[#2F4B3A]/20 border border-[#2F4B3A]/30 text-[#2F4B3A] dark:text-[#A7C7B3] font-mono">
+            bucket: activities (16:10)
+          </span>
+          <span id="activityModalModeBadge" class="text-[10px] px-2.5 py-0.5 rounded-full font-bold bg-[#E4572E]/10 dark:bg-[#E4572E]/20 text-[#E4572E] border border-[#E4572E]/30">
+            Nueva Actividad
+          </span>
+        </div>
+        <h3 id="activityModalTitle" class="text-xl sm:text-2xl font-serif font-bold text-[#1F1B16] dark:text-white tracking-tight truncate">
+          Formulario de Actividad
+        </h3>
+        <p class="text-xs text-[#78716A] dark:text-neutral-400 mt-0.5 truncate hidden sm:block">
+          Configura los datos del evento, afiche editorial 16:10 y especificaciones técnicas.
+        </p>
+      </div>
+
+      <!-- Close Button -->
+      <button
+        type="button"
+        id="closeActivityModalBtn"
+        class="p-2 text-[#78716A] hover:text-[#1F1B16] dark:text-neutral-400 dark:hover:text-white rounded-xl bg-white hover:bg-[#FAF6F0] dark:bg-[#181818] dark:hover:bg-[#222222] border border-[#E5DFD5] dark:border-[#282828] transition-colors shrink-0 cursor-pointer shadow-xs"
+        aria-label="Cerrar modal"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- ── MODAL BODY (SCROLLABLE FORM) ── -->
+    <div class="flex-1 overflow-y-auto px-6 sm:px-8 py-6 space-y-6 custom-scrollbar text-xs">
+      
+      <!-- Mensaje de Alerta / Error Dinámico -->
+      <div id="activityFormAlert" class="hidden p-3.5 rounded-xl border text-xs flex items-center gap-2.5"></div>
+
+      <form id="activityAdminForm" class="space-y-6">
+        <!-- Campo ID Oculto para Edición -->
+        <input type="hidden" id="activityIdInput" name="id" value="" />
+
+        <!-- 1. SELECTOR DE CATEGORÍA INTERACTIVO -->
+        <div class="space-y-2">
+          <label class="block text-xs font-bold text-[#1F1B16] dark:text-neutral-200 uppercase tracking-wider">
+            Tipo de Actividad / Categoría Oficial <span class="text-[#E4572E]">*</span>
+          </label>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5" id="categoryChipsContainer">
+            <!-- Ciclos de Cine -->
+            <button
+              type="button"
+              data-form-category="ciclos-cine"
+              class="category-select-btn p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-1 border-[#E4572E] bg-[#E4572E]/10 text-[#E4572E]"
+            >
+              <span class="text-base">🎬</span>
+              <div>
+                <span class="font-bold text-xs block">Ciclos de Cine</span>
+                <span class="text-[10px] text-neutral-500 dark:text-neutral-400">Proyección y diálogo</span>
+              </div>
+            </button>
+
+            <!-- Club de Lectura -->
+            <button
+              type="button"
+              data-form-category="club-lectura"
+              class="category-select-btn p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-1 border-[#E5DFD5] dark:border-[#282828] bg-white dark:bg-[#181818] text-[#1F1B16] dark:text-neutral-300 hover:border-[#2F4B3A]"
+            >
+              <span class="text-base">📚</span>
+              <div>
+                <span class="font-bold text-xs block">Club de Lectura</span>
+                <span class="text-[10px] text-neutral-500 dark:text-neutral-400">Lectura y memoria</span>
+              </div>
+            </button>
+
+            <!-- Talleres -->
+            <button
+              type="button"
+              data-form-category="talleres"
+              class="category-select-btn p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-1 border-[#E5DFD5] dark:border-[#282828] bg-white dark:bg-[#181818] text-[#1F1B16] dark:text-neutral-300 hover:border-[#F2B134]"
+            >
+              <span class="text-base">🛠️</span>
+              <div>
+                <span class="font-bold text-xs block">Talleres</span>
+                <span class="text-[10px] text-neutral-500 dark:text-neutral-400">Formación práctica</span>
+              </div>
+            </button>
+
+            <!-- Encuentros -->
+            <button
+              type="button"
+              data-form-category="encuentros"
+              class="category-select-btn p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-1 border-[#E5DFD5] dark:border-[#282828] bg-white dark:bg-[#181818] text-[#1F1B16] dark:text-neutral-300 hover:border-neutral-500"
+            >
+              <span class="text-base">🗣️</span>
+              <div>
+                <span class="font-bold text-xs block">Encuentros</span>
+                <span class="text-[10px] text-neutral-500 dark:text-neutral-400">Jornadas abiertas</span>
+              </div>
+            </button>
+          </div>
+          <input type="hidden" id="activityCategoryInput" name="category" value="ciclos-cine" />
+        </div>
+
+        <!-- 2. CAMPOS COMUNES BÁSICOS (TÍTULO Y SLUG) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Título -->
+          <div class="space-y-1.5 md:col-span-2">
+            <label for="activityTitleInput" class="block text-xs font-bold text-[#1F1B16] dark:text-neutral-200 uppercase tracking-wider">
+              Título del Evento o Actividad <span class="text-[#E4572E]">*</span>
+            </label>
+            <input
+              type="text"
+              id="activityTitleInput"
+              name="title"
+              required
+              placeholder="Ej: Ciclo de Cine Colombiano: La Vendedora de Rosas"
+              class="w-full px-4 py-2.5 bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] rounded-xl text-xs sm:text-sm text-[#1F1B16] dark:text-white placeholder-[#A8A29E] dark:placeholder-neutral-500 focus:outline-none focus:border-[#E4572E] transition-colors"
+            />
+          </div>
+
+          <!-- Slug autogenerado -->
+          <div class="space-y-1.5 md:col-span-2">
+            <div class="flex items-center justify-between">
+              <label for="activitySlugInput" class="block text-[11px] font-bold text-[#78716A] dark:text-neutral-400 uppercase tracking-wider">
+                Slug Permanente de la URL
+              </label>
+              <div class="flex items-center gap-2">
+                <button
+                  type="button"
+                  id="resetAutoSlugBtn"
+                  class="text-[10px] text-[#E4572E] hover:underline font-semibold cursor-pointer"
+                >
+                  Regenerar de título
+                </button>
+              </div>
+            </div>
+            <div class="flex items-center rounded-xl bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] overflow-hidden focus-within:border-[#E4572E]">
+              <span class="pl-3.5 pr-1 text-[#78716A] dark:text-neutral-500 font-mono text-xs select-none">
+                /actividades/
+              </span>
+              <input
+                type="text"
+                id="activitySlugInput"
+                name="slug"
+                placeholder="ciclo-cine-la-vendedora-de-rosas"
+                class="w-full py-2.5 pr-4 text-xs font-mono text-[#1F1B16] dark:text-white bg-transparent focus:outline-none"
+              />
+            </div>
+          </div>
+
+          <!-- Fecha y Hora -->
+          <div class="space-y-1.5">
+            <label for="activityDateInput" class="block text-xs font-bold text-[#1F1B16] dark:text-neutral-200 uppercase tracking-wider">
+              Fecha y Hora del Evento <span class="text-[#E4572E]">*</span>
+            </label>
+            <input
+              type="datetime-local"
+              id="activityDateInput"
+              name="event_date"
+              required
+              class="w-full px-3.5 py-2.5 bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] rounded-xl text-xs text-[#1F1B16] dark:text-white focus:outline-none focus:border-[#E4572E] transition-colors"
+            />
+          </div>
+
+          <!-- Ubicación -->
+          <div class="space-y-1.5">
+            <label for="activityLocationInput" class="block text-xs font-bold text-[#1F1B16] dark:text-neutral-200 uppercase tracking-wider">
+              Lugar / Ubicación <span class="text-[#E4572E]">*</span>
+            </label>
+            <input
+              type="text"
+              id="activityLocationInput"
+              name="location"
+              required
+              placeholder="Ej: Sala Audiovisual 870tivo — Carrera 8 # 70-15"
+              value="Sede 870tivo"
+              class="w-full px-3.5 py-2.5 bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] rounded-xl text-xs text-[#1F1B16] dark:text-white placeholder-[#A8A29E] dark:placeholder-neutral-500 focus:outline-none focus:border-[#E4572E] transition-colors"
+            />
+          </div>
+        </div>
+
+        <!-- 3. COMPONENTE DRAG & DROP PARA AFICHE CON PREVIEW (16:10) -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <label class="block text-xs font-bold text-[#1F1B16] dark:text-neutral-200 uppercase tracking-wider">
+              Afiche o Portada Editorial (Proporción 16:10)
+            </label>
+            <span class="text-[11px] text-[#78716A] dark:text-neutral-400 font-mono">
+              Recomendado: 1280x800 px (Máx 10 MB)
+            </span>
+          </div>
+
+          <!-- Drop Zone Container -->
+          <div
+            id="activityDropZone"
+            class="relative rounded-2xl border-2 border-dashed border-[#E5DFD5] dark:border-[#282828] bg-white dark:bg-[#181818] p-5 text-center transition-all duration-200 hover:border-[#E4572E]/60 flex flex-col items-center justify-center min-h-[170px]"
+          >
+            <input
+              type="file"
+              id="activityFileInput"
+              accept="image/jpeg,image/png,image/webp,image/avif,image/gif"
+              class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+              title="Arrastra o selecciona un afiche"
+            />
+
+            <!-- Prompt State -->
+            <div id="dropPrompt" class="space-y-2 pointer-events-none">
+              <div class="w-12 h-12 mx-auto rounded-2xl bg-[#E4572E]/10 dark:bg-[#E4572E]/20 text-[#E4572E] flex items-center justify-center">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <div>
+                <p class="text-xs font-semibold text-[#1F1B16] dark:text-white">
+                  Arrastra tu afiche aquí o <span class="text-[#E4572E] underline">explora tus archivos</span>
+                </p>
+                <p class="text-[11px] text-[#78716A] dark:text-neutral-400 mt-0.5">
+                  Se subirá automáticamente al bucket <code class="text-[#E4572E] font-mono">activities</code> (JPG, PNG, WEBP, AVIF &bull; 16:10)
+                </p>
+              </div>
+            </div>
+
+            <!-- Uploading Spinner State -->
+            <div id="dropUploading" class="hidden pointer-events-none py-4 space-y-2">
+              <div class="w-8 h-8 mx-auto border-3 border-[#E4572E] border-t-transparent rounded-full animate-spin"></div>
+              <p class="text-xs font-semibold text-[#E4572E]">Subiendo afiche a Supabase Storage...</p>
+            </div>
+
+            <!-- Preview State (16:10) -->
+            <div id="dropPreview" class="hidden pointer-events-none w-full max-w-sm">
+              <div class="relative w-full aspect-[16/10] rounded-xl overflow-hidden shadow-md border border-[#E5DFD5] dark:border-[#282828] bg-black">
+                <img
+                  id="previewImg"
+                  src=""
+                  alt="Vista previa del afiche"
+                  class="w-full h-full object-cover"
+                />
+                <span class="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-black/70 text-white font-mono text-[9px] backdrop-blur-xs">
+                  16:10 OK
+                </span>
+              </div>
+              <div class="mt-2.5 flex items-center justify-between pointer-events-auto">
+                <span id="previewFileName" class="text-[11px] text-[#78716A] dark:text-neutral-300 font-mono truncate max-w-[220px]"></span>
+                <button
+                  type="button"
+                  id="removeCoverBtn"
+                  class="text-xs text-red-500 hover:text-red-600 font-medium underline cursor-pointer"
+                >
+                  Cambiar imagen
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- URL Oculta / Input manual alternativo -->
+          <input type="hidden" id="activityCoverUrlHidden" name="cover_url" value="" />
+          <div class="flex items-center justify-between text-[11px] text-[#78716A] dark:text-neutral-400">
+            <button
+              type="button"
+              id="toggleManualCoverUrlBtn"
+              class="text-[#E4572E] hover:underline cursor-pointer"
+            >
+              + Ingresar URL manual de portada
+            </button>
+          </div>
+          <div id="manualCoverUrlContainer" class="hidden mt-1">
+            <input
+              type="text"
+              id="manualCoverUrlInput"
+              placeholder="https://ejemplo.com/afiche.jpg o /assets/logo/870.jpeg"
+              class="w-full px-3.5 py-2 bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] rounded-xl text-xs text-[#1F1B16] dark:text-white placeholder-[#A8A29E] focus:outline-none focus:border-[#E4572E]"
+            />
+          </div>
+        </div>
+
+        <!-- 4. CAMPOS ESPECIALIZADOS POR CATEGORÍA (REACTIVOS) -->
+        <div class="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] space-y-4">
+          <div class="flex items-center justify-between border-b border-[#E5DFD5] dark:border-[#282828] pb-2.5">
+            <div class="flex items-center gap-2">
+              <span id="specializedSectionIcon" class="text-base">🎬</span>
+              <h4 id="specializedSectionTitle" class="font-serif font-bold text-sm text-[#1F1B16] dark:text-white">
+                Ficha Técnica: Ciclos de Cine
+              </h4>
+            </div>
+            <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-[#FAF6F0] dark:bg-[#202020] text-[#78716A] dark:text-neutral-400">
+              Campos Especializados
+            </span>
+          </div>
+
+          <!-- 4.1. SECCIÓN CICLOS DE CINE -->
+          <div id="specializedCine" class="specialized-group grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div class="space-y-1">
+              <label for="cineDirectorInput" class="block text-[11px] font-bold uppercase text-[#78716A] dark:text-neutral-400">
+                Director(a)
+              </label>
+              <input
+                type="text"
+                id="cineDirectorInput"
+                placeholder="Ej: Víctor Gaviria"
+                class="w-full px-3 py-2 bg-[#FAF6F0] dark:bg-[#141414] border border-[#E5DFD5] dark:border-[#282828] rounded-xl text-xs focus:outline-none focus:border-[#E4572E]"
+              />
+            </div>
+
+            <div class="space-y-1">
+              <label for="cineYearInput" class="block text-[11px] font-bold uppercase text-[#78716A] dark:text-neutral-400">
+                Año de Estreno
+              </label>
+              <input
+                type="number"
+                id="cineYearInput"
+                placeholder="1998"
+                min="1900"
+                max="2099"
+                class="w-full px-3 py-2 bg-[#FAF6F0] dark:bg-[#141414] border border-[#E5DFD5] dark:border-[#282828] rounded-xl text-xs focus:outline-none focus:border-[#E4572E]"
+              />
+            </div>
+
+            <div class="space-y-1">
+              <label for="cineDurationInput" class="block text-[11px] font-bold uppercase text-[#78716A] dark:text-neutral-400">
+                Duración (minutos)
+              </label>
+              <input
+                type="number"
+                id="cineDurationInput"
+                placeholder="120"
+                min="1"
+                max="999"
+                class="w-full px-3 py-2 bg-[#FAF6F0] dark:bg-[#141414] border border-[#E5DFD5] dark:border-[#282828] rounded-xl text-xs focus:outline-none focus:border-[#E4572E]"
+              />
+            </div>
+
+            <div class="space-y-1">
+              <label for="cineCountryInput" class="block text-[11px] font-bold uppercase text-[#78716A] dark:text-neutral-400">
+                País de Origen
+              </label>
+              <input
+                type="text"
+                id="cineCountryInput"
+                placeholder="Colombia"
+                class="w-full px-3 py-2 bg-[#FAF6F0] dark:bg-[#141414] border border-[#E5DFD5] dark:border-[#282828] rounded-xl text-xs focus:outline-none focus:border-[#E4572E]"
+              />
+            </div>
+
+            <div class="space-y-1 sm:col-span-2">
+              <label for="cineTrailerInput" class="block text-[11px] font-bold uppercase text-[#78716A] dark:text-neutral-400">
+                Link a Trailer (Opcional - YouTube / Vimeo)
+              </label>
+              <input
+                type="url"
+                id="cineTrailerInput"
+                placeholder="https://www.youtube.com/watch?v=..."
+                class="w-full px-3 py-2 bg-[#FAF6F0] dark:bg-[#141414] border border-[#E5DFD5] dark:border-[#282828] rounded-xl text-xs focus:outline-none focus:border-[#E4572E]"
+              />
+            </div>
+          </div>
+
+          <!-- 4.2. SECCIÓN CLUB DE LECTURA -->
+          <div id="specializedLectura" class="specialized-group hidden grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="space-y-1">
+              <label for="lecturaBookTitleInput" class="block text-[11px] font-bold uppercase text-[#78716A] dark:text-neutral-400">
+                Título del Libro / Texto
+              </label>
+              <input
+                type="text"
+                id="lecturaBookTitleInput"
+                placeholder="Ej: Relato de un Náufrago"
+                class="w-full px-3 py-2 bg-[#FAF6F0] dark:bg-[#141414] border border-[#E5DFD5] dark:border-[#282828] rounded-xl text-xs focus:outline-none focus:border-[#2F4B3A]"
+              />
+            </div>
+
+            <div class="space-y-1">
+              <label for="lecturaBookAuthorInput" class="block text-[11px] font-bold uppercase text-[#78716A] dark:text-neutral-400">
+                Autor(a) del Libro
+              </label>
+              <input
+                type="text"
+                id="lecturaBookAuthorInput"
+                placeholder="Ej: Gabriel García Márquez"
+                class="w-full px-3 py-2 bg-[#FAF6F0] dark:bg-[#141414] border border-[#E5DFD5] dark:border-[#282828] rounded-xl text-xs focus:outline-none focus:border-[#2F4B3A]"
+              />
+            </div>
+
+            <div class="space-y-1 sm:col-span-2">
+              <label for="lecturaReadingsInput" class="block text-[11px] font-bold uppercase text-[#78716A] dark:text-neutral-400">
+                Capítulos / Páginas Asignadas para la Sesión
+              </label>
+              <input
+                type="text"
+                id="lecturaReadingsInput"
+                placeholder="Ej: Capítulos 1 a 4 (Págs. 15 - 68) y notas críticas"
+                class="w-full px-3 py-2 bg-[#FAF6F0] dark:bg-[#141414] border border-[#E5DFD5] dark:border-[#282828] rounded-xl text-xs focus:outline-none focus:border-[#2F4B3A]"
+              />
+            </div>
+          </div>
+
+          <!-- 4.3. SECCIÓN TALLERES -->
+          <div id="specializedTalleres" class="specialized-group hidden grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div class="space-y-1">
+              <label for="talleresFacilitatorInput" class="block text-[11px] font-bold uppercase text-[#78716A] dark:text-neutral-400">
+                Facilitador(a) / Tallerista
+              </label>
+              <input
+                type="text"
+                id="talleresFacilitatorInput"
+                placeholder="Ej: Colectivo Gráfico 870"
+                class="w-full px-3 py-2 bg-[#FAF6F0] dark:bg-[#141414] border border-[#E5DFD5] dark:border-[#282828] rounded-xl text-xs focus:outline-none focus:border-[#F2B134]"
+              />
+            </div>
+
+            <div class="space-y-1">
+              <label for="talleresLevelSelect" class="block text-[11px] font-bold uppercase text-[#78716A] dark:text-neutral-400">
+                Nivel Recomendado
+              </label>
+              <select
+                id="talleresLevelSelect"
+                class="w-full px-3 py-2 bg-[#FAF6F0] dark:bg-[#141414] border border-[#E5DFD5] dark:border-[#282828] rounded-xl text-xs focus:outline-none focus:border-[#F2B134]"
+              >
+                <option value="Todos">Todos los niveles</option>
+                <option value="Principiante">Principiante (Sin experiencia previa)</option>
+                <option value="Intermedio">Intermedio</option>
+                <option value="Avanzado">Avanzado</option>
+              </select>
+            </div>
+
+            <div class="space-y-1">
+              <label for="talleresCapacityInput" class="block text-[11px] font-bold uppercase text-[#78716A] dark:text-neutral-400">
+                Aforo / Cupos Máximos
+              </label>
+              <input
+                type="number"
+                id="talleresCapacityInput"
+                placeholder="15"
+                min="1"
+                max="500"
+                class="w-full px-3 py-2 bg-[#FAF6F0] dark:bg-[#141414] border border-[#E5DFD5] dark:border-[#282828] rounded-xl text-xs focus:outline-none focus:border-[#F2B134]"
+              />
+            </div>
+
+            <div class="space-y-1 sm:col-span-2 lg:col-span-3">
+              <label for="talleresMaterialsInput" class="block text-[11px] font-bold uppercase text-[#78716A] dark:text-neutral-400">
+                Materiales Requeridos / Incluidos
+              </label>
+              <input
+                type="text"
+                id="talleresMaterialsInput"
+                placeholder="Ej: Mallas y tintas al agua incluidas. Traer delantal o ropa de trabajo."
+                class="w-full px-3 py-2 bg-[#FAF6F0] dark:bg-[#141414] border border-[#E5DFD5] dark:border-[#282828] rounded-xl text-xs focus:outline-none focus:border-[#F2B134]"
+              />
+            </div>
+          </div>
+
+          <!-- 4.4. SECCIÓN ENCUENTROS -->
+          <div id="specializedEncuentros" class="specialized-group hidden grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="space-y-1">
+              <label for="encuentrosGuestsInput" class="block text-[11px] font-bold uppercase text-[#78716A] dark:text-neutral-400">
+                Invitados(as) / Conferencistas
+              </label>
+              <input
+                type="text"
+                id="encuentrosGuestsInput"
+                placeholder="Ej: Editores independientes y cantautores barriales"
+                class="w-full px-3 py-2 bg-[#FAF6F0] dark:bg-[#141414] border border-[#E5DFD5] dark:border-[#282828] rounded-xl text-xs focus:outline-none focus:border-neutral-500"
+              />
+            </div>
+
+            <div class="space-y-1">
+              <label for="encuentrosFormatInput" class="block text-[11px] font-bold uppercase text-[#78716A] dark:text-neutral-400">
+                Formato del Evento
+              </label>
+              <input
+                type="text"
+                id="encuentrosFormatInput"
+                placeholder="Ej: Conversatorio, Feria de autoedición y Noche acústica"
+                class="w-full px-3 py-2 bg-[#FAF6F0] dark:bg-[#141414] border border-[#E5DFD5] dark:border-[#282828] rounded-xl text-xs focus:outline-none focus:border-neutral-500"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. SINOPSIS CORTA -->
+        <div class="space-y-1.5">
+          <label for="activityDescInput" class="block text-xs font-bold text-[#1F1B16] dark:text-neutral-200 uppercase tracking-wider">
+            Sinopsis Corta / Resumen Editorial
+          </label>
+          <textarea
+            id="activityDescInput"
+            name="description"
+            rows="2"
+            placeholder="Resumen conciso visible en tarjetas, listados y metadatos sociales..."
+            class="w-full px-3.5 py-2.5 bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] rounded-xl text-xs text-[#1F1B16] dark:text-white placeholder-[#A8A29E] focus:outline-none focus:border-[#E4572E] transition-colors"
+          ></textarea>
+        </div>
+
+        <!-- 6. CONTENIDO EXTENDIDO (MARKDOWN) -->
+        <div class="space-y-1.5">
+          <div class="flex items-center justify-between">
+            <label for="activityContentInput" class="block text-xs font-bold text-[#1F1B16] dark:text-neutral-200 uppercase tracking-wider">
+              Cuerpo Extendido del Evento (Markdown Soportado)
+            </label>
+            <span class="text-[11px] text-[#78716A] dark:text-neutral-400">
+              Compatible con listas, citas y encabezados
+            </span>
+          </div>
+          <textarea
+            id="activityContentInput"
+            name="content"
+            rows="5"
+            placeholder="### Dinámica del encuentro&#10;Describe aquí el itinerario, recomendaciones para asistentes, lecturas sugeridas o perfil de los invitados..."
+            class="w-full px-3.5 py-2.5 bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] rounded-xl text-xs font-mono text-[#1F1B16] dark:text-white placeholder-[#A8A29E] focus:outline-none focus:border-[#E4572E] transition-colors"
+          ></textarea>
+        </div>
+
+        <!-- 7. GESTIÓN DE TAGS Y ETIQUETAS -->
+        <div class="space-y-2">
+          <label class="block text-xs font-bold text-[#1F1B16] dark:text-neutral-200 uppercase tracking-wider">
+            Etiquetas / Palabras Clave (Tags)
+          </label>
+          <div class="flex items-center gap-2">
+            <input
+              type="text"
+              id="tagInput"
+              placeholder="Escribe una etiqueta y presiona Enter..."
+              class="flex-1 px-3.5 py-2 bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] rounded-xl text-xs text-[#1F1B16] dark:text-white placeholder-[#A8A29E] focus:outline-none focus:border-[#E4572E]"
+            />
+            <button
+              type="button"
+              id="addTagBtn"
+              class="px-3.5 py-2 rounded-xl bg-neutral-200 hover:bg-neutral-300 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-[#1F1B16] dark:text-white font-semibold text-xs transition-colors cursor-pointer"
+            >
+              + Añadir
+            </button>
+          </div>
+          <!-- Tags Chips Container -->
+          <div id="tagsListContainer" class="flex flex-wrap items-center gap-1.5 min-h-[28px] pt-1"></div>
+        </div>
+
+        <!-- 8. ESTADO Y VISIBILIDAD -->
+        <div class="p-4 rounded-2xl bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <span class="block text-xs font-bold text-[#1F1B16] dark:text-white">
+              Visibilidad Pública en la Web
+            </span>
+            <span class="text-[11px] text-[#78716A] dark:text-neutral-400">
+              Si está desmarcado, se guardará como <strong>Borrador</strong> y solo será visible en el panel.
+            </span>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                id="activityPublishedCheckbox"
+                name="is_published"
+                class="sr-only peer"
+                checked
+              />
+              <div class="w-11 h-6 bg-neutral-300 dark:bg-neutral-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+              <span id="publishedStatusText" class="ml-2.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 select-none">
+                Publicado
+              </span>
+            </label>
+          </div>
+        </div>
+
+      </form>
+    </div>
+
+    <!-- ── MODAL FOOTER ACTIONS ── -->
+    <div class="px-6 sm:px-8 py-4 border-t border-[#E5DFD5] dark:border-[#282828] bg-white dark:bg-[#141414] flex items-center justify-between gap-3 shrink-0">
+      <button
+        type="button"
+        id="cancelActivityFormBtn"
+        class="px-4 py-2.5 rounded-xl text-xs font-semibold bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-[#1F1B16] dark:text-white transition-colors cursor-pointer"
+      >
+        Cancelar
+      </button>
+
+      <div class="flex items-center gap-2.5">
+        <button
+          type="button"
+          id="saveActivitySubmitBtn"
+          class="px-5 py-2.5 rounded-xl text-xs font-bold bg-[#E4572E] hover:bg-[#CF4821] text-white transition-all cursor-pointer shadow-md inline-flex items-center gap-2"
+        >
+          <span id="saveBtnText">Guardar Actividad</span>
+          <div id="saveSpinner" class="hidden w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── SCRIPT DE COMPORTAMIENTO Y CRUD EN EL CLIENTE ── -->
+<script is:inline>
+  document.addEventListener('DOMContentLoaded', () => {
+    // ── Referencias Principales del Modal ──
+    const modal = document.getElementById('activityEditorModal');
+    const modalCard = document.getElementById('activityEditorModalCard');
+    const closeBtn = document.getElementById('closeActivityModalBtn');
+    const cancelBtn = document.getElementById('cancelActivityFormBtn');
+    const saveBtn = document.getElementById('saveActivitySubmitBtn');
+    const saveBtnText = document.getElementById('saveBtnText');
+    const saveSpinner = document.getElementById('saveSpinner');
+    const modalTitle = document.getElementById('activityModalTitle');
+    const modalModeBadge = document.getElementById('activityModalModeBadge');
+    const formAlert = document.getElementById('activityFormAlert');
+
+    // Inputs comunes
+    const idInput = document.getElementById('activityIdInput');
+    const titleInput = document.getElementById('activityTitleInput');
+    const slugInput = document.getElementById('activitySlugInput');
+    const resetAutoSlugBtn = document.getElementById('resetAutoSlugBtn');
+    const dateInput = document.getElementById('activityDateInput');
+    const locationInput = document.getElementById('activityLocationInput');
+    const descInput = document.getElementById('activityDescInput');
+    const contentInput = document.getElementById('activityContentInput');
+    const categoryInput = document.getElementById('activityCategoryInput');
+    const categoryChips = document.querySelectorAll('.category-select-btn');
+    const publishedCheckbox = document.getElementById('activityPublishedCheckbox');
+    const publishedStatusText = document.getElementById('publishedStatusText');
+
+    // Drag & Drop / Portada
+    const dropZone = document.getElementById('activityDropZone');
+    const fileInput = document.getElementById('activityFileInput');
+    const dropPrompt = document.getElementById('dropPrompt');
+    const dropUploading = document.getElementById('dropUploading');
+    const dropPreview = document.getElementById('dropPreview');
+    const previewImg = document.getElementById('previewImg');
+    const previewFileName = document.getElementById('previewFileName');
+    const removeCoverBtn = document.getElementById('removeCoverBtn');
+    const coverUrlHidden = document.getElementById('activityCoverUrlHidden');
+    const toggleManualUrlBtn = document.getElementById('toggleManualCoverUrlBtn');
+    const manualUrlContainer = document.getElementById('manualCoverUrlContainer');
+    const manualUrlInput = document.getElementById('manualCoverUrlInput');
+
+    // Secciones Especializadas
+    const specIcon = document.getElementById('specializedSectionIcon');
+    const specTitle = document.getElementById('specializedSectionTitle');
+    const specCine = document.getElementById('specializedCine');
+    const specLectura = document.getElementById('specializedLectura');
+    const specTalleres = document.getElementById('specializedTalleres');
+    const specEncuentros = document.getElementById('specializedEncuentros');
+
+    // Inputs especializados Cine
+    const cineDirector = document.getElementById('cineDirectorInput');
+    const cineYear = document.getElementById('cineYearInput');
+    const cineDuration = document.getElementById('cineDurationInput');
+    const cineCountry = document.getElementById('cineCountryInput');
+    const cineTrailer = document.getElementById('cineTrailerInput');
+
+    // Inputs especializados Lectura
+    const lecturaBookTitle = document.getElementById('lecturaBookTitleInput');
+    const lecturaBookAuthor = document.getElementById('lecturaBookAuthorInput');
+    const lecturaReadings = document.getElementById('lecturaReadingsInput');
+
+    // Inputs especializados Talleres
+    const talleresFacilitator = document.getElementById('talleresFacilitatorInput');
+    const talleresLevel = document.getElementById('talleresLevelSelect');
+    const talleresCapacity = document.getElementById('talleresCapacityInput');
+    const talleresMaterials = document.getElementById('talleresMaterialsInput');
+
+    // Inputs especializados Encuentros
+    const encuentrosGuests = document.getElementById('encuentrosGuestsInput');
+    const encuentrosFormat = document.getElementById('encuentrosFormatInput');
+
+    // Tags
+    const tagInput = document.getElementById('tagInput');
+    const addTagBtn = document.getElementById('addTagBtn');
+    const tagsListContainer = document.getElementById('tagsListContainer');
+    let currentTags = [];
+
+    let isAutoSlug = true;
+
+    // ── 1. Apertura y Cierre del Modal ──
+    function openModal() {
+      showAlert('');
+      modal?.classList.remove('opacity-0', 'pointer-events-none');
+      modal?.classList.add('opacity-100');
+      modalCard?.classList.remove('scale-95');
+      modalCard?.classList.add('scale-100');
+      document.body.style.overflow = 'hidden';
+      setTimeout(() => titleInput?.focus(), 150);
+    }
+
+    function closeModal() {
+      modal?.classList.add('opacity-0', 'pointer-events-none');
+      modal?.classList.remove('opacity-100');
+      modalCard?.classList.add('scale-95');
+      modalCard?.classList.remove('scale-100');
+      document.body.style.overflow = '';
+      resetForm();
+    }
+
+    closeBtn?.addEventListener('click', closeModal);
+    cancelBtn?.addEventListener('click', closeModal);
+    modal?.addEventListener('click', (e) => {
+      if (e.target === modal) closeModal();
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !modal?.classList.contains('pointer-events-none')) {
+        closeModal();
+      }
+    });
+
+    // ── 2. Alertas Internas ──
+    function showAlert(msg, type = 'error') {
+      if (!formAlert) return;
+      if (!msg) {
+        formAlert.classList.add('hidden');
+        formAlert.textContent = '';
+        return;
+      }
+      formAlert.classList.remove('hidden');
+      formAlert.textContent = msg;
+
+      if (type === 'error') {
+        formAlert.className = 'p-3.5 rounded-xl border text-xs flex items-center gap-2.5 bg-red-500/10 border-red-500/30 text-red-600 dark:text-red-400';
+      } else {
+        formAlert.className = 'p-3.5 rounded-xl border text-xs flex items-center gap-2.5 bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400';
+      }
+    }
+
+    // ── 3. Slugify Automático ──
+    function slugify(text) {
+      return text
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9_-]/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '')
+        .slice(0, 80);
+    }
+
+    titleInput?.addEventListener('input', () => {
+      if (isAutoSlug && slugInput) {
+        slugInput.value = slugify(titleInput.value);
+      }
+    });
+
+    slugInput?.addEventListener('input', () => {
+      isAutoSlug = false;
+    });
+
+    resetAutoSlugBtn?.addEventListener('click', () => {
+      isAutoSlug = true;
+      if (slugInput && titleInput) {
+        slugInput.value = slugify(titleInput.value);
+      }
+    });
+
+    // ── 4. Conmutación Dinámica de Categoría y Campos Especializados ──
+    function switchCategory(cat) {
+      if (!cat) return;
+      if (categoryInput) categoryInput.value = cat;
+
+      // Actualizar chips de selección
+      categoryChips.forEach((btn) => {
+        const btnCat = btn.getAttribute('data-form-category');
+        const isSelected = btnCat === cat;
+
+        if (isSelected) {
+          if (cat === 'ciclos-cine') {
+            btn.className = 'category-select-btn p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-1 border-[#E4572E] bg-[#E4572E]/10 text-[#E4572E] shadow-xs';
+          } else if (cat === 'club-lectura') {
+            btn.className = 'category-select-btn p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-1 border-[#2F4B3A] bg-[#2F4B3A]/10 text-[#2F4B3A] dark:text-[#A7C7B3] shadow-xs';
+          } else if (cat === 'talleres') {
+            btn.className = 'category-select-btn p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-1 border-[#F2B134] bg-[#F2B134]/15 text-[#1F1B16] dark:text-[#F2B134] font-bold shadow-xs';
+          } else {
+            btn.className = 'category-select-btn p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-1 border-neutral-500 bg-neutral-100 dark:bg-neutral-800 text-[#1F1B16] dark:text-white shadow-xs';
+          }
+        } else {
+          btn.className = 'category-select-btn p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-1 border-[#E5DFD5] dark:border-[#282828] bg-white dark:bg-[#181818] text-[#1F1B16] dark:text-neutral-300 hover:border-neutral-400';
+        }
+      });
+
+      // Ocultar todos los grupos especializados
+      specCine?.classList.add('hidden');
+      specLectura?.classList.add('hidden');
+      specTalleres?.classList.add('hidden');
+      specEncuentros?.classList.add('hidden');
+
+      // Mostrar el correspondiente
+      if (cat === 'ciclos-cine') {
+        specCine?.classList.remove('hidden');
+        if (specIcon) specIcon.textContent = '🎬';
+        if (specTitle) specTitle.textContent = 'Ficha Técnica: Ciclos de Cine';
+      } else if (cat === 'club-lectura') {
+        specLectura?.classList.remove('hidden');
+        if (specIcon) specIcon.textContent = '📚';
+        if (specTitle) specTitle.textContent = 'Detalles Literarios: Club de Lectura';
+      } else if (cat === 'talleres') {
+        specTalleres?.classList.remove('hidden');
+        if (specIcon) specIcon.textContent = '🛠️';
+        if (specTitle) specTitle.textContent = 'Especificaciones del Taller: Formación Práctica';
+      } else if (cat === 'encuentros') {
+        specEncuentros?.classList.remove('hidden');
+        if (specIcon) specIcon.textContent = '🗣️';
+        if (specTitle) specTitle.textContent = 'Detalles de la Jornada: Encuentros Comunitarios';
+      }
+    }
+
+    categoryChips.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const cat = btn.getAttribute('data-form-category');
+        switchCategory(cat);
+      });
+    });
+
+    // ── 5. Drag & Drop y Subida de Afiche (16:10) ──
+    ['dragenter', 'dragover'].forEach((evt) => {
+      dropZone?.addEventListener(evt, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropZone.classList.add('border-[#E4572E]', 'bg-[#E4572E]/5');
+      });
+    });
+
+    ['dragleave', 'drop'].forEach((evt) => {
+      dropZone?.addEventListener(evt, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropZone.classList.remove('border-[#E4572E]', 'bg-[#E4572E]/5');
+      });
+    });
+
+    dropZone?.addEventListener('drop', (e) => {
+      const files = e.dataTransfer?.files;
+      if (files && files.length > 0) {
+        handleFileUpload(files[0]);
+      }
+    });
+
+    fileInput?.addEventListener('change', () => {
+      const file = fileInput.files?.[0];
+      if (file) {
+        handleFileUpload(file);
+      }
+    });
+
+    async function handleFileUpload(file) {
+      showAlert('');
+
+      // Validar tipo y peso
+      const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/gif'];
+      if (!validTypes.includes(file.type)) {
+        showAlert(`Formato no permitido (${file.type}). Por favor selecciona JPG, PNG, WEBP o AVIF.`);
+        return;
+      }
+
+      if (file.size > 10 * 1024 * 1024) {
+        showAlert(`El archivo pesa ${(file.size / (1024 * 1024)).toFixed(1)} MB. El límite es 10 MB.`);
+        return;
+      }
+
+      // Estado visual subiendo
+      dropPrompt?.classList.add('hidden');
+      dropPreview?.classList.add('hidden');
+      dropUploading?.classList.remove('hidden');
+
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        if (slugInput?.value) {
+          formData.append('slug', slugInput.value);
+        }
+
+        const res = await fetch('/api/admin/activities/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || !data.success) {
+          throw new Error(data.message || 'Error al subir el afiche a Supabase Storage.');
+        }
+
+        setCoverPreview(data.url, file.name);
+
+      } catch (err) {
+        console.error('Error subiendo afiche:', err);
+        showAlert(err.message || 'No se pudo subir la imagen al bucket activities.');
+        resetCoverPreview();
+      } finally {
+        dropUploading?.classList.add('hidden');
+      }
+    }
+
+    function setCoverPreview(url, name) {
+      if (coverUrlHidden) coverUrlHidden.value = url;
+      if (previewImg) previewImg.src = url;
+      if (previewFileName) previewFileName.textContent = name || url.split('/').pop() || 'afiche-16-10.jpg';
+      dropPrompt?.classList.add('hidden');
+      dropUploading?.classList.add('hidden');
+      dropPreview?.classList.remove('hidden');
+    }
+
+    function resetCoverPreview() {
+      if (coverUrlHidden) coverUrlHidden.value = '';
+      if (previewImg) previewImg.src = '';
+      if (previewFileName) previewFileName.textContent = '';
+      dropPreview?.classList.add('hidden');
+      dropUploading?.classList.add('hidden');
+      dropPrompt?.classList.remove('hidden');
+    }
+
+    removeCoverBtn?.addEventListener('click', (e) => {
+      e.preventDefault();
+      resetCoverPreview();
+    });
+
+    toggleManualUrlBtn?.addEventListener('click', () => {
+      manualUrlContainer?.classList.toggle('hidden');
+      if (!manualUrlContainer?.classList.contains('hidden')) {
+        manualUrlInput?.focus();
+      }
+    });
+
+    manualUrlInput?.addEventListener('input', (e) => {
+      const val = e.target.value.trim();
+      if (val) {
+        setCoverPreview(val, 'URL Externa');
+      }
+    });
+
+    // ── 6. Gestión Interactiva de Tags ──
+    function renderTags() {
+      if (!tagsListContainer) return;
+      tagsListContainer.innerHTML = '';
+
+      if (currentTags.length === 0) {
+        const empty = document.createElement('span');
+        empty.className = 'text-[11px] text-neutral-400 italic';
+        empty.textContent = 'Sin etiquetas añadidas.';
+        tagsListContainer.appendChild(empty);
+        return;
+      }
+
+      currentTags.forEach((tag, idx) => {
+        const chip = document.createElement('span');
+        chip.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-[#FAF6F0] dark:bg-[#1E1E1E] text-[#1F1B16] dark:text-neutral-200 border border-[#E5DFD5] dark:border-[#282828] shadow-xs';
+        chip.innerHTML = `
+          <span>#${tag}</span>
+          <button type="button" class="remove-tag text-neutral-400 hover:text-red-500 font-bold cursor-pointer" data-index="${idx}">&times;</button>
+        `;
+        tagsListContainer.appendChild(chip);
+      });
+
+      tagsListContainer.querySelectorAll('.remove-tag').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const idx = parseInt(btn.getAttribute('data-index') || '0', 10);
+          currentTags.splice(idx, 1);
+          renderTags();
+        });
+      });
+    }
+
+    function addTagFromInput() {
+      if (!tagInput) return;
+      const val = tagInput.value.replace(/#/g, '').trim();
+      if (val && !currentTags.includes(val)) {
+        currentTags.push(val);
+        renderTags();
+      }
+      tagInput.value = '';
+    }
+
+    addTagBtn?.addEventListener('click', addTagFromInput);
+    tagInput?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ',') {
+        e.preventDefault();
+        addTagFromInput();
+      }
+    });
+
+    // ── 7. Toggle de Publicación / Borrador ──
+    publishedCheckbox?.addEventListener('change', () => {
+      if (publishedStatusText) {
+        if (publishedCheckbox.checked) {
+          publishedStatusText.textContent = 'Publicado';
+          publishedStatusText.className = 'ml-2.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 select-none';
+        } else {
+          publishedStatusText.textContent = 'Borrador';
+          publishedStatusText.className = 'ml-2.5 text-xs font-bold text-amber-600 dark:text-amber-400 select-none';
+        }
+      }
+    });
+
+    // ── 8. Reset del Formulario ──
+    function resetForm() {
+      if (idInput) idInput.value = '';
+      if (titleInput) titleInput.value = '';
+      if (slugInput) slugInput.value = '';
+      isAutoSlug = true;
+
+      // Fecha por defecto: hoy + 3 días a las 18:00
+      if (dateInput) {
+        const nextDate = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
+        nextDate.setHours(18, 0, 0, 0);
+        dateInput.value = nextDate.toISOString().slice(0, 16);
+      }
+
+      if (locationInput) locationInput.value = 'Sede 870tivo';
+      if (descInput) descInput.value = '';
+      if (contentInput) contentInput.value = '';
+      if (publishedCheckbox) publishedCheckbox.checked = true;
+      if (publishedStatusText) {
+        publishedStatusText.textContent = 'Publicado';
+        publishedStatusText.className = 'ml-2.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 select-none';
+      }
+
+      resetCoverPreview();
+      currentTags = [];
+      renderTags();
+
+      // Reset de campos especializados
+      if (cineDirector) cineDirector.value = '';
+      if (cineYear) cineYear.value = '';
+      if (cineDuration) cineDuration.value = '';
+      if (cineCountry) cineCountry.value = '';
+      if (cineTrailer) cineTrailer.value = '';
+
+      if (lecturaBookTitle) lecturaBookTitle.value = '';
+      if (lecturaBookAuthor) lecturaBookAuthor.value = '';
+      if (lecturaReadings) lecturaReadings.value = '';
+
+      if (talleresFacilitator) talleresFacilitator.value = '';
+      if (talleresLevel) talleresLevel.value = 'Todos';
+      if (talleresCapacity) talleresCapacity.value = '';
+      if (talleresMaterials) talleresMaterials.value = '';
+
+      if (encuentrosGuests) encuentrosGuests.value = '';
+      if (encuentrosFormat) encuentrosFormat.value = '';
+
+      switchCategory('ciclos-cine');
+      showAlert('');
+    }
+
+    // ── 9. Manejador Global de Apertura ('open-activity-modal') ──
+    window.addEventListener('open-activity-modal', (e) => {
+      const detail = e.detail || {};
+      resetForm();
+
+      if (detail.mode === 'create') {
+        modalTitle.textContent = 'Crear Nueva Actividad Cultural';
+        modalModeBadge.textContent = 'Nueva Actividad';
+        modalModeBadge.className = 'text-[10px] px-2.5 py-0.5 rounded-full font-bold bg-[#E4572E]/10 dark:bg-[#E4572E]/20 text-[#E4572E] border border-[#E4572E]/30';
+        saveBtnText.textContent = 'Crear Actividad';
+
+        if (detail.category) {
+          switchCategory(detail.category);
+        }
+        openModal();
+      } else if (detail.mode === 'edit') {
+        modalTitle.textContent = 'Editar Actividad Cultural';
+        modalModeBadge.textContent = 'Modo Edición';
+        modalModeBadge.className = 'text-[10px] px-2.5 py-0.5 rounded-full font-bold bg-[#2F4B3A]/15 text-[#2F4B3A] dark:text-[#A7C7B3] border border-[#2F4B3A]/30';
+        saveBtnText.textContent = 'Guardar Cambios';
+
+        // Buscar fila correspondiente en el DOM para precargar valores
+        const row = document.querySelector(`.activity-row[data-id="${detail.id}"]`);
+        if (row) {
+          if (idInput) idInput.value = detail.id || '';
+          if (titleInput) titleInput.value = row.querySelector('a.font-serif')?.textContent?.trim() || '';
+          if (slugInput) slugInput.value = row.getAttribute('data-slug') || '';
+          isAutoSlug = false;
+
+          const cat = row.getAttribute('data-category') || 'ciclos-cine';
+          switchCategory(cat);
+
+          const isPub = row.getAttribute('data-published') === 'true';
+          if (publishedCheckbox) publishedCheckbox.checked = isPub;
+          if (publishedStatusText) {
+            publishedStatusText.textContent = isPub ? 'Publicado' : 'Borrador';
+            publishedStatusText.className = isPub
+              ? 'ml-2.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 select-none'
+              : 'ml-2.5 text-xs font-bold text-amber-600 dark:text-amber-400 select-none';
+          }
+
+          const imgEl = row.querySelector('img');
+          if (imgEl && imgEl.src && !imgEl.src.includes('/assets/logo/870.jpeg')) {
+            setCoverPreview(imgEl.src, row.getAttribute('data-slug') || 'portada');
+          }
+        }
+        openModal();
+      }
+    });
+
+    // ── 10. Envío del Formulario (Submit / Save) ──
+    saveBtn?.addEventListener('click', async (e) => {
+      e.preventDefault();
+      showAlert('');
+
+      const title = titleInput?.value.trim();
+      if (!title) {
+        showAlert('El título de la actividad es obligatorio.');
+        titleInput?.focus();
+        return;
+      }
+
+      const eventDate = dateInput?.value;
+      if (!eventDate) {
+        showAlert('Debes seleccionar la fecha y hora del evento.');
+        dateInput?.focus();
+        return;
+      }
+
+      const category = categoryInput?.value || 'ciclos-cine';
+      const slug = slugInput?.value.trim() || slugify(title);
+
+      // Recopilar metadatos especializados según la categoría seleccionada
+      let metadata = {};
+      if (category === 'ciclos-cine') {
+        metadata = {
+          director: cineDirector?.value.trim() || undefined,
+          release_year: cineYear?.value ? parseInt(cineYear.value, 10) : undefined,
+          duration_min: cineDuration?.value ? parseInt(cineDuration.value, 10) : undefined,
+          country: cineCountry?.value.trim() || undefined,
+          trailer_url: cineTrailer?.value.trim() || undefined,
+        };
+      } else if (category === 'club-lectura') {
+        metadata = {
+          book_title: lecturaBookTitle?.value.trim() || undefined,
+          book_author: lecturaBookAuthor?.value.trim() || undefined,
+          assigned_readings: lecturaReadings?.value.trim() || undefined,
+        };
+      } else if (category === 'talleres') {
+        metadata = {
+          facilitator: talleresFacilitator?.value.trim() || undefined,
+          level: talleresLevel?.value || 'Todos',
+          capacity: talleresCapacity?.value ? parseInt(talleresCapacity.value, 10) : undefined,
+          materials: talleresMaterials?.value.trim() || undefined,
+        };
+      } else if (category === 'encuentros') {
+        metadata = {
+          guests: encuentrosGuests?.value.trim() || undefined,
+          event_format: encuentrosFormat?.value.trim() || undefined,
+        };
+      }
+
+      const isPublished = publishedCheckbox?.checked ?? true;
+      const payload = {
+        id: idInput?.value || undefined,
+        title,
+        slug,
+        category,
+        event_date: eventDate,
+        location: locationInput?.value.trim() || 'Sede 870tivo',
+        cover_url: coverUrlHidden?.value.trim() || undefined,
+        description: descInput?.value.trim() || undefined,
+        content: contentInput?.value.trim() || undefined,
+        tags: currentTags,
+        status: isPublished ? 'publicado' : 'borrador',
+        is_published: isPublished,
+        metadata,
+      };
+
+      // Estado visual guardando
+      saveSpinner?.classList.remove('hidden');
+      saveBtnText.textContent = 'Guardando...';
+      saveBtn.setAttribute('disabled', 'true');
+
+      try {
+        const res = await fetch('/api/admin/activities/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || !data.success) {
+          throw new Error(data.message || 'Error al guardar la actividad.');
+        }
+
+        closeModal();
+
+        // Mostrar notificación y recargar página para reflejar cambios
+        if (typeof window.__showAdminToast === 'function') {
+          window.__showAdminToast(data.message || 'Actividad guardada exitosamente.', '✅');
+        }
+
+        setTimeout(() => {
+          window.location.reload();
+        }, 600);
+
+      } catch (err) {
+        console.error('Error al guardar actividad:', err);
+        showAlert(err.message || 'No se pudo guardar la actividad.');
+      } finally {
+        saveSpinner?.classList.add('hidden');
+        saveBtnText.textContent = idInput?.value ? 'Guardar Cambios' : 'Crear Actividad';
+        saveBtn?.removeAttribute('disabled');
+      }
+    });
+
+    // Inicializar estado de tags
+    renderTags();
+  });
+</script>
