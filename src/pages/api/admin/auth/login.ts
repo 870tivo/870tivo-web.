@@ -154,17 +154,42 @@ export const POST: APIRoute = async ({ request }) => {
     // ── 4b. Login exitoso ────────────────────────────────────────────────────
     resetOnSuccess(normalizedEmail);
 
-    // Devolvemos los tokens al cliente para que sincronice las cookies
-    // (setAuthCookies() solo funciona en browser; aquí lo hace el cliente)
-    return jsonResponse(
-      {
-        success:      true,
-        message:      'Autenticación exitosa.',
-        accessToken:  data.session.access_token,
-        refreshToken: data.session.refresh_token,
-        expiresIn:    data.session.expires_in,
-      },
-      200
+    // El servidor establece las cookies directamente en la respuesta (Opción B).
+    // Esto evita que los tokens viajen en el body JSON y los expone al cliente JS.
+    //
+    // HttpOnly=false es INTENCIONAL: el cliente necesita leer/limpiar estas cookies
+    // mediante clearAuthCookies() y para sincronizar el estado de sesión en el navegador.
+    // Si se cambiara a HttpOnly=true, el logout y la sincronización del cliente dejarían de funcionar.
+    const isProduction = import.meta.env.PROD;
+    const securePart = isProduction ? '; Secure' : '';
+
+    const accessCookie = [
+      `sb-access-token=${data.session.access_token}`,
+      'Path=/',
+      `Max-Age=${data.session.expires_in}`,
+      'SameSite=Lax',
+      'HttpOnly=false',
+      securePart,
+    ].filter(Boolean).join('; ');
+
+    const refreshCookie = [
+      `sb-refresh-token=${data.session.refresh_token}`,
+      'Path=/',
+      `Max-Age=${60 * 60 * 24 * 7}`, // 7 días
+      'SameSite=Lax',
+      'HttpOnly=false',
+      securePart,
+    ].filter(Boolean).join('; ');
+
+    // Se usa Headers + append para poder enviar dos Set-Cookie separados
+    // (un objeto literal no permite claves duplicadas).
+    const headers = new Headers({ 'Content-Type': 'application/json' });
+    headers.append('Set-Cookie', accessCookie);
+    headers.append('Set-Cookie', refreshCookie);
+
+    return new Response(
+      JSON.stringify({ success: true, message: 'Autenticación exitosa.' }),
+      { status: 200, headers }
     );
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Error interno del servidor.';

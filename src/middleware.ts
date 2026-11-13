@@ -36,6 +36,14 @@ const CRITICAL_API_ADMIN_PREFIXES = [
   '/api/admin/users',
 ];
 
+/**
+ * Endpoints de la API interna que son públicos y no requieren sesión activa.
+ * Se excluyen explícitamente para evitar que el middleware los bloquee con 401.
+ */
+const PUBLIC_API_ROUTES = [
+  '/api/admin/auth/login',
+];
+
 export const onRequest = defineMiddleware(async (context, next) => {
   const { url, cookies, redirect, request } = context;
   const pathname = url.pathname.replace(/\/$/, '') || '/';
@@ -70,6 +78,12 @@ export const onRequest = defineMiddleware(async (context, next) => {
   const isApiAdminRoute = pathname.startsWith('/api/admin');
 
   if (!isAdminRoute && !isApiAdminRoute) {
+    return next();
+  }
+
+  // Early-exit: endpoints de API públicos que no requieren sesión activa.
+  // Debe ir ANTES de la validación de tokens para que el login pueda procesar credenciales.
+  if (PUBLIC_API_ROUTES.includes(pathname)) {
     return next();
   }
 
