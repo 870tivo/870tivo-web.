@@ -92,6 +92,12 @@
     clearAllTimers();
 
     try {
+      await fetch('/api/admin/auth/logout', { method: 'POST' });
+    } catch {
+      // Endpoint puede fallar si la red se corta; continuamos de todas formas.
+    }
+
+    try {
       await supabase.auth.signOut();
     } catch {
       // signOut puede fallar si el token ya expiró; continuamos de todas formas.

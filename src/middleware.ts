@@ -42,6 +42,7 @@ const CRITICAL_API_ADMIN_PREFIXES = [
  */
 const PUBLIC_API_ROUTES = [
   '/api/admin/auth/login',
+  '/api/admin/auth/logout',
 ];
 
 export const onRequest = defineMiddleware(async (context, next) => {
@@ -111,9 +112,8 @@ export const onRequest = defineMiddleware(async (context, next) => {
         isAuthenticated = true;
         currentUser = data.user;
       } else if (refreshToken) {
-        // En caso de expiración del access token, intentar renovación con el refresh token
-        const { data: refreshData, error: refreshError } = await supabase.auth.setSession({
-          access_token: accessToken,
+        // En caso de expiración del access token (1 hora), intentar renovación con el refresh token
+        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession({
           refresh_token: refreshToken,
         });
 
@@ -121,14 +121,13 @@ export const onRequest = defineMiddleware(async (context, next) => {
           isAuthenticated = true;
           currentUser = refreshData.user;
 
-          // Sincronizar nuevas cookies manteniendo httpOnly: false para interoperabilidad
-          // fluida con sessionStorage y la función client-side clearAuthCookies()
+          // Sincronizar nuevas cookies seguras con HttpOnly activo
           cookies.set('sb-access-token', refreshData.session.access_token, {
             path: '/',
             maxAge: refreshData.session.expires_in,
             sameSite: 'lax',
             secure: import.meta.env.PROD,
-            httpOnly: false,
+            httpOnly: true,
           });
 
           cookies.set('sb-refresh-token', refreshData.session.refresh_token, {
@@ -136,7 +135,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
             maxAge: 60 * 60 * 24 * 7, // 7 días
             sameSite: 'lax',
             secure: import.meta.env.PROD,
-            httpOnly: false,
+            httpOnly: true,
           });
         }
       }
@@ -145,10 +144,42 @@ export const onRequest = defineMiddleware(async (context, next) => {
       isAuthenticated = false;
       currentUser = null;
     }
+  } else if (refreshToken) {
+    // Si la cookie del access token expiró en el browser pero aún existe el refresh token (7 días)
+    try {
+      const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession({
+        refresh_token: refreshToken,
+      });
+
+      if (refreshData?.session && !refreshError) {
+        isAuthenticated = true;
+        currentUser = refreshData.user;
+
+        cookies.set('sb-access-token', refreshData.session.access_token, {
+          path: '/',
+          maxAge: refreshData.session.expires_in,
+          sameSite: 'lax',
+          secure: import.meta.env.PROD,
+          httpOnly: true,
+        });
+
+        cookies.set('sb-refresh-token', refreshData.session.refresh_token, {
+          path: '/',
+          maxAge: 60 * 60 * 24 * 7,
+          sameSite: 'lax',
+          secure: import.meta.env.PROD,
+          httpOnly: true,
+        });
+      }
+    } catch (err) {
+      console.error('[Middleware] Error al renovar sesión con refresh token:', err);
+      isAuthenticated = false;
+      currentUser = null;
+    }
   }
 
   // Si no se pudo validar la sesión y existían cookies corruptas o inválidas, limpiarlas
-  if (!isAuthenticated && accessToken) {
+  if (!isAuthenticated && (accessToken || refreshToken)) {
     cookies.delete('sb-access-token', { path: '/' });
     cookies.delete('sb-refresh-token', { path: '/' });
   }
