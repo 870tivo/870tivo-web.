@@ -134,6 +134,7 @@ export const POST: APIRoute = async ({ request, locals, cookies }) => {
         success: true,
         message: 'Avatar subido exitosamente.',
         url: publicUrl,
+        publicUrl,
         bucket: targetBucket,
         path: filePath,
       }),

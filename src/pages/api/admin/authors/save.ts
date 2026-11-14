@@ -3,14 +3,51 @@ import { supabaseAdmin } from '../../../../lib/supabase';
 
 export const prerender = false;
 
+function generateBaseSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'autor';
+}
+
+async function getUniqueSlug(baseSlug: string, currentAuthorId?: string): Promise<string> {
+  let candidate = baseSlug;
+  let counter = 1;
+
+  while (counter <= 50) {
+    let query = supabaseAdmin
+      .from('authors')
+      .select('id')
+      .eq('slug', candidate);
+
+    if (currentAuthorId) {
+      query = query.neq('id', currentAuthorId);
+    }
+
+    const { data } = await query.maybeSingle();
+
+    if (!data) {
+      return candidate;
+    }
+
+    candidate = `${baseSlug}-${counter}`;
+    counter++;
+  }
+
+  return `${baseSlug}-${Date.now().toString().slice(-4)}`;
+}
+
 /**
  * POST /api/admin/authors/save
- * Crea o actualiza un autor en la tabla public.authors
+ * Crea o actualiza un autor en la tabla public.authors sincronizando todos sus campos:
+ * name, slug, specialty, bio, avatar_url, social_url, social_links.
  */
 export const POST: APIRoute = async ({ request }) => {
   try {
     const body = await request.json();
-    const { id, name, socialUrl } = body;
+    const { id, name, bio, specialty, avatarUrl, socialUrl, socialLinks } = body;
 
     if (!name || typeof name !== 'string' || !name.trim()) {
       return new Response(
@@ -19,38 +56,136 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
+    const trimmedName = name.trim();
+
+    // 1. Resolver slug único
+    let slug: string | null = body.slug?.trim() ? generateBaseSlug(body.slug.trim()) : null;
+
+    if (!slug) {
+      if (id) {
+        const { data: existingAuthor } = await supabaseAdmin
+          .from('authors')
+          .select('slug, name')
+          .eq('id', id)
+          .maybeSingle();
+
+        if (existingAuthor?.slug && existingAuthor.name === trimmedName) {
+          slug = existingAuthor.slug;
+        }
+      }
+
+      if (!slug) {
+        const baseSlug = generateBaseSlug(trimmedName);
+        slug = await getUniqueSlug(baseSlug, id);
+      }
+    } else {
+      slug = await getUniqueSlug(slug, id);
+    }
+
+    // 2. Normalizar campos opcionales
+    const cleanBio = typeof bio === 'string' && bio.trim() ? bio.trim() : null;
+    const cleanSpecialty = typeof specialty === 'string' && specialty.trim() ? specialty.trim() : null;
+    const rawAvatar = body.avatar_url ?? avatarUrl;
+    const cleanAvatarUrl = typeof rawAvatar === 'string' && rawAvatar.trim() ? rawAvatar.trim() : null;
+    const rawSocial = body.social_url ?? socialUrl;
+    const cleanSocialUrl = typeof rawSocial === 'string' && rawSocial.trim() ? rawSocial.trim() : null;
+
+    // 3. Normalizar objeto social_links (JSONB)
+    let parsedSocialLinks: Record<string, string> | null = null;
+    if (socialLinks) {
+      let rawObj = socialLinks;
+      if (typeof socialLinks === 'string') {
+        try {
+          rawObj = JSON.parse(socialLinks);
+        } catch {
+          rawObj = null;
+        }
+      }
+
+      if (rawObj && typeof rawObj === 'object' && !Array.isArray(rawObj)) {
+        const cleanMap: Record<string, string> = {};
+        for (const [k, v] of Object.entries(rawObj)) {
+          if (typeof v === 'string' && v.trim()) {
+            cleanMap[k.toLowerCase()] = v.trim();
+          }
+        }
+        if (Object.keys(cleanMap).length > 0) {
+          parsedSocialLinks = cleanMap;
+        }
+      }
+    }
+
     const authorData: Record<string, any> = {
-      name: name.trim(),
-      social_url: socialUrl?.trim() || null,
+      name: trimmedName,
+      slug,
+      bio: cleanBio,
+      specialty: cleanSpecialty,
+      avatar_url: cleanAvatarUrl,
+      social_url: cleanSocialUrl,
       updated_at: new Date().toISOString(),
     };
+
+    if (socialLinks !== undefined) {
+      authorData.social_links = parsedSocialLinks;
+    }
 
     let result;
 
     if (id) {
       // Actualizar autor existente
-      const { data, error } = await supabaseAdmin
+      let { data, error } = await supabaseAdmin
         .from('authors')
         .update(authorData)
         .eq('id', id)
         .select()
         .single();
 
-      if (error) throw error;
+      // Si la columna specialty no existe aún en Supabase, reintentar sin ella
+      if (error && (error.code === '42703' || error.message?.includes('specialty'))) {
+        console.warn('La columna "specialty" no existe aún en public.authors. Guardando autor sin specialty temporalmente.');
+        const fallbackData = { ...authorData };
+        delete fallbackData.specialty;
+        const retry = await supabaseAdmin
+          .from('authors')
+          .update(fallbackData)
+          .eq('id', id)
+          .select()
+          .single();
+        data = retry.data;
+        error = retry.error;
+      }
+
+      if (error) {
+        console.error('Error al actualizar autor:', error);
+        throw error;
+      }
       result = data;
     } else {
       // Crear nuevo autor
-      const { data, error } = await supabaseAdmin
+      let { data, error } = await supabaseAdmin
         .from('authors')
         .insert(authorData)
         .select()
         .single();
 
+      // Si la columna specialty no existe aún en Supabase, reintentar sin ella
+      if (error && (error.code === '42703' || error.message?.includes('specialty'))) {
+        console.warn('La columna "specialty" no existe aún en public.authors. Guardando autor sin specialty temporalmente.');
+        const fallbackData = { ...authorData };
+        delete fallbackData.specialty;
+        const retry = await supabaseAdmin
+          .from('authors')
+          .insert(fallbackData)
+          .select()
+          .single();
+        data = retry.data;
+        error = retry.error;
+      }
+
       if (error) {
-        // Verificar si es error de duplicado
         if (error.code === '23505') {
           return new Response(
-            JSON.stringify({ success: false, message: `Ya existe un autor con el nombre «${name.trim()}».` }),
+            JSON.stringify({ success: false, message: `Ya existe un autor con el nombre o slug «${trimmedName}».` }),
             { status: 409, headers: { 'Content-Type': 'application/json' } }
           );
         }

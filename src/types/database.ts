@@ -63,6 +63,7 @@ export interface Database {
           avatar_url: string | null;
           social_url: string | null;
           social_links: Json | null;
+          specialty: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -74,6 +75,7 @@ export interface Database {
           avatar_url?: string | null;
           social_url?: string | null;
           social_links?: Json | null;
+          specialty?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -85,8 +87,27 @@ export interface Database {
           avatar_url?: string | null;
           social_url?: string | null;
           social_links?: Json | null;
+          specialty?: string | null;
           created_at?: string;
           updated_at?: string;
+        };
+        Relationships: [];
+      };
+      specialties: {
+        Row: {
+          id: string;
+          name: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          created_at?: string;
         };
         Relationships: [];
       };
@@ -322,6 +343,10 @@ export type EmailSubscriberInsert = TablesInsert<'email_subscribers'>;
 export type AuthorRow    = Tables<'authors'>;
 export type AuthorInsert = TablesInsert<'authors'>;
 export type AuthorUpdate = TablesUpdate<'authors'>;
+
+export type SpecialtyRow    = Tables<'specialties'>;
+export type SpecialtyInsert = TablesInsert<'specialties'>;
+export type SpecialtyUpdate = TablesUpdate<'specialties'>;
 
 export type ActivityRow    = Tables<'activities'>;
 export type ActivityInsert = TablesInsert<'activities'>;

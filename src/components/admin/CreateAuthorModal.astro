@@ -1,38 +1,45 @@
 ---
 /**
  * src/components/admin/CreateAuthorModal.astro
- * Modal independiente para crear un nuevo autor/redactor.
- * Se abre fuera del formulario de publicación para evitar conflictos de <form> anidados.
- * Emite un evento personalizado 'author-created' al guardar con éxito.
+ * Modal editorial simplificado y compacto para crear y editar autores.
+ * Incluye: Fotografía/Avatar (subida directa a bucket 'avatars' o URL externa),
+ * Nombre completo, Especialidad editorial dinámica (desde catálogo Supabase),
+ * Biografía y Enlace/Red Social.
+ * Emite evento 'author-created' al guardar exitosamente.
  */
+interface Props {
+  specialties?: string[];
+}
+
+const { specialties = [] } = Astro.props;
 ---
 
-<!-- MODAL OVERLAY (FUERA de cualquier otro formulario) -->
+<!-- MODAL OVERLAY -->
 <div 
   id="createAuthorModal" 
-  class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm opacity-0 pointer-events-none transition-all duration-300"
+  class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm opacity-0 pointer-events-none transition-all duration-300"
   role="dialog"
   aria-modal="true"
   aria-labelledby="createAuthorModalTitle"
 >
   <div 
     id="createAuthorModalCard"
-    class="relative w-full max-w-md flex flex-col rounded-2xl bg-[#FAF6F0] dark:bg-[#141414] border border-[#E5DFD5] dark:border-[#282828] shadow-2xl transform scale-95 transition-all duration-300 overflow-hidden text-[#1F1B16] dark:text-[#FAF6F0]"
+    class="relative w-full max-w-lg flex flex-col rounded-2xl bg-[#FAF6F0] dark:bg-[#141414] border border-[#E5DFD5] dark:border-[#282828] shadow-2xl transform scale-95 transition-all duration-300 overflow-hidden text-[#1F1B16] dark:text-[#FAF6F0]"
   >
     <!-- Header -->
-    <div class="px-6 py-4 border-b border-[#E5DFD5] dark:border-[#282828] bg-white dark:bg-[#141414] flex items-center justify-between gap-3 shrink-0">
+    <div class="px-6 py-3.5 border-b border-[#E5DFD5] dark:border-[#282828] bg-white dark:bg-[#181818] flex items-center justify-between gap-3 shrink-0">
       <div class="flex items-center gap-2.5 min-w-0">
         <div class="w-8 h-8 rounded-lg bg-[#E4572E]/10 border border-[#E4572E]/25 flex items-center justify-center shrink-0">
           <svg class="w-4 h-4 text-[#E4572E]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
           </svg>
         </div>
         <div>
-          <h3 id="createAuthorModalTitle" class="text-base font-serif font-bold text-[#1F1B16] dark:text-white tracking-tight">
+          <h3 id="createAuthorModalTitle" class="text-sm sm:text-base font-serif font-bold text-[#1F1B16] dark:text-white tracking-tight">
             Nuevo Autor
           </h3>
           <p class="text-[10px] text-[#78716A] dark:text-neutral-400 font-medium">
-            Se añadirá a la base de datos editorial
+            Ficha bibliográfica editorial
           </p>
         </div>
       </div>
@@ -40,7 +47,7 @@
         type="button" 
         id="closeCreateAuthorModalBtn"
         class="p-1.5 text-[#78716A] hover:text-[#1F1B16] dark:text-neutral-400 dark:hover:text-white rounded-lg hover:bg-[#FAF6F0] dark:hover:bg-[#222222] transition-colors cursor-pointer"
-        aria-label="Cerrar"
+        aria-label="Cerrar modal"
       >
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -48,53 +55,240 @@
       </button>
     </div>
 
-    <!-- Body -->
-    <div class="px-6 py-5 space-y-4">
-      <!-- Alert -->
-      <div id="createAuthorAlert" class="hidden p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-700 dark:text-red-300 text-xs flex items-start gap-2">
-        <svg class="w-4 h-4 shrink-0 text-red-500 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <!-- Body Compacto -->
+    <div class="px-6 py-4 space-y-3.5 overflow-y-auto max-h-[calc(88vh-115px)]">
+      <!-- Banner de Notificación Dinámico (Éxito o Error) -->
+      <div id="createAuthorNotice" class="hidden p-3 rounded-xl text-xs flex items-start gap-2.5 transition-all duration-200">
+        <!-- Icono Error -->
+        <svg id="noticeIconError" class="w-4 h-4 shrink-0 text-red-500 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
         </svg>
-        <span id="createAuthorAlertMsg" class="font-medium"></span>
+        <!-- Icono Éxito -->
+        <svg id="noticeIconSuccess" class="hidden w-4 h-4 shrink-0 text-emerald-500 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+        </svg>
+        <span id="createAuthorNoticeMsg" class="font-medium leading-relaxed"></span>
       </div>
 
-      <!-- ID oculto si estamos editando -->
+      <!-- ID y Slug ocultos si estamos editando -->
       <input type="hidden" id="createAuthorIdInput" value="" />
+      <input type="hidden" id="createAuthorSlugInput" value="" />
+      <input type="hidden" id="createAuthorAvatarUrlState" value="" />
 
-      <!-- Nombre -->
-      <div>
-        <label for="createAuthorNameInput" class="block text-xs font-bold text-[#1F1B16] dark:text-neutral-200 uppercase tracking-wider mb-1.5">
-          Nombre Completo <span class="text-[#E4572E]">*</span>
+      <!-- 1. AVATAR / FOTO EDITORIAL -->
+      <div class="p-3.5 rounded-xl bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] space-y-2.5">
+        <label class="block text-[11px] font-bold text-[#1F1B16] dark:text-neutral-200 uppercase tracking-wider">
+          Fotografía / Retrato
         </label>
-        <input 
-          type="text" 
-          id="createAuthorNameInput" 
-          placeholder="Ej: Valeria Domínguez" 
-          class="w-full px-3.5 py-2.5 bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] focus:border-[#E4572E] rounded-xl text-sm text-[#1F1B16] dark:text-white placeholder-[#A8A29E] dark:placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-[#E4572E] transition-all shadow-xs"
-        />
+        
+        <div class="flex items-center gap-3.5">
+          <!-- Vista previa circular con <img> directo -->
+          <div class="relative w-14 h-14 sm:w-16 sm:h-16 rounded-full border-2 border-[#E4572E]/40 overflow-hidden bg-[#FAF6F0] dark:bg-[#121212] shrink-0 shadow-inner group/avatar flex items-center justify-center">
+            <img 
+              id="createAuthorAvatarPreview" 
+              src="" 
+              alt="Avatar" 
+              class="w-full h-full object-cover rounded-full hidden"
+            />
+            <div 
+              id="createAuthorAvatarPlaceholder" 
+              class="w-full h-full flex items-center justify-center font-serif font-bold text-base sm:text-lg text-[#E4572E] select-none"
+            >
+              870
+            </div>
+            
+            <!-- Loading Spinner de Subida -->
+            <div 
+              id="createAuthorAvatarSpinner" 
+              class="hidden absolute inset-0 bg-black/70 flex flex-col items-center justify-center text-white"
+            >
+              <svg class="w-4 h-4 animate-spin text-[#E4572E]" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+              </svg>
+            </div>
+          </div>
+
+          <!-- Controles de subida -->
+          <div class="flex-grow space-y-1.5">
+            <div class="flex flex-wrap items-center gap-2">
+              <input 
+                type="file" 
+                id="createAuthorAvatarFileInput" 
+                accept="image/jpeg,image/png,image/webp,image/gif,image/avif" 
+                class="hidden" 
+              />
+              <button 
+                type="button" 
+                id="triggerAuthorAvatarUploadBtn"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#FAF6F0] dark:bg-[#222222] hover:bg-[#E5DFD5] dark:hover:bg-[#2a2a2a] border border-[#E5DFD5] dark:border-[#333333] text-[#1F1B16] dark:text-neutral-200 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
+              >
+                <svg class="w-3.5 h-3.5 text-[#E4572E]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                </svg>
+                <span>Subir foto</span>
+              </button>
+              
+              <button 
+                type="button" 
+                id="removeAuthorAvatarBtn"
+                class="hidden inline-flex items-center gap-1 px-2 py-1.5 text-xs text-red-600 dark:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer"
+                title="Eliminar foto"
+              >
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                <span>Quitar</span>
+              </button>
+
+              <button 
+                type="button" 
+                id="toggleExternalAvatarBtn"
+                class="text-[11px] text-[#78716A] dark:text-neutral-400 hover:text-[#E4572E] dark:hover:text-[#E4572E] underline transition-colors cursor-pointer"
+              >
+                URL externa
+              </button>
+            </div>
+            
+            <p class="text-[10px] text-[#78716A] dark:text-neutral-400">
+              Sube directamente al bucket <code class="font-mono text-[#E4572E]">avatars</code> (JPG, PNG, WEBP, máx. 5MB).
+            </p>
+          </div>
+        </div>
+
+        <!-- Input de URL externa (Desplegable) -->
+        <div id="externalAvatarUrlContainer" class="hidden pt-2 border-t border-[#E5DFD5] dark:border-[#282828]">
+          <input 
+            type="url" 
+            id="createAuthorAvatarUrlInput" 
+            placeholder="Pegar URL directa de la imagen (https://...)" 
+            class="w-full px-3 py-1.5 bg-[#FAF6F0] dark:bg-[#141414] border border-[#E5DFD5] dark:border-[#282828] focus:border-[#E4572E] rounded-lg text-xs text-[#1F1B16] dark:text-white placeholder-[#A8A29E] dark:placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-[#E4572E] transition-all"
+          />
+        </div>
       </div>
 
-      <!-- Enlace Social -->
+      <!-- 2. NOMBRE COMPLETO Y ESPECIALIDAD EDITORIAL -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+        <div>
+          <label for="createAuthorNameInput" class="block text-xs font-bold text-[#1F1B16] dark:text-neutral-200 uppercase tracking-wider mb-1">
+            Nombre completo <span class="text-[#E4572E]">*</span>
+          </label>
+          <input 
+            type="text" 
+            id="createAuthorNameInput" 
+            placeholder="Ej: Valeria Domínguez" 
+            class="w-full px-3.5 py-2 bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] focus:border-[#E4572E] rounded-xl text-sm text-[#1F1B16] dark:text-white placeholder-[#A8A29E] dark:placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-[#E4572E] transition-all shadow-xs"
+          />
+        </div>
+
+        <div class="relative">
+          <div class="flex items-center justify-between mb-1">
+            <label for="createAuthorSpecialtySelect" class="block text-xs font-bold text-[#1F1B16] dark:text-neutral-200 uppercase tracking-wider">
+              Especialidad
+            </label>
+            <button
+              type="button"
+              id="toggleCreateSpecialtyBtn"
+              class="text-[11px] font-semibold text-[#E4572E] hover:text-[#CF4821] hover:underline transition-colors cursor-pointer inline-flex items-center gap-1"
+            >
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+              </svg>
+              <span>Crear especialidad</span>
+            </button>
+          </div>
+
+          <select 
+            id="createAuthorSpecialtySelect" 
+            class="w-full px-3.5 py-2 bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] focus:border-[#E4572E] rounded-xl text-xs sm:text-sm text-[#1F1B16] dark:text-white focus:outline-none focus:ring-1 focus:ring-[#E4572E] transition-all shadow-xs cursor-pointer"
+          >
+            <option value="">Seleccionar especialidad (opcional)</option>
+            {specialties.map((spec) => (
+              <option value={spec}>{spec}</option>
+            ))}
+          </select>
+
+          <!-- Popover Flotante Elevado para crear nueva especialidad (no desplaza el formulario) -->
+          <div 
+            id="inlineCreateSpecialtyBox" 
+            class="hidden absolute left-0 right-0 top-full mt-1.5 z-50 p-3 rounded-xl bg-white dark:bg-[#18181b] border border-[#E5DFD5] dark:border-zinc-700/80 shadow-2xl space-y-2.5"
+          >
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-[#78716A] dark:text-neutral-400">
+                Nueva especialidad
+              </span>
+              <span id="inlineSpecialtyNotice" class="text-[10px] text-red-500 font-medium hidden"></span>
+            </div>
+            <input 
+              type="text" 
+              id="inlineSpecialtyNameInput" 
+              placeholder="Ej: Ilustrador, Editor..." 
+              class="w-full px-3 py-1.5 bg-[#FAF6F0] dark:bg-[#121214] border border-[#E5DFD5] dark:border-zinc-700 focus:border-[#E4572E] rounded-lg text-xs text-[#1F1B16] dark:text-white placeholder-[#A8A29E] dark:placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-[#E4572E]"
+            />
+            <div class="flex items-center justify-end gap-2 pt-0.5">
+              <button 
+                type="button" 
+                id="cancelInlineSpecialtyBtn" 
+                class="px-2.5 py-1 text-[11px] font-semibold text-[#78716A] hover:text-[#1F1B16] dark:text-neutral-400 dark:hover:text-white rounded-md transition-colors cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button 
+                type="button" 
+                id="saveInlineSpecialtyBtn" 
+                class="inline-flex items-center gap-1 px-3 py-1 bg-[#E4572E] hover:bg-[#CF4821] text-white font-bold text-[11px] rounded-md shadow-sm transition-colors cursor-pointer disabled:opacity-50"
+              >
+                <span>Crear</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. BIOGRAFÍA EDITORIAL -->
       <div>
-        <label for="createAuthorSocialInput" class="block text-xs font-bold text-[#1F1B16] dark:text-neutral-200 uppercase tracking-wider mb-1.5">
-          Enlace Social / Perfil <span class="text-[#78716A] dark:text-neutral-400 font-normal">(Opcional)</span>
+        <div class="flex items-center justify-between mb-1">
+          <label for="createAuthorBioInput" class="block text-xs font-bold text-[#1F1B16] dark:text-neutral-200 uppercase tracking-wider">
+            Biografía / Reseña <span class="text-[#78716A] dark:text-neutral-400 font-normal">(Opcional)</span>
+          </label>
+          <span id="createAuthorBioCounter" class="text-[10px] font-mono text-[#78716A] dark:text-neutral-400">
+            0 / 500
+          </span>
+        </div>
+        <textarea 
+          id="createAuthorBioInput" 
+          rows="3" 
+          maxlength="800"
+          placeholder="Reseña biográfica, intereses, trayectoria o áreas de colaboración en el colectivo..."
+          class="w-full px-3.5 py-2 bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] focus:border-[#E4572E] rounded-xl text-xs sm:text-sm text-[#1F1B16] dark:text-white placeholder-[#A8A29E] dark:placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-[#E4572E] transition-all shadow-xs resize-y"
+        ></textarea>
+      </div>
+
+      <!-- 4. ENLACE O RED SOCIAL ÚNICO -->
+      <div>
+        <label for="createAuthorSocialInput" class="block text-xs font-bold text-[#1F1B16] dark:text-neutral-200 uppercase tracking-wider mb-1">
+          Enlace o red social <span class="text-[#78716A] dark:text-neutral-400 font-normal">(Opcional)</span>
         </label>
         <div class="relative">
           <input 
             type="text" 
             id="createAuthorSocialInput" 
-            placeholder="https://instagram.com/valeria" 
-            class="w-full pl-9 pr-3.5 py-2.5 bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] focus:border-[#E4572E] rounded-xl text-sm text-[#1F1B16] dark:text-white placeholder-[#A8A29E] dark:placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-[#E4572E] transition-all shadow-xs"
+            placeholder="https://instagram.com/usuario, @usuario o web personal" 
+            class="w-full pl-9 pr-3.5 py-2 bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] focus:border-[#E4572E] rounded-xl text-xs sm:text-sm text-[#1F1B16] dark:text-white placeholder-[#A8A29E] dark:placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-[#E4572E] transition-all shadow-xs"
           />
-          <svg class="w-4 h-4 text-[#78716A] dark:text-neutral-400 absolute left-3 top-3 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-4 h-4 text-[#78716A] dark:text-neutral-400 absolute left-3 top-2.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
           </svg>
         </div>
+        <p class="mt-1 text-[10px] text-[#78716A] dark:text-neutral-400">
+          Se enlazará automáticamente con su icono correspondiente (Instagram, X, Substack o Web) en su perfil público.
+        </p>
       </div>
+
     </div>
 
     <!-- Footer -->
-    <div class="px-6 py-4 border-t border-[#E5DFD5] dark:border-[#282828] bg-white dark:bg-[#141414] flex items-center justify-end gap-3 shrink-0">
+    <div class="px-6 py-3.5 border-t border-[#E5DFD5] dark:border-[#282828] bg-white dark:bg-[#181818] flex items-center justify-end gap-3 shrink-0">
       <button 
         type="button" 
         id="cancelCreateAuthorBtn"
@@ -117,36 +311,389 @@
 </div>
 
 <script>
+  interface AuthorFormData {
+    id?: string;
+    name?: string;
+    slug?: string;
+    specialty?: string | null;
+    bio?: string | null;
+    avatarUrl?: string | null;
+    avatar_url?: string | null;
+    socialUrl?: string | null;
+    social_url?: string | null;
+  }
+
   const authorModal = document.getElementById('createAuthorModal') as HTMLElement;
   const authorModalCard = document.getElementById('createAuthorModalCard') as HTMLElement;
   const authorModalTitle = document.getElementById('createAuthorModalTitle') as HTMLElement;
   const closeAuthorModalBtn = document.getElementById('closeCreateAuthorModalBtn') as HTMLButtonElement;
   const cancelAuthorBtn = document.getElementById('cancelCreateAuthorBtn') as HTMLButtonElement;
   const saveAuthorBtn = document.getElementById('saveCreateAuthorBtn') as HTMLButtonElement;
+
+  // Inputs
   const authorIdInput = document.getElementById('createAuthorIdInput') as HTMLInputElement;
+  const authorSlugInput = document.getElementById('createAuthorSlugInput') as HTMLInputElement;
+  const authorAvatarUrlState = document.getElementById('createAuthorAvatarUrlState') as HTMLInputElement;
   const authorNameInput = document.getElementById('createAuthorNameInput') as HTMLInputElement;
+  const authorSpecialtySelect = document.getElementById('createAuthorSpecialtySelect') as HTMLSelectElement;
+  const toggleCreateSpecialtyBtn = document.getElementById('toggleCreateSpecialtyBtn') as HTMLButtonElement;
+  const inlineCreateSpecialtyBox = document.getElementById('inlineCreateSpecialtyBox') as HTMLElement;
+  const inlineSpecialtyNameInput = document.getElementById('inlineSpecialtyNameInput') as HTMLInputElement;
+  const inlineSpecialtyNotice = document.getElementById('inlineSpecialtyNotice') as HTMLElement;
+  const cancelInlineSpecialtyBtn = document.getElementById('cancelInlineSpecialtyBtn') as HTMLButtonElement;
+  const saveInlineSpecialtyBtn = document.getElementById('saveInlineSpecialtyBtn') as HTMLButtonElement;
+  const authorBioInput = document.getElementById('createAuthorBioInput') as HTMLTextAreaElement;
+  const authorBioCounter = document.getElementById('createAuthorBioCounter') as HTMLElement;
   const authorSocialInput = document.getElementById('createAuthorSocialInput') as HTMLInputElement;
-  const authorAlert = document.getElementById('createAuthorAlert') as HTMLElement;
-  const authorAlertMsg = document.getElementById('createAuthorAlertMsg') as HTMLElement;
 
-  function openCreateAuthorModal(authorData?: { id?: string; name?: string; socialUrl?: string }) {
-    showAuthorAlert('');
+  // Avatar elements
+  const authorAvatarFileInput = document.getElementById('createAuthorAvatarFileInput') as HTMLInputElement;
+  const triggerAvatarUploadBtn = document.getElementById('triggerAuthorAvatarUploadBtn') as HTMLButtonElement;
+  const removeAvatarBtn = document.getElementById('removeAuthorAvatarBtn') as HTMLButtonElement;
+  const toggleExternalAvatarBtn = document.getElementById('toggleExternalAvatarBtn') as HTMLButtonElement;
+  const externalAvatarContainer = document.getElementById('externalAvatarUrlContainer') as HTMLElement;
+  const authorAvatarUrlInput = document.getElementById('createAuthorAvatarUrlInput') as HTMLInputElement;
+  const authorAvatarPreview = document.getElementById('createAuthorAvatarPreview') as HTMLImageElement;
+  const authorAvatarPlaceholder = document.getElementById('createAuthorAvatarPlaceholder') as HTMLElement;
+  const authorAvatarSpinner = document.getElementById('createAuthorAvatarSpinner') as HTMLElement;
 
-    if (authorData && (authorData.id || authorData.name)) {
-      if (authorIdInput) authorIdInput.value = authorData.id || '';
-      if (authorNameInput) authorNameInput.value = authorData.name || '';
-      if (authorSocialInput) authorSocialInput.value = authorData.socialUrl || '';
-      if (authorModalTitle) authorModalTitle.textContent = authorData.id ? 'Editar Autor' : 'Nuevo Autor';
-      const btnText = saveAuthorBtn?.querySelector('.btn-text');
-      if (btnText) btnText.textContent = authorData.id ? 'Actualizar Autor' : 'Guardar Autor';
-    } else {
-      if (authorIdInput) authorIdInput.value = '';
-      if (authorNameInput) authorNameInput.value = '';
-      if (authorSocialInput) authorSocialInput.value = '';
-      if (authorModalTitle) authorModalTitle.textContent = 'Nuevo Autor';
-      const btnText = saveAuthorBtn?.querySelector('.btn-text');
-      if (btnText) btnText.textContent = 'Guardar Autor';
+  // Notice elements (Unificado con estilo éxito / error)
+  const createAuthorNotice = document.getElementById('createAuthorNotice') as HTMLElement;
+  const createAuthorNoticeMsg = document.getElementById('createAuthorNoticeMsg') as HTMLElement;
+  const noticeIconError = document.getElementById('noticeIconError') as unknown as SVGElement;
+  const noticeIconSuccess = document.getElementById('noticeIconSuccess') as unknown as SVGElement;
+
+  function showAuthorNotice(msg: string, type: 'error' | 'success' = 'error') {
+    if (!createAuthorNotice || !createAuthorNoticeMsg) return;
+
+    if (!msg) {
+      createAuthorNotice.classList.add('hidden');
+      createAuthorNoticeMsg.textContent = '';
+      return;
     }
+
+    createAuthorNotice.classList.remove('hidden');
+    createAuthorNoticeMsg.textContent = msg;
+
+    if (type === 'success') {
+      createAuthorNotice.className = 'p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs flex items-start gap-2.5';
+      noticeIconSuccess?.classList.remove('hidden');
+      noticeIconError?.classList.add('hidden');
+
+      setTimeout(() => {
+        if (createAuthorNoticeMsg.textContent === msg) {
+          createAuthorNotice.classList.add('hidden');
+        }
+      }, 3500);
+    } else {
+      createAuthorNotice.className = 'p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-700 dark:text-red-300 text-xs flex items-start gap-2.5';
+      noticeIconError?.classList.remove('hidden');
+      noticeIconSuccess?.classList.add('hidden');
+    }
+  }
+
+  function getInitials(name: string): string {
+    const parts = name.trim().split(/\s+/).filter(Boolean);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    return name.slice(0, 2).toUpperCase() || '870';
+  }
+
+  function updateAvatarVisual(url?: string | null) {
+    const cleanUrl = url?.trim() || '';
+
+    // Asignar inmediatamente al estado oculto y al input
+    if (authorAvatarUrlState) authorAvatarUrlState.value = cleanUrl;
+    if (authorAvatarUrlInput && authorAvatarUrlInput.value !== cleanUrl) {
+      authorAvatarUrlInput.value = cleanUrl;
+    }
+
+    if (cleanUrl) {
+      if (authorAvatarPreview) {
+        authorAvatarPreview.src = cleanUrl;
+        authorAvatarPreview.classList.remove('hidden');
+      }
+      if (authorAvatarPlaceholder) authorAvatarPlaceholder.classList.add('hidden');
+      if (removeAvatarBtn) removeAvatarBtn.classList.remove('hidden');
+    } else {
+      if (authorAvatarPreview) {
+        authorAvatarPreview.src = '';
+        authorAvatarPreview.classList.add('hidden');
+      }
+      if (authorAvatarPlaceholder) {
+        authorAvatarPlaceholder.classList.remove('hidden');
+        authorAvatarPlaceholder.textContent = getInitials(authorNameInput?.value || '');
+      }
+      if (removeAvatarBtn) removeAvatarBtn.classList.add('hidden');
+    }
+  }
+
+  function updateBioCounter() {
+    if (!authorBioInput || !authorBioCounter) return;
+    const len = authorBioInput.value.length;
+    authorBioCounter.textContent = `${len} / 500`;
+    if (len > 500) {
+      authorBioCounter.classList.add('text-[#E4572E]', 'font-bold');
+    } else {
+      authorBioCounter.classList.remove('text-[#E4572E]', 'font-bold');
+    }
+  }
+
+  authorBioInput?.addEventListener('input', updateBioCounter);
+
+  authorNameInput?.addEventListener('input', () => {
+    // Si no hay foto activa, actualizar iniciales en vivo
+    if (!authorAvatarUrlState?.value.trim() && authorAvatarPlaceholder) {
+      authorAvatarPlaceholder.textContent = getInitials(authorNameInput.value);
+    }
+  });
+
+  // Toggle input URL externa
+  toggleExternalAvatarBtn?.addEventListener('click', () => {
+    if (externalAvatarContainer) {
+      externalAvatarContainer.classList.toggle('hidden');
+      if (!externalAvatarContainer.classList.contains('hidden')) {
+        authorAvatarUrlInput?.focus();
+      }
+    }
+  });
+
+  // Entrada manual de URL externa
+  authorAvatarUrlInput?.addEventListener('input', () => {
+    updateAvatarVisual(authorAvatarUrlInput.value);
+  });
+
+  // Disparar selector de archivo
+  triggerAvatarUploadBtn?.addEventListener('click', () => {
+    authorAvatarFileInput?.click();
+  });
+
+  // Subida de imagen al bucket 'avatars' de Supabase Storage
+  authorAvatarFileInput?.addEventListener('change', async () => {
+    const file = authorAvatarFileInput.files?.[0];
+    if (!file) return;
+
+    if (authorAvatarSpinner) authorAvatarSpinner.classList.remove('hidden');
+    showAuthorNotice('');
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      // Endpoint dedicado a subir al bucket 'avatars'
+      const res = await fetch('/api/admin/authors/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json();
+      const uploadedUrl = data.url || data.publicUrl;
+
+      if (!res.ok || !data.success || !uploadedUrl) {
+        throw new Error(data.message || 'Error al subir la imagen al bucket avatars.');
+      }
+
+      // 1. Asignar inmediatamente la URL al estado y previsualizar la foto
+      updateAvatarVisual(uploadedUrl);
+
+      // 2. Notificación en estilo de éxito limpio
+      showAuthorNotice('Avatar subido exitosamente al bucket avatars.', 'success');
+    } catch (err: any) {
+      showAuthorNotice(err.message || 'No se pudo subir la foto de autor.', 'error');
+    } finally {
+      if (authorAvatarSpinner) authorAvatarSpinner.classList.add('hidden');
+      authorAvatarFileInput.value = '';
+    }
+  });
+
+  // Quitar foto
+  removeAvatarBtn?.addEventListener('click', () => {
+    updateAvatarVisual('');
+    if (externalAvatarContainer) externalAvatarContainer.classList.add('hidden');
+    showAuthorNotice('Foto eliminada.', 'success');
+  });
+
+  function closeInlineSpecialtyBox() {
+    if (inlineCreateSpecialtyBox) inlineCreateSpecialtyBox.classList.add('hidden');
+    if (inlineSpecialtyNameInput) inlineSpecialtyNameInput.value = '';
+    if (inlineSpecialtyNotice) {
+      inlineSpecialtyNotice.classList.add('hidden');
+      inlineSpecialtyNotice.textContent = '';
+    }
+  }
+
+  // Toggle popover flotante para nueva especialidad
+  toggleCreateSpecialtyBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (inlineCreateSpecialtyBox) {
+      const isHidden = inlineCreateSpecialtyBox.classList.contains('hidden');
+      if (isHidden) {
+        inlineCreateSpecialtyBox.classList.remove('hidden');
+        if (inlineSpecialtyNotice) {
+          inlineSpecialtyNotice.classList.add('hidden');
+          inlineSpecialtyNotice.textContent = '';
+        }
+        setTimeout(() => inlineSpecialtyNameInput?.focus(), 50);
+      } else {
+        closeInlineSpecialtyBox();
+      }
+    }
+  });
+
+  cancelInlineSpecialtyBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    closeInlineSpecialtyBox();
+  });
+
+  // Evitar que clics dentro del popover lo cierren por click-outside
+  inlineCreateSpecialtyBox?.addEventListener('click', (e) => {
+    e.stopPropagation();
+  });
+
+  // Cerrar popover flotante al hacer clic fuera
+  document.addEventListener('click', (e) => {
+    if (
+      inlineCreateSpecialtyBox &&
+      !inlineCreateSpecialtyBox.classList.contains('hidden') &&
+      !inlineCreateSpecialtyBox.contains(e.target as Node) &&
+      !toggleCreateSpecialtyBtn?.contains(e.target as Node)
+    ) {
+      closeInlineSpecialtyBox();
+    }
+  });
+
+  async function handleCreateSpecialty() {
+    const val = inlineSpecialtyNameInput?.value.trim() || '';
+    if (!val) {
+      if (inlineSpecialtyNotice) {
+        inlineSpecialtyNotice.textContent = 'Ingresa un nombre';
+        inlineSpecialtyNotice.classList.remove('hidden');
+      }
+      inlineSpecialtyNameInput?.focus();
+      return;
+    }
+
+    if (saveInlineSpecialtyBtn) saveInlineSpecialtyBtn.disabled = true;
+
+    try {
+      const res = await fetch('/api/admin/authors/specialties', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: val }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'Error al crear la especialidad.');
+      }
+
+      const createdName = data.specialty?.name || val;
+
+      if (authorSpecialtySelect) {
+        // Verificar si la opción ya existe en el <select>
+        let foundIndex = -1;
+        for (let i = 0; i < authorSpecialtySelect.options.length; i++) {
+          if (authorSpecialtySelect.options[i].value.toLowerCase() === createdName.toLowerCase()) {
+            foundIndex = i;
+            break;
+          }
+        }
+
+        if (foundIndex >= 0) {
+          authorSpecialtySelect.selectedIndex = foundIndex;
+        } else {
+          const opt = document.createElement('option');
+          opt.value = createdName;
+          opt.textContent = createdName;
+          authorSpecialtySelect.appendChild(opt);
+          authorSpecialtySelect.value = createdName;
+        }
+      }
+
+      // Limpiar y ocultar popover flotante
+      closeInlineSpecialtyBox();
+      authorSpecialtySelect?.focus();
+    } catch (err: any) {
+      if (inlineSpecialtyNotice) {
+        inlineSpecialtyNotice.textContent = err.message || 'Error al guardar';
+        inlineSpecialtyNotice.classList.remove('hidden');
+      }
+    } finally {
+      if (saveInlineSpecialtyBtn) saveInlineSpecialtyBtn.disabled = false;
+    }
+  }
+
+  saveInlineSpecialtyBtn?.addEventListener('click', handleCreateSpecialty);
+
+  inlineSpecialtyNameInput?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleCreateSpecialty();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      closeInlineSpecialtyBox();
+    }
+  });
+
+  function openCreateAuthorModal(authorData?: AuthorFormData) {
+    showAuthorNotice('');
+
+    // Resetear popover flotante de especialidad
+    closeInlineSpecialtyBox();
+
+    const isEdit = Boolean(authorData && (authorData.id || authorData.name));
+
+    if (authorIdInput) authorIdInput.value = authorData?.id || '';
+    if (authorSlugInput) authorSlugInput.value = authorData?.slug || '';
+    if (authorNameInput) authorNameInput.value = authorData?.name || '';
+    if (authorBioInput) authorBioInput.value = authorData?.bio || '';
+
+    // Seleccionar o precargar especialidad en el select
+    const currentSpec = authorData?.specialty?.trim() || '';
+    if (authorSpecialtySelect) {
+      if (currentSpec) {
+        let optionExists = false;
+        for (let i = 0; i < authorSpecialtySelect.options.length; i++) {
+          if (authorSpecialtySelect.options[i].value.toLowerCase() === currentSpec.toLowerCase()) {
+            authorSpecialtySelect.selectedIndex = i;
+            optionExists = true;
+            break;
+          }
+        }
+        if (!optionExists) {
+          const opt = document.createElement('option');
+          opt.value = currentSpec;
+          opt.textContent = currentSpec;
+          authorSpecialtySelect.appendChild(opt);
+          authorSpecialtySelect.value = currentSpec;
+        }
+      } else {
+        authorSpecialtySelect.value = '';
+      }
+    }
+
+    let social = authorData?.socialUrl || authorData?.social_url || '';
+    if (!social && (authorData as any)?.socialLinks) {
+      const sl = (authorData as any).socialLinks;
+      if (typeof sl === 'object' && !Array.isArray(sl)) {
+        social = sl.instagram ? (sl.instagram.startsWith('@') ? sl.instagram : `@${sl.instagram}`) : (sl.x || sl.twitter || sl.website || sl.web || '');
+      }
+    }
+    if (authorSocialInput) authorSocialInput.value = social;
+
+    // Avatar inicial
+    const initialAvatar = authorData?.avatar_url || authorData?.avatarUrl || '';
+    updateAvatarVisual(initialAvatar);
+    if (externalAvatarContainer) externalAvatarContainer.classList.add('hidden');
+
+    // Contador bio
+    updateBioCounter();
+
+    // Título y botón
+    if (authorModalTitle) authorModalTitle.textContent = isEdit ? 'Editar Autor' : 'Nuevo Autor';
+    const btnText = saveAuthorBtn?.querySelector('.btn-text');
+    if (btnText) btnText.textContent = isEdit ? 'Actualizar Autor' : 'Guardar Autor';
 
     authorModal.classList.remove('opacity-0', 'pointer-events-none');
     authorModal.classList.add('opacity-100');
@@ -163,16 +710,6 @@
     authorModalCard.classList.remove('scale-100');
   }
 
-  function showAuthorAlert(msg: string) {
-    if (!msg) {
-      authorAlert?.classList.add('hidden');
-      if (authorAlertMsg) authorAlertMsg.textContent = '';
-      return;
-    }
-    authorAlert?.classList.remove('hidden');
-    if (authorAlertMsg) authorAlertMsg.textContent = msg;
-  }
-
   closeAuthorModalBtn?.addEventListener('click', closeCreateAuthorModal);
   cancelAuthorBtn?.addEventListener('click', closeCreateAuthorModal);
 
@@ -181,31 +718,52 @@
   });
 
   window.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && !authorModal.classList.contains('pointer-events-none')) {
-      closeCreateAuthorModal();
+    if (e.key === 'Escape') {
+      if (inlineCreateSpecialtyBox && !inlineCreateSpecialtyBox.classList.contains('hidden')) {
+        e.stopPropagation();
+        closeInlineSpecialtyBox();
+        return;
+      }
+      if (!authorModal.classList.contains('pointer-events-none')) {
+        closeCreateAuthorModal();
+      }
     }
   });
 
   saveAuthorBtn?.addEventListener('click', async () => {
-    const name = authorNameInput.value.trim();
+    const name = authorNameInput?.value.trim() || '';
     if (!name) {
-      showAuthorAlert('El nombre del autor es obligatorio.');
-      authorNameInput.focus();
+      showAuthorNotice('El nombre del autor es obligatorio.', 'error');
+      authorNameInput?.focus();
       return;
     }
 
-    const socialUrl = authorSocialInput.value.trim() || null;
+    const id = authorIdInput?.value.trim() || undefined;
+    const slug = authorSlugInput?.value.trim() || undefined;
+    const specialty = authorSpecialtySelect?.value.trim() || null;
+    const bio = authorBioInput?.value.trim() || null;
+    const avatarUrl = authorAvatarUrlState?.value.trim() || authorAvatarUrlInput?.value.trim() || null;
+    const socialUrl = authorSocialInput?.value.trim() || null;
 
     saveAuthorBtn.disabled = true;
     const btnText = saveAuthorBtn.querySelector('.btn-text');
     if (btnText) btnText.textContent = 'Guardando...';
 
     try {
-      const id = authorIdInput?.value.trim() || undefined;
       const res = await fetch('/api/admin/authors/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, name, socialUrl }),
+        body: JSON.stringify({
+          id,
+          name,
+          slug,
+          specialty,
+          bio,
+          avatar_url: avatarUrl,
+          avatarUrl,
+          social_url: socialUrl,
+          socialUrl,
+        }),
       });
 
       const data = await res.json();
@@ -214,18 +772,31 @@
         throw new Error(data.message || 'Error al guardar el autor.');
       }
 
-      // Emitir evento personalizado para que otros componentes se enteren
+      // Notificar al sistema
       window.dispatchEvent(new CustomEvent('author-created', {
-        detail: { id: data.author?.id, name, socialUrl },
+        detail: {
+          id: data.author?.id,
+          author: data.author,
+          name,
+          slug: data.author?.slug,
+          specialty,
+          bio,
+          avatar_url: avatarUrl,
+          avatarUrl,
+          social_url: socialUrl,
+          socialUrl,
+        },
       }));
 
       closeCreateAuthorModal();
 
-      // Mostrar toast si existe
+      // Toast feedback
       const toast = document.getElementById('toastNotification');
       const toastText = document.getElementById('toastMessage');
       if (toast && toastText) {
-        toastText.textContent = `Autor «${name}» creado exitosamente`;
+        toastText.textContent = id
+          ? `Autor «${name}» actualizado exitosamente`
+          : `Autor «${name}» creado exitosamente`;
         toast.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-10');
         toast.classList.add('opacity-100', 'translate-y-0');
         setTimeout(() => {
@@ -234,10 +805,10 @@
         }, 3500);
       }
     } catch (err: any) {
-      showAuthorAlert(err.message || 'Error inesperado al guardar el autor.');
+      showAuthorNotice(err.message || 'Error inesperado al guardar el autor.', 'error');
     } finally {
       saveAuthorBtn.disabled = false;
-      if (btnText) btnText.textContent = 'Guardar Autor';
+      if (btnText) btnText.textContent = id ? 'Actualizar Autor' : 'Guardar Autor';
     }
   });
 
