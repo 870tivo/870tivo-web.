@@ -306,11 +306,126 @@ export interface Database {
         };
         Relationships: [];
       };
+      posts: {
+        Row: {
+          id: string;
+          title: string;
+          slug: string;
+          subtitle: string | null;
+          category: string;
+          author: string;
+          author_social_url: string | null;
+          author_id: string | null;
+          cover_image: string | null;
+          content: string;
+          read_time: string;
+          status: 'publicado' | 'borrador' | 'archivado';
+          views: number;
+          likes: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          title: string;
+          slug: string;
+          subtitle?: string | null;
+          category?: string;
+          author: string;
+          author_social_url?: string | null;
+          author_id?: string | null;
+          cover_image?: string | null;
+          content?: string;
+          read_time?: string;
+          status?: 'publicado' | 'borrador' | 'archivado';
+          views?: number;
+          likes?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          title?: string;
+          slug?: string;
+          subtitle?: string | null;
+          category?: string;
+          author?: string;
+          author_social_url?: string | null;
+          author_id?: string | null;
+          cover_image?: string | null;
+          content?: string;
+          read_time?: string;
+          status?: 'publicado' | 'borrador' | 'archivado';
+          views?: number;
+          likes?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "posts_author_id_fkey";
+            columns: ["author_id"];
+            isOneToOne: false;
+            referencedRelation: "authors";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      comments: {
+        Row: {
+          id: string;
+          post_id: string;
+          author_name: string;
+          content: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          post_id: string;
+          author_name: string;
+          content: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          post_id?: string;
+          author_name?: string;
+          content?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "comments_post_id_fkey";
+            columns: ["post_id"];
+            isOneToOne: false;
+            referencedRelation: "posts";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
     };
     Views: {
       [_ in never]: never;
     };
     Functions: {
+      increment_post_views: {
+        Args: {
+          post_slug: string;
+        };
+        Returns: undefined;
+      };
+      increment_post_likes: {
+        Args: {
+          post_slug: string;
+        };
+        Returns: number;
+      };
+      decrement_post_likes: {
+        Args: {
+          post_slug: string;
+        };
+        Returns: number;
+      };
       has_permission: {
         Args: {
           _user_id: string;
@@ -351,6 +466,14 @@ export type SpecialtyUpdate = TablesUpdate<'specialties'>;
 export type ActivityRow    = Tables<'activities'>;
 export type ActivityInsert = TablesInsert<'activities'>;
 export type ActivityUpdate = TablesUpdate<'activities'>;
+
+export type PostRow    = Tables<'posts'>;
+export type PostInsert = TablesInsert<'posts'>;
+export type PostUpdate = TablesUpdate<'posts'>;
+
+export type CommentRow    = Tables<'comments'>;
+export type CommentInsert = TablesInsert<'comments'>;
+export type CommentUpdate = TablesUpdate<'comments'>;
 
 export interface ActivityCategoryMeta {
   slug: ActivityCategory;

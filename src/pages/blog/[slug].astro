@@ -125,7 +125,7 @@ const formattedDate = post ? formatPostDate(post.created_at) : '';
   title={post ? `${post.title} — 870tivo` : 'Artículo No Encontrado (404) — 870tivo'} 
   description={post?.subtitle || 'Ensayo editorial y pensamiento visual contemporáneo en Galería 870tivo.'}
 >
-  <main class="flex-grow bg-brand-ink text-[#D3D3BF] selection:bg-brand-orange selection:text-white min-h-[70vh]">
+  <main class="flex-grow bg-brand-ink text-[#D3D3BF] selection:bg-brand-orange selection:text-white min-h-[70vh]" data-post-slug={post?.slug}>
     
     {post ? (
       <>
@@ -389,7 +389,12 @@ const formattedDate = post ? formatPostDate(post.created_at) : '';
 
           {/* 7. Sección de Comentarios / Likes interactiva */}
           <div class="mt-12">
-            <CommentSection client:visible />
+            <CommentSection 
+              client:visible 
+              postId={post.id}
+              postSlug={post.slug}
+              initialLikes={post.likes ?? 0}
+            />
           </div>
 
           {/* 8. Botón inferior Volver al Inicio */}
@@ -534,6 +539,23 @@ const formattedDate = post ? formatPostDate(post.created_at) : '';
     }
     if (whatsappBtn) {
       whatsappBtn.href = `https://api.whatsapp.com/send?text=${encodeURIComponent(`${pageTitle} — ${currentUrl}`)}`;
+    }
+
+    // Registro silencioso de vistas (1 por sesión en sessionStorage)
+    const mainEl = document.querySelector('main[data-post-slug]') as HTMLElement | null;
+    const postSlug = mainEl?.dataset?.postSlug;
+    if (postSlug) {
+      const storageKey = `viewed_post_${postSlug}`;
+      if (!sessionStorage.getItem(storageKey)) {
+        sessionStorage.setItem(storageKey, '1');
+        fetch('/api/posts/view', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ slug: postSlug }),
+        }).catch(() => {
+          // Fallo silencioso en segundo plano
+        });
+      }
     }
   }
 </script>
