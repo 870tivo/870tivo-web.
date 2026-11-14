@@ -132,6 +132,7 @@ const avatarInitial = (userFullName?.[0] || userEmail?.[0] || 'A').toUpperCase()
   headerLogoutBtn?.addEventListener('click', async () => {
     try {
       headerLogoutBtn.classList.add('opacity-50', 'pointer-events-none');
+      await fetch('/api/admin/auth/logout', { method: 'POST' });
       await supabase.auth.signOut();
       clearAuthCookies();
       window.location.href = '/2416f50b-da02-4a5b-86a8-61ae470ed3bd/login';

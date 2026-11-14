@@ -201,8 +201,6 @@ const fontsUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;60
 
     <!-- Client-side Auth Script (rate limiting vía endpoint SSR) -->
     <script>
-      import { supabase } from '../../lib/supabase';
-
       const LOGIN_API_URL  = '/api/admin/auth/login';
       const DASHBOARD_URL  = '/2416f50b-da02-4a5b-86a8-61ae470ed3bd/dashboard';
 
@@ -217,16 +215,6 @@ const fontsUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;60
       const togglePasswordBtn = document.getElementById('togglePassword');
       const eyeIcon         = document.getElementById('eyeIcon');
       const eyeOffIcon      = document.getElementById('eyeOffIcon');
-
-      // ── Redirigir si ya hay sesión activa en sessionStorage ──────────────────
-      // No llamamos setAuthCookies() aquí: las cookies las establece el servidor
-      // en el endpoint /api/admin/auth/login vía Set-Cookie. El middleware SSR
-      // validará las cookies en la próxima navegación.
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (session) {
-          window.location.href = DASHBOARD_URL;
-        }
-      });
 
       // ── Banner de sesión expirada por inactividad ────────────────────────────
       const urlParams = new URLSearchParams(window.location.search);

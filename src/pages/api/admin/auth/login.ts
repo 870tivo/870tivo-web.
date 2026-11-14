@@ -155,19 +155,17 @@ export const POST: APIRoute = async ({ request }) => {
     resetOnSuccess(normalizedEmail);
 
     // El servidor establece las cookies directamente en la respuesta (Opción B).
-    // No se usa el atributo HttpOnly → las cookies son legibles por JS del cliente,
-    // lo cual es necesario para que clearAuthCookies() y la sincronización de sesión funcionen.
+    // Con HttpOnly activo para proteger contra robo de tokens vía XSS.
     // El flag Secure solo se agrega en producción (HTTPS).
     const isProduction = import.meta.env.PROD;
     const securePart = isProduction ? '; Secure' : '';
 
-    // Sin HttpOnly → las cookies son legibles por JS (necesario para clearAuthCookies() en el cliente).
-    // El flag Secure se agrega solo en producción (HTTPS).
     const accessCookie = [
       `sb-access-token=${data.session.access_token}`,
       'Path=/',
       `Max-Age=${data.session.expires_in}`,
       'SameSite=Lax',
+      'HttpOnly',
       securePart,
     ].filter(Boolean).join('; ');
 
@@ -176,6 +174,7 @@ export const POST: APIRoute = async ({ request }) => {
       'Path=/',
       `Max-Age=${60 * 60 * 24 * 7}`, // 7 días
       'SameSite=Lax',
+      'HttpOnly',
       securePart,
     ].filter(Boolean).join('; ');
 
