@@ -14,7 +14,7 @@ type Author = Tables<'authors'>;
 // ── Fetch SSR desde Supabase (anon key, lectura pública) ─────────────────────
 const { data: authorsData, error } = await supabase
   .from('authors')
-  .select('id, name, slug, bio, avatar_url, social_url, social_links, created_at')
+  .select('*')
   .order('name', { ascending: true });
 
 if (error) {
@@ -49,6 +49,35 @@ function toReadableHandle(url: string): string {
     return url;
   }
 }
+
+/**
+ * Extrae el enlace social principal desde social_url o social_links
+ */
+function getPrimarySocial(author: Author): { url: string; handle: string } | null {
+  if (author.social_url && author.social_url.trim()) {
+    const raw = author.social_url.trim();
+    const url = raw.startsWith('http') ? raw : `https://${raw}`;
+    return { url, handle: toReadableHandle(url) };
+  }
+  if (author.social_links && typeof author.social_links === 'object' && !Array.isArray(author.social_links)) {
+    const links = author.social_links as Record<string, unknown>;
+    for (const key of ['instagram', 'x', 'twitter', 'website', 'web']) {
+      const val = links[key];
+      if (typeof val === 'string' && val.trim()) {
+        const clean = val.trim();
+        const url = clean.startsWith('http')
+          ? clean
+          : key === 'instagram'
+          ? `https://instagram.com/${clean.replace(/^@/, '')}`
+          : key === 'x' || key === 'twitter'
+          ? `https://x.com/${clean.replace(/^@/, '')}`
+          : `https://${clean}`;
+        return { url, handle: toReadableHandle(url) };
+      }
+    }
+  }
+  return null;
+}
 ---
 
 <BaseLayout
@@ -59,7 +88,7 @@ function toReadableHandle(url: string): string {
     <div class="container mx-auto px-4 md:px-6 py-12 md:py-20">
 
       <!-- ── Encabezado editorial ── -->
-      <header class="mb-14 md:mb-20 border-b border-brand-ink/10 dark:border-white/10 pb-10">
+      <header class="mb-10 md:mb-14 border-b border-brand-ink/10 dark:border-white/10 pb-8">
         <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
             <span class="text-brand-orange dark:text-brand-orange text-[10px] md:text-xs font-bold uppercase tracking-[0.35em] mb-3 block">
@@ -89,7 +118,74 @@ function toReadableHandle(url: string): string {
         </div>
       </header>
 
-      <!-- ── Estado vacío ── -->
+      <!-- ── Buscador y Filtro Rápido en Cliente ── -->
+      {authors.length > 0 && (
+        <div class="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div class="relative w-full max-w-md">
+            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-brand-muted">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+            </span>
+            <input
+              type="text"
+              id="author-search-input"
+              placeholder="Buscar por nombre o palabra clave..."
+              autocomplete="off"
+              spellcheck="false"
+              class="w-full pl-10 pr-10 py-2.5 bg-brand-bg dark:bg-[#141414] border border-brand-ink/15 dark:border-white/10 rounded-xl text-sm text-brand-ink dark:text-white placeholder-brand-muted/70 focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange transition-all shadow-sm"
+              aria-label="Buscar autores"
+            />
+            <button
+              type="button"
+              id="search-clear-btn"
+              class="hidden absolute inset-y-0 right-0 pr-3.5 flex items-center text-brand-muted hover:text-brand-orange transition-colors"
+              aria-label="Limpiar búsqueda"
+            >
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+
+          <div class="flex items-center gap-2 text-xs text-brand-muted">
+            <span>Mostrando</span>
+            <span id="search-counter" class="font-bold text-brand-orange dark:text-brand-bg px-2 py-0.5 rounded-md bg-brand-orange/10 dark:bg-white/5 border border-brand-orange/20 dark:border-white/10">
+              {authors.length}
+            </span>
+            <span>de {authors.length} autores</span>
+          </div>
+        </div>
+      )}
+
+      <!-- ── Estado sin resultados de búsqueda ── -->
+      <div id="no-search-results" class="hidden flex-col items-center justify-center py-16 text-center gap-4 border border-dashed border-brand-ink/15 dark:border-white/10 rounded-2xl bg-brand-card/40 dark:bg-brand-darkCard/40 p-8 my-6">
+        <div class="w-12 h-12 rounded-full bg-brand-orange/10 flex items-center justify-center text-brand-orange">
+          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+        </div>
+        <div>
+          <p class="font-serif text-lg font-bold text-brand-ink dark:text-white">
+            Sin coincidencias
+          </p>
+          <p class="mt-1 text-sm text-brand-muted max-w-sm">
+            No encontramos autores que coincidan con <strong id="search-term-display" class="text-brand-orange"></strong>.
+          </p>
+        </div>
+        <button
+          type="button"
+          id="reset-search-btn"
+          class="mt-2 px-4 py-2 text-xs font-bold uppercase tracking-wider text-brand-orange hover:text-white bg-brand-orange/10 hover:bg-brand-orange border border-brand-orange/30 rounded-lg transition-colors cursor-pointer"
+        >
+          Limpiar búsqueda
+        </button>
+      </div>
+
+      <!-- ── Estado vacío general ── -->
       {authors.length === 0 && (
         <div class="flex flex-col items-center justify-center py-24 text-center gap-5">
           <div class="w-16 h-16 border border-brand-ink/15 dark:border-white/10 rounded-sm flex items-center justify-center text-brand-muted">
@@ -112,6 +208,7 @@ function toReadableHandle(url: string): string {
       <!-- ── Grilla de autores ── -->
       {authors.length > 0 && (
         <ul
+          id="authors-grid"
           class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-px bg-brand-ink/8 dark:bg-white/5 border border-brand-ink/8 dark:border-white/5"
           role="list"
           aria-label="Directorio de autores"
@@ -119,12 +216,15 @@ function toReadableHandle(url: string): string {
           {authors.map((author) => {
             const initials   = getInitials(author.name);
             const profileUrl = `/autores/${author.slug || author.id}`;
-            const hasLink    = Boolean(author.social_url);
-            const handle     = hasLink ? toReadableHandle(author.social_url!) : null;
+            const primarySocial = getPrimarySocial(author);
 
             return (
               <li
                 role="listitem"
+                data-author-card
+                data-name={author.name.toLowerCase()}
+                data-bio={(author.bio || '').toLowerCase()}
+                data-specialty={(author.specialty || '').toLowerCase()}
                 class="group bg-brand-bg dark:bg-brand-ink hover:bg-brand-card dark:hover:bg-brand-darkCard transition-all duration-200"
               >
                 <div class="p-6 md:p-8 flex flex-col justify-between gap-6 h-full">
@@ -173,7 +273,7 @@ function toReadableHandle(url: string): string {
                         </a>
                       </h2>
                       <p class="mt-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-brand-muted">
-                        Colaborador 870tivo
+                        {author.specialty || 'Colaborador 870tivo'}
                       </p>
 
                       <!-- Extracto de bio si existe -->
@@ -187,9 +287,9 @@ function toReadableHandle(url: string): string {
 
                   <!-- Pie de tarjeta: enlace social y ver perfil -->
                   <div class="pt-4 border-t border-brand-ink/5 dark:border-white/5 flex items-center justify-between gap-3 text-xs">
-                    {hasLink ? (
+                    {primarySocial ? (
                       <a
-                        href={author.social_url!}
+                        href={primarySocial.url}
                         target="_blank"
                         rel="noopener noreferrer"
                         class="
@@ -205,7 +305,7 @@ function toReadableHandle(url: string): string {
                           <polyline points="15 3 21 3 21 9"></polyline>
                           <line x1="10" y1="14" x2="21" y2="3"></line>
                         </svg>
-                        {handle}
+                        {primarySocial.handle}
                       </a>
                     ) : (
                       <span class="text-[11px] text-brand-muted/50 italic">
@@ -234,3 +334,93 @@ function toReadableHandle(url: string): string {
     </div>
   </main>
 </BaseLayout>
+
+<script>
+  function setupAuthorSearch() {
+    const input = document.getElementById('author-search-input') as HTMLInputElement | null;
+    const clearBtn = document.getElementById('search-clear-btn');
+    const resetBtn = document.getElementById('reset-search-btn');
+    const counter = document.getElementById('search-counter');
+    const noResults = document.getElementById('no-search-results');
+    const termDisplay = document.getElementById('search-term-display');
+    const grid = document.getElementById('authors-grid');
+    const cards = Array.from(document.querySelectorAll<HTMLLIElement>('[data-author-card]'));
+
+    if (!input || cards.length === 0) return;
+
+    function normalizeText(text: string): string {
+      return text
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .trim();
+    }
+
+    function filterAuthors() {
+      const rawQuery = input?.value || '';
+      const query = normalizeText(rawQuery);
+
+      if (clearBtn) {
+        if (rawQuery.length > 0) {
+          clearBtn.classList.remove('hidden');
+        } else {
+          clearBtn.classList.add('hidden');
+        }
+      }
+
+      let visibleCount = 0;
+
+      cards.forEach((card) => {
+        const name = card.dataset.name ? normalizeText(card.dataset.name) : '';
+        const bio = card.dataset.bio ? normalizeText(card.dataset.bio) : '';
+        const specialty = card.dataset.specialty ? normalizeText(card.dataset.specialty) : '';
+        const matches = !query || name.includes(query) || bio.includes(query) || specialty.includes(query);
+
+        if (matches) {
+          card.classList.remove('hidden');
+          visibleCount++;
+        } else {
+          card.classList.add('hidden');
+        }
+      });
+
+      if (counter) {
+        counter.textContent = String(visibleCount);
+      }
+
+      if (noResults && termDisplay) {
+        if (visibleCount === 0 && query) {
+          termDisplay.textContent = `«${rawQuery}»`;
+          noResults.classList.remove('hidden');
+          noResults.classList.add('flex');
+          if (grid) grid.classList.add('hidden');
+        } else {
+          noResults.classList.add('hidden');
+          noResults.classList.remove('flex');
+          if (grid) grid.classList.remove('hidden');
+        }
+      }
+    }
+
+    function clearInput() {
+      if (input) {
+        input.value = '';
+        input.focus();
+        filterAuthors();
+      }
+    }
+
+    input.addEventListener('input', filterAuthors);
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        clearInput();
+      }
+    });
+
+    clearBtn?.addEventListener('click', clearInput);
+    resetBtn?.addEventListener('click', clearInput);
+  }
+
+  setupAuthorSearch();
+  document.addEventListener('astro:page-load', setupAuthorSearch);
+</script>

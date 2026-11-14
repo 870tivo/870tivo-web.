@@ -39,7 +39,12 @@ if (postsData) {
 let authorsList: Array<{
   id: string;
   name: string;
+  slug: string;
+  specialty: string | null;
+  bio: string | null;
+  avatar_url: string | null;
   social_url: string | null;
+  social_links: any;
   created_at: string;
   post_count: number;
 }> = [];
@@ -51,7 +56,7 @@ try {
     .order('name', { ascending: true });
 
   if (searchQuery) {
-    query = query.or(`name.ilike.%${searchQuery}%,social_url.ilike.%${searchQuery}%`);
+    query = query.or(`name.ilike.%${searchQuery}%,social_url.ilike.%${searchQuery}%,bio.ilike.%${searchQuery}%`);
   }
 
   const { data, error } = await query;
@@ -62,7 +67,12 @@ try {
     authorsList = data.map((a: any) => ({
       id: a.id,
       name: a.name,
-      social_url: a.social_url,
+      slug: a.slug || '',
+      specialty: a.specialty || null,
+      bio: a.bio || null,
+      avatar_url: a.avatar_url || null,
+      social_url: a.social_url || null,
+      social_links: a.social_links || null,
       created_at: a.created_at || new Date().toISOString(),
       post_count: authorPostCounts.get(a.name.toLowerCase()) || 0,
     }));
@@ -72,6 +82,23 @@ try {
 }
 
 const totalAuthors = authorsList.length;
+
+// 5. Consultar catálogo oficial de especialidades desde `public.specialties`
+let specialtiesList: string[] = [];
+try {
+  const { data: specData, error: specError } = await supabaseAdmin
+    .from('specialties')
+    .select('name')
+    .order('name', { ascending: true });
+
+  if (specError) {
+    console.warn('Tabla public.specialties no disponible o vacía:', specError.message);
+  } else if (specData) {
+    specialtiesList = specData.map((s) => s.name.trim()).filter(Boolean);
+  }
+} catch (e) {
+  console.warn('Error al cargar especialidades:', e);
+}
 
 function getInitials(name: string): string {
   const parts = name.trim().split(/\s+/);
@@ -204,21 +231,57 @@ function formatDate(isoDate: string): string {
                     class="author-row hover:bg-[#FAF6F0]/40 dark:hover:bg-[#181818]/40 transition-colors"
                     data-id={author.id}
                     data-name={author.name}
+                    data-slug={author.slug}
+                    data-specialty={author.specialty || ''}
+                    data-bio={author.bio || ''}
+                    data-avatar={author.avatar_url || ''}
                     data-social={author.social_url || ''}
+                    data-links={JSON.stringify(author.social_links || {})}
                   >
                     <!-- Nombre y Avatar -->
                     <td class="py-3.5 px-4 sm:px-6">
                       <div class="flex items-center gap-3">
-                        <div class="w-9 h-9 rounded-xl bg-[#FAF6F0] dark:bg-[#1E1E1E] border border-[#E5DFD5] dark:border-[#282828] flex items-center justify-center font-serif font-bold text-xs text-[#E4572E] shadow-2xs shrink-0">
-                          {initials}
+                        <div class="w-10 h-10 rounded-xl bg-[#FAF6F0] dark:bg-[#1E1E1E] border border-[#E5DFD5] dark:border-[#282828] overflow-hidden flex items-center justify-center font-serif font-bold text-xs text-[#E4572E] shadow-2xs shrink-0">
+                          {author.avatar_url ? (
+                            <img 
+                              src={author.avatar_url} 
+                              alt={author.name} 
+                              class="w-full h-full object-cover" 
+                              onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                            />
+                            <div class="hidden w-full h-full items-center justify-center font-serif font-bold text-xs text-[#E4572E]">
+                              {initials}
+                            </div>
+                          ) : (
+                            <div class="w-full h-full flex items-center justify-center font-serif font-bold text-xs text-[#E4572E]">
+                              {initials}
+                            </div>
+                          )}
                         </div>
                         <div class="min-w-0">
-                          <span class="font-medium text-[#1F1B16] dark:text-white block truncate">
-                            {author.name}
-                          </span>
-                          <span class="text-[10px] text-[#78716A] dark:text-neutral-400">
-                            Firma Editorial
-                          </span>
+                          <div class="flex items-center gap-2 flex-wrap">
+                            <span class="font-medium text-[#1F1B16] dark:text-white block truncate">
+                              {author.name}
+                            </span>
+                            {author.specialty && (
+                              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#E4572E]/10 text-[#E4572E] border border-[#E4572E]/20">
+                                {author.specialty}
+                              </span>
+                            )}
+                            {author.slug && (
+                              <a 
+                                href={`/autores/${author.slug}`} 
+                                target="_blank" 
+                                title="Ver ficha pública del autor"
+                                class="text-[10px] font-mono text-[#E4572E] hover:underline"
+                              >
+                                /{author.slug} ↗
+                              </a>
+                            )}
+                          </div>
+                          <p class="text-[10px] text-[#78716A] dark:text-neutral-400 truncate max-w-xs">
+                            {author.bio || 'Firma Editorial'}
+                          </p>
                         </div>
                       </div>
                     </td>
@@ -295,7 +358,7 @@ function formatDate(isoDate: string): string {
   </div>
 
   <!-- MODAL INDEPENDIENTE PARA CREAR O EDITAR AUTOR -->
-  <CreateAuthorModal />
+  <CreateAuthorModal specialties={specialtiesList} />
 
   <!-- MODAL DE CONFIRMACIÓN PARA ELIMINAR AUTOR -->
   <div 
@@ -384,10 +447,30 @@ function formatDate(isoDate: string): string {
 
       const id = row.getAttribute('data-id') || '';
       const name = row.getAttribute('data-name') || '';
+      const slug = row.getAttribute('data-slug') || '';
+      const specialty = row.getAttribute('data-specialty') || '';
+      const bio = row.getAttribute('data-bio') || '';
+      const avatarUrl = row.getAttribute('data-avatar') || '';
       const socialUrl = row.getAttribute('data-social') || '';
+      let socialLinks = null;
+      try {
+        const rawLinks = row.getAttribute('data-links');
+        if (rawLinks) socialLinks = JSON.parse(rawLinks);
+      } catch {
+        socialLinks = null;
+      }
 
       if (typeof (window as any).__openCreateAuthorModal === 'function') {
-        (window as any).__openCreateAuthorModal({ id, name, socialUrl });
+        (window as any).__openCreateAuthorModal({
+          id,
+          name,
+          slug,
+          specialty,
+          bio,
+          avatarUrl,
+          socialUrl,
+          socialLinks,
+        });
       }
     });
   });

@@ -166,11 +166,30 @@ const formattedDate = post ? formatPostDate(post.created_at) : '';
           <div class="flex flex-wrap items-center gap-4 sm:gap-6 pt-6 border-t border-white/10 text-xs tracking-wider uppercase font-medium text-brand-muted">
             <!-- Firma del Autor / Redactor con enlace dinámico -->
             <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-full bg-brand-darkCard border border-brand-orange/40 flex items-center justify-center font-bold text-xs text-brand-yellow shadow-inner shrink-0 tracking-wider">
-                {authorInitials}
-              </div>
+              {authorSlug ? (
+                <a
+                  href={`/autores/${authorSlug}`}
+                  class="w-10 h-10 rounded-full bg-brand-darkCard border border-brand-orange/40 hover:border-brand-orange flex items-center justify-center font-bold text-xs text-brand-yellow hover:text-white shadow-inner shrink-0 tracking-wider transition-colors"
+                  aria-label={`Ver perfil de ${post.author}`}
+                >
+                  {authorInitials}
+                </a>
+              ) : (
+                <div class="w-10 h-10 rounded-full bg-brand-darkCard border border-brand-orange/40 flex items-center justify-center font-bold text-xs text-brand-yellow shadow-inner shrink-0 tracking-wider">
+                  {authorInitials}
+                </div>
+              )}
               <div class="flex flex-col">
-                <span class="font-bold text-white tracking-widest text-xs sm:text-sm">{post.author}</span>
+                {authorSlug ? (
+                  <a
+                    href={`/autores/${authorSlug}`}
+                    class="font-bold text-white hover:text-brand-orange tracking-widest text-xs sm:text-sm transition-colors"
+                  >
+                    {post.author}
+                  </a>
+                ) : (
+                  <span class="font-bold text-white tracking-widest text-xs sm:text-sm">{post.author}</span>
+                )}
                 {socialInfo && (
                   <a 
                     href={socialInfo.href} 

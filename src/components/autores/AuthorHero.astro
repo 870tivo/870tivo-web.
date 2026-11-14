@@ -3,12 +3,13 @@
  * src/components/autores/AuthorHero.astro
  * Cabecera editorial del perfil individual de autor.
  * Muestra avatar de alta resolución o iniciales con monograma, nombre en Playfair Display,
- * rol/badge de pertenencia al colectivo, biografía y enlaces sociales estructurados.
+ * rol/badge de pertenencia al colectivo, biografía y enlace o red social normalizado.
  */
 import type { Json } from '../../types/database';
 
 interface Props {
   name: string;
+  specialty?: string | null;
   bio?: string | null;
   avatarUrl?: string | null;
   socialUrl?: string | null;
@@ -20,6 +21,7 @@ interface Props {
 
 const {
   name,
+  specialty,
   bio,
   avatarUrl,
   socialUrl,
@@ -35,20 +37,26 @@ function getInitials(fullName: string): string {
   if (parts.length >= 2) {
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   }
-  return fullName.slice(0, 2).toUpperCase();
+  return fullName.slice(0, 2).toUpperCase() || '870';
 }
 
 const initials = getInitials(name);
 
-// Extraer año de membresía
-let formattedYear = '2026';
-if (memberSince) {
+// Extraer mes abreviado y año de membresía en español (ej: NOV 2026)
+function formatMembershipDate(dateStr?: string): string {
+  if (!dateStr) return 'NOV 2026';
   try {
-    formattedYear = new Date(memberSince).getFullYear().toString();
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return 'NOV 2026';
+    const month = d.toLocaleDateString('es-ES', { month: 'short' }).replace('.', '').toUpperCase();
+    const year = d.getFullYear();
+    return `${month} ${year}`;
   } catch {
-    formattedYear = '2026';
+    return 'NOV 2026';
   }
 }
+
+const formattedMembership = formatMembershipDate(memberSince);
 
 // Procesar enlaces sociales normalizados
 interface NormalizedSocial {
@@ -57,73 +65,110 @@ interface NormalizedSocial {
   url: string;
 }
 
-const normalizedLinks: NormalizedSocial[] = [];
+function parseSocial(raw?: string | null): NormalizedSocial | null {
+  if (!raw || typeof raw !== 'string') return null;
+  const str = raw.trim();
+  if (!str) return null;
 
-// 1. Procesar objeto social_links (JSONB)
-if (socialLinks && typeof socialLinks === 'object' && !Array.isArray(socialLinks)) {
-  for (const [key, val] of Object.entries(socialLinks)) {
-    if (typeof val === 'string' && val.trim()) {
-      const cleanVal = val.trim();
-      let href = cleanVal;
-      let label = cleanVal;
-
-      if (key === 'instagram') {
-        const handle = cleanVal.replace(/^https?:\/\/(www\.)?instagram\.com\/?/, '').replace(/^@/, '').replace(/\/$/, '');
-        href = `https://instagram.com/${handle}`;
-        label = `@${handle}`;
-      } else if (key === 'twitter' || key === 'x') {
-        const handle = cleanVal.replace(/^https?:\/\/(www\.)?(twitter|x)\.com\/?/, '').replace(/^@/, '').replace(/\/$/, '');
-        href = `https://x.com/${handle}`;
-        label = `@${handle}`;
-      } else if (key === 'website' || key === 'web') {
-        href = cleanVal.startsWith('http') ? cleanVal : `https://${cleanVal}`;
-        label = cleanVal.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '');
-      } else if (key === 'email' || key === 'correo') {
-        href = `mailto:${cleanVal}`;
-        label = cleanVal;
-      } else {
-        href = cleanVal.startsWith('http') ? cleanVal : `https://${cleanVal}`;
-      }
-
-      normalizedLinks.push({
-        platform: key.toLowerCase(),
-        label,
-        url: href,
-      });
-    }
-  }
-}
-
-// 2. Si no hay social_links estructurados, usar social_url legado
-if (normalizedLinks.length === 0 && socialUrl && socialUrl.trim()) {
-  const cleanUrl = socialUrl.trim();
-  let href = cleanUrl.startsWith('http') ? cleanUrl : `https://${cleanUrl}`;
-  let label = cleanUrl;
   let platform = 'web';
+  let url = str;
+  let label = str;
+
+  // Caso 1: Handle con @ (ej: @valeria o @870tivo)
+  if (str.startsWith('@')) {
+    const handle = str.replace(/^@+/, '');
+    return {
+      platform: 'instagram',
+      label: `@${handle}`,
+      url: `https://instagram.com/${handle}`,
+    };
+  }
+
+  // Caso 2: URL completa o con dominio
+  let withHttp = str;
+  if (!withHttp.startsWith('http://') && !withHttp.startsWith('https://')) {
+    if (!withHttp.includes('.') && !withHttp.includes('/')) {
+      return {
+        platform: 'instagram',
+        label: `@${withHttp}`,
+        url: `https://instagram.com/${withHttp}`,
+      };
+    }
+    withHttp = `https://${withHttp}`;
+  }
 
   try {
-    const parsed = new URL(href);
-    const host = parsed.hostname.toLowerCase();
-    const path = parsed.pathname.replace(/^\//, '').split('/')[0] || '';
+    const u = new URL(withHttp);
+    const hostname = u.hostname.toLowerCase().replace(/^www\./, '');
+    const pathname = u.pathname.replace(/^\/+|\/+$/g, '');
+    const firstSegment = pathname.split('/')[0] || '';
 
-    if (host.includes('instagram.com')) {
+    if (hostname.includes('instagram.com')) {
       platform = 'instagram';
-      label = path ? `@${path}` : 'Instagram';
-    } else if (host.includes('twitter.com') || host.includes('x.com')) {
+      label = firstSegment ? `@${firstSegment}` : 'Instagram';
+      url = firstSegment ? `https://instagram.com/${firstSegment}` : withHttp;
+    } else if (hostname.includes('twitter.com') || hostname.includes('x.com')) {
       platform = 'x';
-      label = path ? `@${path}` : 'X';
+      label = firstSegment ? `@${firstSegment}` : '𝕏';
+      url = firstSegment ? `https://x.com/${firstSegment}` : withHttp;
+    } else if (hostname.includes('substack.com')) {
+      platform = 'substack';
+      label = hostname;
+      url = withHttp;
+    } else if (hostname.includes('github.com')) {
+      platform = 'github';
+      label = firstSegment ? `@${firstSegment}` : 'GitHub';
+      url = withHttp;
+    } else if (hostname.includes('linkedin.com')) {
+      platform = 'linkedin';
+      label = 'LinkedIn';
+      url = withHttp;
     } else {
-      label = host.replace(/^www\./, '');
+      platform = 'web';
+      label = hostname || str;
+      url = withHttp;
     }
   } catch {
-    label = cleanUrl;
+    platform = 'web';
+    label = str.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '');
+    url = withHttp;
   }
 
-  normalizedLinks.push({
-    platform,
-    label,
-    url: href,
-  });
+  return { platform, label, url };
+}
+
+const normalizedLinks: NormalizedSocial[] = [];
+
+// 1. Prioridad: social_url principal
+const primary = parseSocial(socialUrl);
+if (primary) {
+  normalizedLinks.push(primary);
+}
+
+// 2. Revisar social_links estructurados si existen y no duplican
+if (socialLinks && typeof socialLinks === 'object') {
+  if (Array.isArray(socialLinks)) {
+    for (const item of socialLinks) {
+      if (item && typeof item === 'object') {
+        const rawUrl = String((item as any).url || (item as any).href || '').trim();
+        if (rawUrl) {
+          const parsed = parseSocial(rawUrl);
+          if (parsed && !normalizedLinks.some((l) => l.url === parsed.url)) {
+            normalizedLinks.push(parsed);
+          }
+        }
+      }
+    }
+  } else {
+    for (const [key, val] of Object.entries(socialLinks)) {
+      if (typeof val === 'string' && val.trim()) {
+        const parsed = parseSocial(val.trim());
+        if (parsed && !normalizedLinks.some((l) => l.url === parsed.url)) {
+          normalizedLinks.push(parsed);
+        }
+      }
+    }
+  }
 }
 ---
 
@@ -197,11 +242,11 @@ if (normalizedLinks.length === 0 && socialUrl && socialUrl.trim()) {
 
       <!-- Información del Autor -->
       <div class="flex-1 min-w-0">
-        <!-- Badge colectivo -->
+        <!-- Badge colectivo / especialidad editorial -->
         <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-orange/10 dark:bg-brand-orange/20 border border-brand-orange/25 mb-4">
           <span class="w-1.5 h-1.5 rounded-full bg-brand-orange animate-pulse"></span>
           <span class="text-[10px] sm:text-xs font-bold uppercase tracking-[0.25em] text-brand-orange">
-            Firma Colaboradora
+            {specialty?.trim() ? specialty.trim().toUpperCase() : 'FIRMA COLABORADORA'}
           </span>
         </div>
 
@@ -221,45 +266,51 @@ if (normalizedLinks.length === 0 && socialUrl && socialUrl.trim()) {
           </p>
         )}
 
-        <!-- Redes sociales y presencia digital -->
+        <!-- Red social o enlace destacado (Directamente bajo la biografía) -->
         {normalizedLinks.length > 0 && (
-          <div class="mt-6 flex flex-wrap items-center justify-center md:justify-start gap-2.5">
+          <div class="mt-4 flex flex-wrap items-center justify-center md:justify-start gap-2.5">
             {normalizedLinks.map((link) => (
               <a
                 href={link.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-brand-bg dark:bg-[#141414] hover:bg-brand-orange/10 dark:hover:bg-brand-orange/20 text-brand-ink dark:text-white hover:text-brand-orange dark:hover:text-brand-orange border border-brand-ink/10 dark:border-white/10 hover:border-brand-orange/30 text-xs font-bold tracking-wider uppercase transition-all duration-200 shadow-xs"
-                aria-label={`Enlace a ${link.platform} de ${name}`}
+                class="
+                  group/social inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full
+                  bg-brand-orange/5 hover:bg-brand-orange/15 dark:bg-white/5 dark:hover:bg-white/10
+                  border border-brand-orange/25 hover:border-brand-orange/50 dark:border-white/10 dark:hover:border-brand-orange/30
+                  text-brand-ink dark:text-white hover:text-brand-orange dark:hover:text-brand-orange
+                  text-xs font-semibold tracking-wide transition-all duration-200 shadow-2xs
+                "
+                aria-label={`Visitar perfil de ${name}: ${link.label}`}
               >
                 {link.platform === 'instagram' && (
-                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <svg class="w-3.5 h-3.5 text-brand-orange shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/>
                     <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
                     <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/>
                   </svg>
                 )}
-                {(link.platform === 'twitter' || link.platform === 'x') && (
-                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M4 4l11.733 16h4.267l-11.733 -16z" />
-                    <path d="M4 20l6.768 -6.768m2.46 -2.46l6.772 -6.772" />
+                {link.platform === 'x' && (
+                  <svg class="w-3.5 h-3.5 text-brand-orange shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
                   </svg>
                 )}
-                {link.platform === 'email' && (
-                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect width="20" height="16" x="2" y="4" rx="2"/>
-                    <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+                {link.platform === 'substack' && (
+                  <svg class="w-3.5 h-3.5 text-brand-orange shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M22.539 8.242H1.46V5.406h21.08v2.836zM1.46 10.812V24L12 18.11 22.54 24V10.812H1.46zM22.54 0H1.46v2.836h21.08V0z"/>
                   </svg>
                 )}
-                {link.platform !== 'instagram' && link.platform !== 'twitter' && link.platform !== 'x' && link.platform !== 'email' && (
-                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                {link.platform !== 'instagram' && link.platform !== 'x' && link.platform !== 'substack' && (
+                  <svg class="w-3.5 h-3.5 text-brand-orange shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="12" r="10"/>
                     <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/>
                     <path d="M2 12h20"/>
                   </svg>
                 )}
-                <span>{link.label}</span>
-                <svg class="w-3 h-3 opacity-60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <span class="font-medium text-xs text-brand-ink dark:text-neutral-200 group-hover/social:text-brand-orange dark:group-hover/social:text-brand-orange transition-colors">
+                  {link.label}
+                </span>
+                <svg class="w-3 h-3 text-brand-orange opacity-60 group-hover/social:opacity-100 group-hover/social:translate-x-0.5 transition-all shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
                   <polyline points="15 3 21 3 21 9"/>
                   <line x1="10" y1="14" x2="21" y2="3"/>
@@ -293,10 +344,10 @@ if (normalizedLinks.length === 0 && socialUrl && socialUrl.trim()) {
 
           <div class="flex items-center gap-2">
             <span class="text-brand-muted uppercase tracking-widest text-[11px] font-semibold">
-              Vinculación
+              MIEMBRO DESDE
             </span>
             <span class="font-serif text-sm font-bold text-brand-orange">
-              {formattedYear}
+              {formattedMembership}
             </span>
           </div>
         </div>
@@ -305,4 +356,3 @@ if (normalizedLinks.length === 0 && socialUrl && socialUrl.trim()) {
     </div>
   </div>
 </section>
-
