@@ -160,7 +160,7 @@ if (socialLinks && typeof socialLinks === 'object') {
       }
     }
   } else {
-    for (const [key, val] of Object.entries(socialLinks)) {
+    for (const [_key, val] of Object.entries(socialLinks)) {
       if (typeof val === 'string' && val.trim()) {
         const parsed = parseSocial(val.trim());
         if (parsed && !normalizedLinks.some((l) => l.url === parsed.url)) {

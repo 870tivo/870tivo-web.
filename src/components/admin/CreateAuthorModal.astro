@@ -360,8 +360,8 @@ const { specialties = [] } = Astro.props;
   // Notice elements (Unificado con estilo éxito / error)
   const createAuthorNotice = document.getElementById('createAuthorNotice') as HTMLElement;
   const createAuthorNoticeMsg = document.getElementById('createAuthorNoticeMsg') as HTMLElement;
-  const noticeIconError = document.getElementById('noticeIconError') as SVGElement;
-  const noticeIconSuccess = document.getElementById('noticeIconSuccess') as SVGElement;
+  const noticeIconError = document.getElementById('noticeIconError') as unknown as SVGElement;
+  const noticeIconSuccess = document.getElementById('noticeIconSuccess') as unknown as SVGElement;
 
   function showAuthorNotice(msg: string, type: 'error' | 'success' = 'error') {
     if (!createAuthorNotice || !createAuthorNoticeMsg) return;
