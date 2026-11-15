@@ -1,0 +1,702 @@
+---
+/**
+ * DashEditorialTabs.astro
+ * Columna Izquierda del Bloque Central del Dashboard:
+ * Gestión Activa de Contenidos con pestañas para Blog/Ensayos, Galería y Autores.
+ * 
+ * - Renderizado SSR con datos vivos de Supabase.
+ * - Pestañas con switch interactivo en cliente sin recargar la página.
+ * - Tablas densas y limpias con badges de estado (Publicado/Borrador).
+ * - Acciones rápidas: Editar y Ocultar/Publicar en vivo con fetch() asíncrono.
+ */
+
+import { supabaseAdmin } from '../../../lib/supabase';
+import { posts as fallbackPosts } from '../../../lib/posts';
+
+interface Props {
+  adminBase?: string;
+}
+
+const { adminBase = '/2416f50b-da02-4a5b-86a8-61ae470ed3bd' } = Astro.props;
+
+// 1. Obtener publicaciones recientes (Blog)
+let blogList: Array<{
+  id: string;
+  slug: string;
+  title: string;
+  author: string;
+  views: number;
+  status: string;
+  created_at: string;
+}> = [];
+
+try {
+  const { data, error } = await supabaseAdmin
+    .from('posts')
+    .select('id, slug, title, author, views, status, created_at')
+    .order('created_at', { ascending: false })
+    .limit(7);
+
+  if (!error && data && data.length > 0) {
+    blogList = data.map((p) => ({
+      id: p.id || p.slug,
+      slug: p.slug,
+      title: p.title,
+      author: p.author || 'Equipo 870',
+      views: p.views ?? 0,
+      status: p.status || 'publicado',
+      created_at: p.created_at,
+    }));
+  } else {
+    // Fallback con datos estáticos del catálogo si la tabla estuviera vacía
+    blogList = fallbackPosts.slice(0, 5).map((p, idx) => ({
+      id: `post-fb-${idx}`,
+      slug: p.slug,
+      title: p.title,
+      author: p.author,
+      views: 120 + idx * 45,
+      status: idx === 3 ? 'borrador' : 'publicado',
+      created_at: new Date().toISOString(),
+    }));
+  }
+} catch (e) {
+  blogList = fallbackPosts.slice(0, 5).map((p, idx) => ({
+    id: `post-fb-${idx}`,
+    slug: p.slug,
+    title: p.title,
+    author: p.author,
+    views: 85,
+    status: 'publicado',
+    created_at: new Date().toISOString(),
+  }));
+}
+
+// 2. Obtener obras recientes (Galería)
+let galleryList: Array<{
+  id: string;
+  title: string;
+  image_url: string;
+  category: string;
+  status: string;
+  created_at: string;
+}> = [];
+
+try {
+  const { data: gData } = await supabaseAdmin
+    .from('gallery')
+    .select('id, title, image_url, category, status, created_at')
+    .order('created_at', { ascending: false })
+    .limit(7);
+
+  if (gData && gData.length > 0) {
+    galleryList = gData;
+  } else {
+    galleryList = [
+      {
+        id: 'gal-fb-1',
+        title: 'Serie Vestigios Urbanos',
+        image_url: '/assets/logo/870.jpeg',
+        category: 'Fotografía',
+        status: 'publicado',
+        created_at: new Date().toISOString(),
+      },
+      {
+        id: 'gal-fb-2',
+        title: 'Muestra Colectiva de Grabado',
+        image_url: '/assets/logo/870.jpeg',
+        category: 'Artes Visuales',
+        status: 'borrador',
+        created_at: new Date().toISOString(),
+      },
+    ];
+  }
+} catch {
+  galleryList = [];
+}
+
+// 3. Obtener autores / equipo editorial
+let authorsList: Array<{
+  id: string;
+  name: string;
+  social_url: string | null;
+  created_at: string;
+  posts_count?: number;
+}> = [];
+
+try {
+  const { data: aData } = await supabaseAdmin
+    .from('authors')
+    .select('id, name, social_url, created_at')
+    .order('name', { ascending: true })
+    .limit(7);
+
+  if (aData && aData.length > 0) {
+    authorsList = aData;
+  } else {
+    authorsList = [
+      { id: 'aut-1', name: 'Miguel Ángel Uribe', social_url: '@migueluribe', created_at: new Date().toISOString() },
+      { id: 'aut-2', name: 'Redacción 870tivo', social_url: '@870tivo', created_at: new Date().toISOString() },
+    ];
+  }
+} catch {
+  authorsList = [];
+}
+---
+
+<div class="h-full flex flex-col rounded-2xl bg-[#181818] border border-zinc-800 shadow-sm overflow-hidden" id="dashEditorialCard">
+  <!-- Cabecera de la Tarjeta con Pestañas -->
+  <div class="p-4 sm:p-5 border-b border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#151515]/80">
+    <div class="flex items-center gap-2.5">
+      <div class="w-8 h-8 rounded-xl bg-[#E4572E]/10 border border-[#E4572E]/20 flex items-center justify-center text-[#E4572E] shrink-0">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+        </svg>
+      </div>
+      <div>
+        <h3 class="text-sm sm:text-base font-bold font-serif text-slate-100 tracking-tight leading-none">
+          Catálogo & Gestión Editorial
+        </h3>
+        <p class="text-[11px] text-slate-400 mt-1">
+          Supervisión directa de publicaciones, obras y colaboradores
+        </p>
+      </div>
+    </div>
+
+    <!-- Pestañas de Selección -->
+    <div class="inline-flex items-center p-1 rounded-xl bg-zinc-900 border border-zinc-800 text-xs font-semibold self-start sm:self-auto" role="tablist">
+      <button
+        type="button"
+        role="tab"
+        aria-selected="true"
+        aria-controls="dash-tab-blog"
+        id="btn-tab-blog"
+        data-target="dash-tab-blog"
+        class="tab-trigger px-3 py-1.5 rounded-lg text-slate-100 bg-[#181818] border border-zinc-700/80 shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+      >
+        <span>Blog / Ensayos</span>
+        <span class="text-[10px] font-mono px-1.5 py-0.2 rounded-md bg-[#E4572E]/20 text-[#E4572E] font-bold">
+          {blogList.length}
+        </span>
+      </button>
+
+      <button
+        type="button"
+        role="tab"
+        aria-selected="false"
+        aria-controls="dash-tab-galeria"
+        id="btn-tab-galeria"
+        data-target="dash-tab-galeria"
+        class="tab-trigger px-3 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 transition-all cursor-pointer flex items-center gap-1.5"
+      >
+        <span>Galería</span>
+        <span class="text-[10px] font-mono px-1.5 py-0.2 rounded-md bg-zinc-800 text-slate-400">
+          {galleryList.length}
+        </span>
+      </button>
+
+      <button
+        type="button"
+        role="tab"
+        aria-selected="false"
+        aria-controls="dash-tab-autores"
+        id="btn-tab-autores"
+        data-target="dash-tab-autores"
+        class="tab-trigger px-3 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 transition-all cursor-pointer flex items-center gap-1.5"
+      >
+        <span>Autores</span>
+        <span class="text-[10px] font-mono px-1.5 py-0.2 rounded-md bg-zinc-800 text-slate-400">
+          {authorsList.length}
+        </span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Contenedores de Contenido de las Pestañas -->
+  <div class="flex-1 overflow-x-auto">
+
+    <!-- ──────────────────────────────────────────────────────────
+         TAB 1: BLOG / ENSAYOS
+    ────────────────────────────────────────────────────────── -->
+    <div id="dash-tab-blog" class="tab-panel block" role="tabpanel" aria-labelledby="btn-tab-blog">
+      <table class="w-full text-left border-collapse text-xs">
+        <thead>
+          <tr class="border-b border-zinc-800/80 bg-zinc-900/50 text-slate-400 text-[11px] uppercase tracking-wider font-semibold">
+            <th class="py-3 px-4">Artículo & Autor</th>
+            <th class="py-3 px-4 text-center">Vistas</th>
+            <th class="py-3 px-4 text-center">Estado</th>
+            <th class="py-3 px-4 text-right">Acciones</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-zinc-800/50">
+          {blogList.map((post) => {
+            const isPublished = post.status === 'publicado';
+            return (
+              <tr class="hover:bg-zinc-800/25 transition-colors group" data-post-slug={post.slug}>
+                <!-- Título y Autor -->
+                <td class="py-3 px-4 max-w-[200px] sm:max-w-xs">
+                  <a
+                    href={`/blog/${post.slug}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="font-semibold text-slate-200 group-hover:text-[#E4572E] transition-colors truncate block text-xs"
+                    title={`Ver «${post.title}» en vivo`}
+                  >
+                    {post.title}
+                  </a>
+                  <div class="flex items-center gap-2 mt-0.5 text-[11px] text-slate-500">
+                    <span class="truncate max-w-[120px]">{post.author}</span>
+                  </div>
+                </td>
+
+                <!-- Vistas -->
+                <td class="py-3 px-4 text-center font-mono tabular-nums text-slate-300">
+                  <span class="inline-flex items-center gap-1">
+                    <svg class="w-3 h-3 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                    {post.views}
+                  </span>
+                </td>
+
+                <!-- Estado (Badge Esmeralda / Ámbar) -->
+                <td class="py-3 px-4 text-center">
+                  <span
+                    class={`status-badge-post inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
+                      isPublished
+                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                        : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                    }`}
+                  >
+                    <span class={`status-dot w-1.5 h-1.5 rounded-full ${isPublished ? 'bg-emerald-400' : 'bg-amber-400'}`}></span>
+                    <span class="status-label">{isPublished ? 'Publicado' : 'Borrador'}</span>
+                  </span>
+                </td>
+
+                <!-- Acciones Rápidas -->
+                <td class="py-3 px-4 text-right whitespace-nowrap">
+                  <div class="inline-flex items-center gap-1.5">
+                    <!-- Editar -->
+                    <a
+                      href={`${adminBase}/publicaciones?edit=${post.slug}`}
+                      class="px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-slate-300 hover:text-white border border-zinc-700/60 text-[11px] font-medium transition-colors"
+                      title="Editar en el Canvas Editorial"
+                    >
+                      Editar
+                    </a>
+
+                    <!-- Toggle Ocultar / Publicar -->
+                    <button
+                      type="button"
+                      class="toggle-post-btn px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all border cursor-pointer select-none"
+                      data-slug={post.slug}
+                      data-published={isPublished ? 'true' : 'false'}
+                      title={isPublished ? 'Ocultar al público (pasar a borrador)' : 'Publicar en la plataforma'}
+                    >
+                      {isPublished ? 'Ocultar' : 'Publicar'}
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+
+      <!-- Pie del Tab Blog -->
+      <div class="p-3 bg-zinc-900/30 border-t border-zinc-800 flex items-center justify-between text-xs text-slate-400">
+        <a
+          href={`${adminBase}/publicaciones?new=1`}
+          class="inline-flex items-center gap-1.5 text-[#E4572E] hover:text-[#cf4821] font-semibold text-xs transition-colors"
+        >
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+          </svg>
+          Nueva Publicación
+        </a>
+        <a
+          href={`${adminBase}/publicaciones`}
+          class="hover:text-slate-200 transition-colors inline-flex items-center gap-1 text-[11px]"
+        >
+          <span>Ver catálogo completo</span>
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
+        </a>
+      </div>
+    </div>
+
+    <!-- ──────────────────────────────────────────────────────────
+         TAB 2: GALERÍA
+    ────────────────────────────────────────────────────────── -->
+    <div id="dash-tab-galeria" class="tab-panel hidden" role="tabpanel" aria-labelledby="btn-tab-galeria">
+      <table class="w-full text-left border-collapse text-xs">
+        <thead>
+          <tr class="border-b border-zinc-800/80 bg-zinc-900/50 text-slate-400 text-[11px] uppercase tracking-wider font-semibold">
+            <th class="py-3 px-4">Obra / Exposición</th>
+            <th class="py-3 px-4 text-center">Categoría</th>
+            <th class="py-3 px-4 text-center">Estado</th>
+            <th class="py-3 px-4 text-right">Acciones</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-zinc-800/50">
+          {galleryList.length === 0 ? (
+            <tr>
+              <td colspan="4" class="py-8 text-center text-slate-500 italic">
+                No hay obras registradas en la Galería aún.
+              </td>
+            </tr>
+          ) : (
+            galleryList.map((item) => {
+              const isPub = item.status === 'publicado';
+              return (
+                <tr class="hover:bg-zinc-800/25 transition-colors group" data-gallery-id={item.id}>
+                  <td class="py-3 px-4">
+                    <div class="flex items-center gap-2.5">
+                      <img
+                        src={item.image_url || '/assets/logo/870.jpeg'}
+                        alt={item.title}
+                        class="w-8 h-8 rounded-lg object-cover border border-zinc-800 shrink-0"
+                        loading="lazy"
+                      />
+                      <span class="font-semibold text-slate-200 group-hover:text-[#F2B134] transition-colors truncate block text-xs max-w-[160px] sm:max-w-xs">
+                        {item.title}
+                      </span>
+                    </div>
+                  </td>
+
+                  <td class="py-3 px-4 text-center">
+                    <span class="px-2 py-0.5 rounded-md bg-zinc-900 text-slate-400 border border-zinc-800 text-[10px] font-mono">
+                      {item.category || 'General'}
+                    </span>
+                  </td>
+
+                  <td class="py-3 px-4 text-center">
+                    <span
+                      class={`status-badge-gallery inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
+                        isPub
+                          ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                          : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                      }`}
+                    >
+                      <span class={`status-dot w-1.5 h-1.5 rounded-full ${isPub ? 'bg-emerald-400' : 'bg-amber-400'}`}></span>
+                      <span class="status-label">{isPub ? 'Publicado' : 'Borrador'}</span>
+                    </span>
+                  </td>
+
+                  <td class="py-3 px-4 text-right whitespace-nowrap">
+                    <div class="inline-flex items-center gap-1.5">
+                      <a
+                        href={`${adminBase}/galeria`}
+                        class="px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-slate-300 hover:text-white border border-zinc-700/60 text-[11px] font-medium transition-colors"
+                      >
+                        Gestionar
+                      </a>
+                      <button
+                        type="button"
+                        class="toggle-gallery-btn px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all border cursor-pointer select-none"
+                        data-id={item.id}
+                        data-status={item.status}
+                        title={isPub ? 'Ocultar obra al público' : 'Publicar obra'}
+                      >
+                        {isPub ? 'Ocultar' : 'Publicar'}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })
+          )}
+        </tbody>
+      </table>
+
+      <div class="p-3 bg-zinc-900/30 border-t border-zinc-800 flex items-center justify-between text-xs text-slate-400">
+        <a
+          href={`${adminBase}/galeria`}
+          class="inline-flex items-center gap-1.5 text-[#F2B134] hover:text-[#d99c27] font-semibold text-xs transition-colors"
+        >
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+          </svg>
+          Nueva Obra
+        </a>
+        <a href={`${adminBase}/galeria`} class="hover:text-slate-200 transition-colors inline-flex items-center gap-1 text-[11px]">
+          <span>Ver todas las obras</span>
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
+        </a>
+      </div>
+    </div>
+
+    <!-- ──────────────────────────────────────────────────────────
+         TAB 3: AUTORES
+    ────────────────────────────────────────────────────────── -->
+    <div id="dash-tab-autores" class="tab-panel hidden" role="tabpanel" aria-labelledby="btn-tab-autores">
+      <table class="w-full text-left border-collapse text-xs">
+        <thead>
+          <tr class="border-b border-zinc-800/80 bg-zinc-900/50 text-slate-400 text-[11px] uppercase tracking-wider font-semibold">
+            <th class="py-3 px-4">Autor / Colaborador</th>
+            <th class="py-3 px-4">Contacto / Red</th>
+            <th class="py-3 px-4 text-center">Rol</th>
+            <th class="py-3 px-4 text-right">Acciones</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-zinc-800/50">
+          {authorsList.length === 0 ? (
+            <tr>
+              <td colspan="4" class="py-8 text-center text-slate-500 italic">
+                No hay autores registrados.
+              </td>
+            </tr>
+          ) : (
+            authorsList.map((author) => {
+              const initials = author.name
+                .split(' ')
+                .map((n) => n[0])
+                .slice(0, 2)
+                .join('')
+                .toUpperCase();
+
+              return (
+                <tr class="hover:bg-zinc-800/25 transition-colors group">
+                  <td class="py-3 px-4">
+                    <div class="flex items-center gap-2.5">
+                      <div class="w-7 h-7 rounded-lg bg-[#E4572E]/15 border border-[#E4572E]/30 text-[#E4572E] font-bold text-[11px] flex items-center justify-center shrink-0">
+                        {initials}
+                      </div>
+                      <span class="font-semibold text-slate-200 group-hover:text-[#E4572E] transition-colors truncate block text-xs">
+                        {author.name}
+                      </span>
+                    </div>
+                  </td>
+
+                  <td class="py-3 px-4 text-slate-400 font-mono text-[11px]">
+                    {author.social_url ? (
+                      <span class="truncate block max-w-[130px]">{author.social_url}</span>
+                    ) : (
+                      <span class="text-zinc-600">—</span>
+                    )}
+                  </td>
+
+                  <td class="py-3 px-4 text-center">
+                    <span class="px-2 py-0.5 rounded-full bg-zinc-800 text-slate-300 border border-zinc-700/60 text-[10px] font-medium">
+                      Colaborador
+                    </span>
+                  </td>
+
+                  <td class="py-3 px-4 text-right whitespace-nowrap">
+                    <a
+                      href={`${adminBase}/autores`}
+                      class="px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-slate-300 hover:text-white border border-zinc-700/60 text-[11px] font-medium transition-colors inline-block"
+                    >
+                      Perfil & Obras
+                    </a>
+                  </td>
+                </tr>
+              );
+            })
+          )}
+        </tbody>
+      </table>
+
+      <div class="p-3 bg-zinc-900/30 border-t border-zinc-800 flex items-center justify-between text-xs text-slate-400">
+        <a
+          href={`${adminBase}/autores`}
+          class="inline-flex items-center gap-1.5 text-[#E4572E] hover:text-[#cf4821] font-semibold text-xs transition-colors"
+        >
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+          </svg>
+          Nuevo Autor
+        </a>
+        <a href={`${adminBase}/autores`} class="hover:text-slate-200 transition-colors inline-flex items-center gap-1 text-[11px]">
+          <span>Administrar autores</span>
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
+        </a>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Estilos dinámicos para los botones de toggle -->
+<style>
+  .toggle-post-btn[data-published='true'],
+  .toggle-gallery-btn[data-status='publicado'] {
+    background-color: rgba(245, 158, 11, 0.1);
+    color: #fbbf24;
+    border-color: rgba(245, 158, 11, 0.25);
+  }
+  .toggle-post-btn[data-published='true']:hover,
+  .toggle-gallery-btn[data-status='publicado']:hover {
+    background-color: rgba(245, 158, 11, 0.2);
+    color: #f59e0b;
+  }
+  .toggle-post-btn[data-published='false'],
+  .toggle-gallery-btn[data-status='borrador'] {
+    background-color: rgba(16, 185, 129, 0.1);
+    color: #34d399;
+    border-color: rgba(16, 185, 129, 0.25);
+  }
+  .toggle-post-btn[data-published='false']:hover,
+  .toggle-gallery-btn[data-status='borrador']:hover {
+    background-color: rgba(16, 185, 129, 0.2);
+    color: #10b981;
+  }
+</style>
+
+<!-- Script interactivo de Tabs y Toggles en vivo -->
+<script>
+  function setupEditorialTabs() {
+    const card = document.getElementById('dashEditorialCard');
+    if (!card) return;
+
+    // 1. Manejo de Pestañas
+    const triggers = card.querySelectorAll<HTMLButtonElement>('.tab-trigger');
+    const panels = card.querySelectorAll<HTMLElement>('.tab-panel');
+
+    triggers.forEach((trigger) => {
+      trigger.addEventListener('click', () => {
+        const targetId = trigger.dataset.target;
+        if (!targetId) return;
+
+        // Reset triggers
+        triggers.forEach((t) => {
+          t.setAttribute('aria-selected', 'false');
+          t.classList.remove('text-slate-100', 'bg-[#181818]', 'border-zinc-700/80', 'shadow-xs');
+          t.classList.add('text-slate-400');
+        });
+
+        // Activar seleccionado
+        trigger.setAttribute('aria-selected', 'true');
+        trigger.classList.add('text-slate-100', 'bg-[#181818]', 'border-zinc-700/80', 'shadow-xs');
+        trigger.classList.remove('text-slate-400');
+
+        // Paneles
+        panels.forEach((p) => {
+          if (p.id === targetId) {
+            p.classList.remove('hidden');
+            p.classList.add('block');
+          } else {
+            p.classList.add('hidden');
+            p.classList.remove('block');
+          }
+        });
+      });
+    });
+
+    // 2. Toggle rápido de publicación (Blog)
+    const postToggleBtns = card.querySelectorAll<HTMLButtonElement>('.toggle-post-btn');
+    postToggleBtns.forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const slug = btn.dataset.slug;
+        const currentPublished = btn.dataset.published === 'true';
+        const targetPublished = !currentPublished;
+
+        btn.disabled = true;
+        btn.classList.add('opacity-50');
+
+        try {
+          const res = await fetch('/api/posts/toggle-visibility', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ slug, isPublished: targetPublished }),
+          });
+
+          const result = await res.json();
+          if (res.ok && result.success) {
+            btn.dataset.published = String(targetPublished);
+            btn.textContent = targetPublished ? 'Ocultar' : 'Publicar';
+            btn.title = targetPublished ? 'Ocultar al público (pasar a borrador)' : 'Publicar en la plataforma';
+
+            // Actualizar badge en la fila
+            const row = btn.closest('tr');
+            const badge = row?.querySelector('.status-badge-post');
+            const dot = row?.querySelector('.status-dot');
+            const label = row?.querySelector('.status-label');
+
+            if (badge && dot && label) {
+              if (targetPublished) {
+                badge.className = 'status-badge-post inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+                dot.className = 'status-dot w-1.5 h-1.5 rounded-full bg-emerald-400';
+                label.textContent = 'Publicado';
+              } else {
+                badge.className = 'status-badge-post inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-amber-500/10 text-amber-400 border-amber-500/20';
+                dot.className = 'status-dot w-1.5 h-1.5 rounded-full bg-amber-400';
+                label.textContent = 'Borrador';
+              }
+            }
+          } else {
+            alert(result.message || 'Error al cambiar estado.');
+          }
+        } catch (e) {
+          console.error('Error toggling post:', e);
+          alert('Error de conexión al actualizar visibilidad.');
+        } finally {
+          btn.disabled = false;
+          btn.classList.remove('opacity-50');
+        }
+      });
+    });
+
+    // 3. Toggle rápido de Galería
+    const galleryToggleBtns = card.querySelectorAll<HTMLButtonElement>('.toggle-gallery-btn');
+    galleryToggleBtns.forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.id;
+        const currentStatus = btn.dataset.status;
+        const nextStatus = currentStatus === 'publicado' ? 'borrador' : 'publicado';
+
+        btn.disabled = true;
+        btn.classList.add('opacity-50');
+
+        try {
+          const res = await fetch('/api/admin/gallery', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, status: nextStatus }),
+          });
+
+          const result = await res.json();
+          if (res.ok && result.success) {
+            btn.dataset.status = nextStatus;
+            btn.textContent = nextStatus === 'publicado' ? 'Ocultar' : 'Publicar';
+
+            const row = btn.closest('tr');
+            const badge = row?.querySelector('.status-badge-gallery');
+            const dot = row?.querySelector('.status-dot');
+            const label = row?.querySelector('.status-label');
+
+            if (badge && dot && label) {
+              if (nextStatus === 'publicado') {
+                badge.className = 'status-badge-gallery inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+                dot.className = 'status-dot w-1.5 h-1.5 rounded-full bg-emerald-400';
+                label.textContent = 'Publicado';
+              } else {
+                badge.className = 'status-badge-gallery inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-amber-500/10 text-amber-400 border-amber-500/20';
+                dot.className = 'status-dot w-1.5 h-1.5 rounded-full bg-amber-400';
+                label.textContent = 'Borrador';
+              }
+            }
+          } else {
+            alert(result.message || 'Error al cambiar estado de la obra.');
+          }
+        } catch (e) {
+          console.error('Error toggling gallery item:', e);
+          alert('Error de conexión.');
+        } finally {
+          btn.disabled = false;
+          btn.classList.remove('opacity-50');
+        }
+      });
+    });
+  }
+
+  setupEditorialTabs();
+  document.addEventListener('astro:page-load', setupEditorialTabs);
+  document.addEventListener('astro:after-swap', setupEditorialTabs);
+</script>
+

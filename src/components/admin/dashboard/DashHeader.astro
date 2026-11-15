@@ -1,0 +1,134 @@
+---
+/**
+ * DashHeader.astro
+ * Cabecera operativa full-width del Dashboard 870tivo.
+ * — Saludo personalizado con badge de rol y correo.
+ * — 4 botones de acción rápida en línea.
+ * — Tema 100% oscuro (no depende de dark: prefijos, siempre oscuro).
+ */
+
+interface Props {
+  userName: string;
+  userEmail: string;
+  userRole: string;
+  /** Ruta al admin para construir los hrefs internos */
+  adminBase?: string;
+}
+
+const {
+  userName,
+  userEmail,
+  userRole,
+  adminBase = '/2416f50b-da02-4a5b-86a8-61ae470ed3bd',
+} = Astro.props;
+
+// Badge de rol: mapeo de nombre interno → etiqueta visible
+const roleLabels: Record<string, string> = {
+  'super_admin':        'Super Administrador',
+  'superadmin':         'Super Administrador',
+  'admin':              'Administrador',
+  'editor':             'Editor',
+  'redactor':           'Redactor Editorial',
+  'redactor editorial': 'Redactor Editorial',
+};
+const roleBadge = roleLabels[userRole?.toLowerCase()] ?? userRole ?? 'Administrador';
+---
+
+<!-- ════════════════════════════════════════════════════════════
+     CABECERA OPERATIVA — full-width, siempre oscura
+════════════════════════════════════════════════════════════ -->
+<header
+  class="w-full border-b border-zinc-800 bg-[#0d0d0d]/90 backdrop-blur-sm px-4 sm:px-6 lg:px-8 py-5"
+  aria-label="Cabecera del panel de administración"
+>
+  <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+
+    <!-- ── Identidad del usuario ───────────────────────────── -->
+    <div class="flex flex-col gap-1.5">
+
+      <!-- Fila: badge de rol + separador + correo -->
+      <div class="flex flex-wrap items-center gap-2">
+        <!-- Badge rol -->
+        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#E4572E]/15 border border-[#E4572E]/30 text-[#E4572E] text-[11px] font-semibold tracking-wide uppercase">
+          <span class="w-1.5 h-1.5 rounded-full bg-[#E4572E] animate-pulse"></span>
+          {roleBadge}
+        </span>
+
+        <!-- Separador -->
+        <span class="text-zinc-700" aria-hidden="true">·</span>
+
+        <!-- Correo en monoespaciado -->
+        <span class="font-mono text-xs text-zinc-500 tracking-tight">
+          {userEmail}
+        </span>
+      </div>
+
+      <!-- Saludo principal -->
+      <h1 class="text-2xl sm:text-3xl font-bold font-serif text-slate-100 tracking-tight leading-none">
+        Hola, <span class="text-[#E4572E]">{userName}</span>
+      </h1>
+
+      <!-- Subtítulo de contexto -->
+      <p class="text-xs text-slate-500">
+        Centro de control operativo · 870 Plataforma Cultural
+      </p>
+    </div>
+
+    <!-- ── Acciones rápidas ────────────────────────────────── -->
+    <nav
+      class="flex flex-wrap items-center gap-2"
+      aria-label="Acciones rápidas del dashboard"
+    >
+      <!-- + Crear Publicación -->
+      <a
+        href={`${adminBase}/publicaciones?new=1`}
+        class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#E4572E] hover:bg-[#cf4821] text-white text-xs font-bold shadow-sm transition-all active:scale-95 select-none"
+        title="Crear nueva publicación editorial"
+      >
+        <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+        </svg>
+        Crear Publicación
+      </a>
+
+      <!-- + Nueva Actividad -->
+      <a
+        href={`${adminBase}/actividades?new=1`}
+        class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 hover:border-zinc-600 text-slate-100 text-xs font-semibold transition-all active:scale-95 select-none"
+        title="Crear nueva actividad cultural"
+      >
+        <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+        </svg>
+        Nueva Actividad
+      </a>
+
+      <!-- Roles y Permisos -->
+      <a
+        href={`${adminBase}/roles`}
+        class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 hover:border-zinc-600 text-slate-100 text-xs font-semibold transition-all active:scale-95 select-none"
+        title="Gestionar roles y permisos RBAC"
+      >
+        <svg class="w-3.5 h-3.5 shrink-0 text-[#F2B134]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+        </svg>
+        Roles y Permisos
+      </a>
+
+      <!-- Ver Sitio Web (externo) -->
+      <a
+        href="/"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 hover:border-zinc-600 text-slate-400 hover:text-slate-100 text-xs font-semibold transition-all active:scale-95 select-none"
+        title="Abrir el sitio web público en nueva pestaña"
+      >
+        Ver Sitio Web
+        <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+        </svg>
+      </a>
+    </nav>
+  </div>
+</header>
+

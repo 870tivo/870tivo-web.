@@ -8,12 +8,20 @@ interface Props {
   title?: string;
   headerTitle?: string;
   activeModule?: 'dashboard' | 'publicaciones' | string;
+  /** Cuando es true: oculta el sidebar y elimina el padding-left compensatorio.
+   *  Retrocompatible: todas las páginas existentes que no pasen esta prop
+   *  siguen funcionando con sidebar exactamente igual que antes. */
+  noSidebar?: boolean;
+  /** Cuando es true: permite que el contenido utilice el 100% del ancho sin max-w-7xl */
+  fullWidth?: boolean;
 }
 
 const { 
   title = 'Panel de Administración | 870tivo',
   headerTitle = 'Panel de Control',
-  activeModule = 'dashboard'
+  activeModule = 'dashboard',
+  noSidebar = false,
+  fullWidth = false,
 } = Astro.props;
 
 // SSR session retrieval from middleware
@@ -38,7 +46,7 @@ const fontsUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;60
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href={fontsUrl} rel="stylesheet" />
 
-    <!-- Anti-flicker Theme Script -->
+    <!-- Anti-flicker Theme & Sidebar State Script -->
     <script is:inline>
       const theme = (() => {
         if (typeof localStorage !== 'undefined' && localStorage.getItem('theme')) {
@@ -58,6 +66,13 @@ const fontsUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;60
         document.documentElement.setAttribute('data-theme', 'dark');
       }
       window.localStorage.setItem('theme', theme);
+
+      // Estado persistente del Sidebar (Icon-Rail Colapsable)
+      try {
+        if (typeof localStorage !== 'undefined' && localStorage.getItem('admin_sidebar_collapsed') === 'true') {
+          document.documentElement.classList.add('sidebar-collapsed');
+        }
+      } catch (e) {}
     </script>
 
     <style is:global>
@@ -82,20 +97,77 @@ const fontsUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;60
       .custom-scrollbar::-webkit-scrollbar-thumb:hover {
         background: var(--admin-surface-subtle, #3a3a3a);
       }
+
+      /* Transiciones fluidas del Sidebar colapsable (Icon-Rail) */
+      #adminSidebar {
+        transition: width 300ms cubic-bezier(0.4, 0, 0.2, 1), transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      #adminMainContent {
+        transition: padding-left 300ms cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      /* Reglas aplicadas cuando el Sidebar está en estado Colapsado (Icon-Rail) */
+      @media (min-width: 1024px) {
+        html.sidebar-collapsed #adminSidebar {
+          width: 5rem !important; /* 80px (w-20) */
+        }
+        html.sidebar-collapsed #adminMainContent {
+          padding-left: 5rem !important; /* 80px (pl-20) */
+        }
+        html.sidebar-collapsed .sidebar-label,
+        html.sidebar-collapsed .sidebar-brand-text,
+        html.sidebar-collapsed .sidebar-heading-text,
+        html.sidebar-collapsed .sidebar-user-details,
+        html.sidebar-collapsed .sidebar-active-dot {
+          display: none !important;
+        }
+        html.sidebar-collapsed .sidebar-heading-divider {
+          display: block !important;
+        }
+        html.sidebar-collapsed .sidebar-link {
+          justify-content: center !important;
+          padding-left: 0.5rem !important;
+          padding-right: 0.5rem !important;
+        }
+        html.sidebar-collapsed .sidebar-header-inner {
+          justify-content: center !important;
+          padding-left: 0.5rem !important;
+          padding-right: 0.5rem !important;
+        }
+        html.sidebar-collapsed .sidebar-header-toggle {
+          display: none !important;
+        }
+        html.sidebar-collapsed .sidebar-collapse-icon {
+          transform: rotate(180deg);
+        }
+        html.sidebar-collapsed .sidebar-user-card {
+          flex-direction: column !important;
+          align-items: center !important;
+          padding: 0.5rem 0.25rem !important;
+          gap: 0.5rem !important;
+        }
+        html.sidebar-collapsed .sidebar-rail-btn {
+          justify-content: center !important;
+          padding-left: 0.5rem !important;
+          padding-right: 0.5rem !important;
+        }
+      }
     </style>
   </head>
 
   <body class="admin-body min-h-screen font-sans antialiased flex text-[#1F1B16] dark:text-[#FAF6F0] selection:bg-[#E4572E] selection:text-white">
 
-    <!-- Navigation Sidebar -->
-    <AdminSidebar 
-      activeModule={activeModule}
-      userEmail={userEmail}
-      userFullName={userFullName}
-    />
+    <!-- Navigation Sidebar: se omite cuando noSidebar=true -->
+    {!noSidebar && (
+      <AdminSidebar 
+        activeModule={activeModule}
+        userEmail={userEmail}
+        userFullName={userFullName}
+      />
+    )}
 
-    <!-- Main Content Area with offset for Sidebar -->
-    <div class="flex-1 lg:pl-72 flex flex-col min-h-screen min-w-0 bg-[#FAF6F0] dark:bg-[#111111] transition-colors duration-200">
+    <!-- Main Content Area: con transition-all fluida -->
+    <div id="adminMainContent" class={`flex-1 flex flex-col min-h-screen min-w-0 bg-[#FAF6F0] dark:bg-[#111111] transition-all duration-300 ease-in-out ${!noSidebar ? 'lg:pl-72' : ''}`}>
       
       <!-- Top Sticky Header -->
       <AdminHeader 
@@ -105,8 +177,8 @@ const fontsUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;60
         userFullName={userFullName}
       />
 
-      <!-- Content Container -->
-      <main class="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+      <!-- Content Container: full-width cuando fullWidth o noSidebar son true -->
+      <main class={`flex-1 w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-10 ${(!noSidebar && !fullWidth) ? 'max-w-7xl mx-auto' : ''}`}>
         <slot />
       </main>
 
