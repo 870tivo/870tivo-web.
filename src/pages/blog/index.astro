@@ -1,0 +1,195 @@
+---
+/**
+ * src/pages/blog/index.astro
+ * Listado de la Bitácora Cultural 870tivo (SSR).
+ * Consulta todas las publicaciones con status 'publicado' desde Supabase.
+ */
+export const prerender = false;
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { supabaseAdmin } from '../../lib/supabase';
+
+// ── Consulta SSR de publicaciones ───────────────────────────────────────────
+const { data: postsData, error: postsError } = await supabaseAdmin
+  .from('posts')
+  .select(`
+    id, title, slug, subtitle, category, author, cover_image,
+    read_time, created_at, views, likes
+  `)
+  .eq('status', 'publicado')
+  .order('created_at', { ascending: false });
+
+if (postsError) {
+  console.error('[blog/index.astro] Error al cargar posts:', postsError.message);
+}
+
+const posts = postsData ?? [];
+
+// Extraer categorías únicas para los filtros
+const categories = ['Todos', ...new Set(posts.map((p) => p.category).filter(Boolean))];
+
+// Formateador de fechas
+function formatDate(dateStr: string | null) {
+  if (!dateStr) return '';
+  try {
+    return new Intl.DateTimeFormat('es-CO', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    }).format(new Date(dateStr));
+  } catch {
+    return '';
+  }
+}
+---
+
+<BaseLayout
+  title="Bitácora Cultural — 870tivo"
+  description="Ensayos, crónicas y pensamiento visual sobre cine inmaterial, estética urbana y espacio contemporáneo."
+>
+  <main class="flex-grow bg-[#111111] text-slate-100 min-h-screen pb-24 -mt-[72px]">
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         CABECERA EDITORIAL
+         ════════════════════════════════════════════════════════════════════ -->
+    <header class="pt-32 pb-16 border-b border-zinc-800/80 relative overflow-hidden">
+      <!-- Resplandor ambiental de fondo -->
+      <div class="absolute top-0 right-1/4 w-96 h-96 bg-[#E4572E]/5 rounded-full blur-3xl pointer-events-none" />
+
+      <div class="container mx-auto px-4 md:px-8 max-w-5xl relative z-10">
+        <div class="flex items-center gap-2 mb-4">
+          <span class="w-2.5 h-2.5 bg-[#E4572E] rounded-full" />
+          <span class="text-xs font-sans font-bold uppercase tracking-[0.25em] text-[#E4572E]">
+            Archivo Editorial
+          </span>
+        </div>
+
+        <h1 class="font-serif text-4xl sm:text-5xl lg:text-6xl font-bold text-white tracking-tight leading-tight mb-5">
+          Bitácora Cultural
+        </h1>
+
+        <p class="font-sans text-base sm:text-lg text-zinc-400 max-w-2xl leading-relaxed">
+          Ensayos críticos, crónicas urbanas y exploraciones del cine inmaterial. Un espacio de pensamiento y registro sensible desde Bogotá.
+        </p>
+
+        <!-- Filtros rápidos por categoría -->
+        {categories.length > 1 && (
+          <div class="flex flex-wrap items-center gap-2 mt-8 pt-6 border-t border-zinc-800/60">
+            {categories.map((cat, idx) => (
+              <button
+                type="button"
+                data-category-filter={cat}
+                class={`px-4 py-1.5 rounded-sm text-xs font-sans font-semibold tracking-wider uppercase transition-all ${
+                  idx === 0
+                    ? 'bg-[#E4572E] text-white'
+                    : 'bg-[#181818] border border-zinc-800 text-zinc-400 hover:text-white hover:border-zinc-700'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </header>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         GRILLA DE PUBLICACIONES
+         ════════════════════════════════════════════════════════════════════ -->
+    <section class="container mx-auto px-4 md:px-8 max-w-5xl pt-12">
+      {posts.length === 0 ? (
+        <div class="py-20 text-center rounded-sm bg-[#181818] border border-zinc-800">
+          <p class="font-serif text-xl text-zinc-300 mb-2">No hay publicaciones disponibles en este momento.</p>
+          <p class="font-sans text-xs text-zinc-500">Próximamente nuevos ensayos y registros.</p>
+        </div>
+      ) : (
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" id="postsGrid">
+          {posts.map((post) => (
+            <article
+              class="group flex flex-col rounded-sm bg-[#181818] border border-zinc-800 overflow-hidden hover:border-[#E4572E]/60 transition-all duration-300 post-card"
+              data-category={post.category}
+            >
+              <!-- Portada -->
+              <a href={`/blog/${post.slug}`} class="block aspect-[16/10] overflow-hidden relative bg-zinc-900">
+                {post.cover_image ? (
+                  <img
+                    src={post.cover_image}
+                    alt={post.title}
+                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div class="w-full h-full bg-gradient-to-br from-zinc-800 to-zinc-900 flex items-center justify-center">
+                    <span class="font-serif font-bold text-3xl text-zinc-700">870</span>
+                  </div>
+                )}
+                <div class="absolute inset-0 bg-gradient-to-t from-[#181818] via-transparent to-transparent opacity-80" />
+              </a>
+
+              <!-- Contenido -->
+              <div class="p-6 flex flex-col flex-grow">
+                <div class="flex items-center justify-between gap-2 mb-3">
+                  <span class="text-[10px] font-sans font-bold uppercase tracking-[0.2em] text-[#E4572E]">
+                    {post.category || 'ENSAYO'}
+                  </span>
+                  {post.read_time && (
+                    <span class="text-[11px] font-sans text-zinc-500">
+                      {post.read_time}
+                    </span>
+                  )}
+                </div>
+
+                <h2 class="font-serif text-xl font-bold text-white group-hover:text-[#E4572E] transition-colors mb-2 leading-snug">
+                  <a href={`/blog/${post.slug}`}>
+                    {post.title}
+                  </a>
+                </h2>
+
+                {post.subtitle && (
+                  <p class="font-sans text-xs text-zinc-400 line-clamp-3 leading-relaxed mb-6">
+                    {post.subtitle}
+                  </p>
+                )}
+
+                <div class="mt-auto pt-4 border-t border-zinc-800/80 flex items-center justify-between text-[11px] font-sans text-zinc-500">
+                  <span class="font-medium text-zinc-400">por {post.author}</span>
+                  <span>{formatDate(post.created_at)}</span>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+    </section>
+
+  </main>
+</BaseLayout>
+
+<script>
+  // Filtro interactivo de categorías en cliente
+  const filterBtns = document.querySelectorAll<HTMLButtonElement>('[data-category-filter]');
+  const cards = document.querySelectorAll<HTMLElement>('.post-card');
+
+  filterBtns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const selected = btn.dataset.categoryFilter;
+
+      filterBtns.forEach((b) => {
+        b.classList.remove('bg-[#E4572E]', 'text-white');
+        b.classList.add('bg-[#181818]', 'border', 'border-zinc-800', 'text-zinc-400');
+      });
+      btn.classList.remove('bg-[#181818]', 'border', 'border-zinc-800', 'text-zinc-400');
+      btn.classList.add('bg-[#E4572E]', 'text-white');
+
+      cards.forEach((card) => {
+        const cat = card.dataset.category;
+        if (selected === 'Todos' || cat === selected) {
+          card.style.display = '';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    });
+  });
+</script>
+

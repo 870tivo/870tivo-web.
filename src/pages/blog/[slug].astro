@@ -3,559 +3,512 @@
  * src/pages/blog/[slug].astro
  * Detalle del Artículo Público con Server-Side Rendering (SSR).
  * Consulta Supabase 'public.posts' por { slug, status: 'publicado' }.
- * Si no existe, responde con estado 404.
+ * Si no existe, muestra vista 404 elegante propia de 870 sin romper la URL.
  */
+export const prerender = false;
+
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import CommentSection from '../../components/post/CommentSection';
-import { supabase } from '../../lib/supabase';
-import type { SupabasePost } from '../../types/posts';
-import { getAuthorInitials, formatPostDate } from '../../types/posts';
-import { Clock, ArrowRight, Share2, Copy, Check, ExternalLink } from 'lucide-astro';
+import { supabaseAdmin } from '../../lib/supabase';
 import { marked } from 'marked';
-
-export const prerender = false;
 
 const { slug } = Astro.params;
 
-if (!slug) {
-  Astro.response.status = 404;
-}
-
-// 1. Consultar el post publicado en Supabase
-const { data: postData, error: postError } = await supabase
+// ── 1. Consultar el post publicado en Supabase ──────────────────────────────
+const { data: post, error: postError } = await supabaseAdmin
   .from('posts')
-  .select('*')
-  .eq('slug', slug || '')
+  .select(`
+    id, title, slug, subtitle, category, author, author_social_url,
+    author_id, cover_image, content, read_time, status,
+    created_at, updated_at, views, likes
+  `)
+  .eq('slug', slug ?? '')
   .eq('status', 'publicado')
   .maybeSingle();
 
-const post: SupabasePost | null = postData || null;
-
-// Si no se encuentra el post publicado, retornar estado 404
-if (!post || postError) {
+// Manejo de estado 404 elegante si no existe
+const isNotFound = !post || Boolean(postError);
+if (isNotFound) {
   Astro.response.status = 404;
 }
 
-// 2. Consultar lecturas recomendadas (otros artículos publicados)
-let recommendedPosts: SupabasePost[] = [];
+// ── 2. Datos complementarios si el post existe ──────────────────────────────
 let authorSlug: string | null = null;
-let authorAvatarUrl: string | null = null;
-let authorBioText: string | null = null;
+let authorHandle: string = '';
+let formattedContent = '';
+let recommendedPosts: Array<{
+  id: string;
+  title: string;
+  slug: string;
+  subtitle: string | null;
+  category: string;
+  author: string;
+  cover_image: string | null;
+  read_time: string | null;
+  created_at: string;
+}> = [];
 
 if (post) {
-  const { data: recData } = await supabase
-    .from('posts')
-    .select('*')
-    .eq('status', 'publicado')
-    .neq('slug', post.slug)
-    .order('created_at', { ascending: false })
-    .limit(2);
-  recommendedPosts = recData || [];
+  // Incrementar vistas en Supabase
+  supabaseAdmin.rpc('increment_post_views', { post_slug: post.slug }).then(() => {});
 
-  // 2b. Buscar información ampliada del autor en public.authors
+  // Buscar autor en tabla `authors`
   if (post.author_id) {
-    const { data: authorData } = await supabase
+    const { data: authorData } = await supabaseAdmin
       .from('authors')
-      .select('slug, avatar_url, bio')
+      .select('slug, social_url')
       .eq('id', post.author_id)
       .maybeSingle();
 
     if (authorData) {
       authorSlug = authorData.slug;
-      authorAvatarUrl = authorData.avatar_url;
-      authorBioText = authorData.bio;
+      const sUrl = authorData.social_url || post.author_social_url || '';
+      const match = sUrl.match(/instagram\.com\/([^/?#]+)/i);
+      authorHandle = match ? match[1] : (post.author || '').replace(/\s+/g, '').toLowerCase();
     }
-  }
-
-  if (!authorSlug && post.author) {
-    const { data: authorData } = await supabase
+  } else if (post.author) {
+    const { data: authorData } = await supabaseAdmin
       .from('authors')
-      .select('slug, avatar_url, bio')
+      .select('slug, social_url')
       .ilike('name', post.author)
       .maybeSingle();
 
     if (authorData) {
       authorSlug = authorData.slug;
-      authorAvatarUrl = authorData.avatar_url;
-      authorBioText = authorData.bio;
+      const sUrl = authorData.social_url || post.author_social_url || '';
+      const match = sUrl.match(/instagram\.com\/([^/?#]+)/i);
+      authorHandle = match ? match[1] : (post.author || '').replace(/\s+/g, '').toLowerCase();
+    } else if (post.author_social_url) {
+      const match = post.author_social_url.match(/instagram\.com\/([^/?#]+)/i);
+      authorHandle = match ? match[1] : (post.author || '').replace(/\s+/g, '').toLowerCase();
     }
   }
-}
 
-// 3. Procesar el contenido HTML / Markdown y sanitizar/envolver iframes de YouTube
-let formattedContent = '';
-if (post?.content) {
-  try {
-    // Si contiene markdown o html, procesar con marked
-    formattedContent = await marked.parse(post.content);
-    
-    // Convertir iframes de YouTube en contenedores responsivos si no lo están
-    formattedContent = formattedContent.replace(
-      /<iframe\s+([^>]*src=["']https?:\/\/(?:www\.)?(?:youtube\.com|youtu\.be)[^"']*["'][^>]*)><\/iframe>/gi,
-      (_, attrs) => {
-        return `<div class="my-8 aspect-video rounded-xl overflow-hidden border border-white/10 shadow-2xl bg-black"><iframe ${attrs} class="w-full h-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>`;
-      }
-    );
-  } catch (err) {
-    console.error('Error parseando contenido de post:', err);
-    formattedContent = post.content;
+  // Parsear contenido Markdown o HTML con marcado responsivo para videos
+  if (post.content) {
+    try {
+      const parsed = await marked.parse(post.content);
+      formattedContent = parsed.replace(
+        /<iframe\s+([^>]*src=["']https?:\/\/(?:www\.)?(?:youtube\.com|youtu\.be)[^"']*["'][^>]*)><\/iframe>/gi,
+        (_, attrs) => {
+          return `<div class="my-8 aspect-video rounded-sm overflow-hidden border border-zinc-800 shadow-2xl bg-black"><iframe ${attrs} class="w-full h-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>`;
+        }
+      );
+    } catch {
+      formattedContent = post.content;
+    }
   }
+
+  // Buscar 2 lecturas recomendadas
+  const { data: recData } = await supabaseAdmin
+    .from('posts')
+    .select('id, title, slug, subtitle, category, author, cover_image, read_time, created_at')
+    .eq('status', 'publicado')
+    .neq('slug', post.slug)
+    .order('created_at', { ascending: false })
+    .limit(2);
+
+  recommendedPosts = recData ?? [];
 }
 
-// Extraer handle de red social para visualización limpia
-function getCleanSocialHandle(url: string | null): { handle: string; href: string } | null {
-  if (!url || !url.trim()) return null;
-  const cleanUrl = url.trim();
-  const href = cleanUrl.startsWith('http://') || cleanUrl.startsWith('https://') 
-    ? cleanUrl 
-    : `https://${cleanUrl}`;
-  
-  // Extraer nombre de usuario si es Instagram o Twitter
-  const match = cleanUrl.match(/(?:instagram\.com\/|twitter\.com\/|x\.com\/)?@?([a-zA-Z0-9._]+)\/?$/i);
-  const handle = match && match[1] ? `@${match[1]}` : cleanUrl.replace(/^https?:\/\//, '');
-  return { handle, href };
-}
+// ── Formato de fecha ─────────────────────────────────────────────────────────
+const formattedDate = post?.created_at
+  ? new Intl.DateTimeFormat('es-CO', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+    }).format(new Date(post.created_at))
+  : '';
 
-const socialInfo = post ? getCleanSocialHandle(post.author_social_url) : null;
-const authorInitials = post ? getAuthorInitials(post.author) : '870';
-const formattedDate = post ? formatPostDate(post.created_at) : '';
+// ── SEO ──────────────────────────────────────────────────────────────────────
+const pageTitle = post ? `${post.title} — 870tivo` : 'Publicación no encontrada (404) — 870tivo';
+const seoDescription =
+  post?.subtitle ||
+  (post?.content ? post.content.replace(/<[^>]+>/g, '').slice(0, 160) + '…' : '870tivo - Encuentro Inmaterial');
 ---
 
-<BaseLayout 
-  title={post ? `${post.title} — 870tivo` : 'Artículo No Encontrado (404) — 870tivo'} 
-  description={post?.subtitle || 'Ensayo editorial y pensamiento visual contemporáneo en Galería 870tivo.'}
->
-  <main class="flex-grow bg-brand-ink text-[#D3D3BF] selection:bg-brand-orange selection:text-white min-h-[70vh]" data-post-slug={post?.slug}>
-    
-    {post ? (
-      <>
-        {/* 1. Barra de navegación superior: Volver al Inicio */}
-        <div class="max-w-4xl mx-auto px-4 md:px-6 pt-10 pb-6">
-          <a 
-            href="/" 
-            id="backToHomeTop"
-            class="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.25em] text-brand-muted hover:text-brand-yellow transition-all duration-200 group"
-          >
-            <span class="inline-block transition-transform duration-200 group-hover:-translate-x-1">←</span>
-            <span>VOLVER AL INICIO</span>
-          </a>
-        </div>
+<BaseLayout title={pageTitle} description={seoDescription}>
+  {post && (
+    <Fragment slot="head">
+      {post.cover_image && <meta property="og:image" content={post.cover_image} />}
+      <meta property="og:type" content="article" />
+      <meta property="article:published_time" content={post.created_at} />
+      <meta property="article:author" content={post.author} />
+    </Fragment>
+  )}
 
-        {/* 2. Cabecera Editorial */}
-        <header class="max-w-4xl mx-auto px-4 md:px-6 pt-4 pb-8">
-          <!-- Categoría / Badge -->
-          <div class="mb-5">
-            <span class="text-brand-turquoise text-xs sm:text-sm font-bold uppercase tracking-[0.25em] inline-block px-3 py-1 rounded-full bg-brand-turquoise/10 border border-brand-turquoise/20">
-              {post.category || 'EDITORIAL'}
-            </span>
+  <main class="flex-grow flex flex-col bg-[#111111] text-slate-100 -mt-[72px]" data-post-slug={post?.slug}>
+
+    {post && (
+      <>
+        {/*  ---
+             HERO — Portada Editorial
+             ---  */}
+        <header class="w-full relative mb-12 lg:mb-16">
+          <div class="h-[65vh] min-h-[420px] w-full relative overflow-hidden">
+            {post.cover_image ? (
+              <img
+                src={post.cover_image}
+                alt={post.title}
+                class="absolute inset-0 w-full h-full object-cover transition-transform duration-[3s] ease-out hover:scale-105"
+                loading="eager"
+              />
+            ) : (
+              <div class="absolute inset-0 bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900" />
+            )}
+            {/*  Gradiente editorial oscuro  */}
+            <div class="absolute inset-0 bg-gradient-to-t from-[#111111] via-[#111111]/70 to-transparent z-10" />
+            <div class="absolute inset-0 bg-gradient-to-b from-[#111111]/40 to-transparent z-10" />
           </div>
 
-          <!-- Título: Tipografía Editorial Hero -->
-          <h1 class="font-serif text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-white mb-6 leading-[1.08] text-balance">
-            {post.title}
-          </h1>
+          {/*  Metadatos sobre la imagen  */}
+          <div class="container mx-auto px-4 md:px-8 relative z-20 -mt-52 md:-mt-60">
+            <div class="max-w-4xl mx-auto">
 
-          <!-- Subtítulo / Bajada -->
-          {post.subtitle && (
-            <p class="font-serif italic text-lg sm:text-xl md:text-2xl text-brand-muted font-normal leading-relaxed mb-8 max-w-3xl">
-              {post.subtitle}
-            </p>
-          )}
-
-          <!-- Metadatos de Publicación y Firma de Autor -->
-          <div class="flex flex-wrap items-center gap-4 sm:gap-6 pt-6 border-t border-white/10 text-xs tracking-wider uppercase font-medium text-brand-muted">
-            <!-- Firma del Autor / Redactor con enlace dinámico -->
-            <div class="flex items-center gap-3">
-              {authorSlug ? (
+              {/*  Categoría / breadcrumb  */}
+              <div class="flex items-center gap-2 mb-4">
                 <a
-                  href={`/autores/${authorSlug}`}
-                  class="w-10 h-10 rounded-full bg-brand-darkCard border border-brand-orange/40 hover:border-brand-orange flex items-center justify-center font-bold text-xs text-brand-yellow hover:text-white shadow-inner shrink-0 tracking-wider transition-colors"
-                  aria-label={`Ver perfil de ${post.author}`}
+                  href="/blog"
+                  class="text-[#E4572E] text-xs font-sans font-bold uppercase tracking-[0.2em] hover:text-[#F2B134] transition-colors"
                 >
-                  {authorInitials}
+                  Bitácora
                 </a>
-              ) : (
-                <div class="w-10 h-10 rounded-full bg-brand-darkCard border border-brand-orange/40 flex items-center justify-center font-bold text-xs text-brand-yellow shadow-inner shrink-0 tracking-wider">
-                  {authorInitials}
-                </div>
-              )}
-              <div class="flex flex-col">
-                {authorSlug ? (
-                  <a
-                    href={`/autores/${authorSlug}`}
-                    class="font-bold text-white hover:text-brand-orange tracking-widest text-xs sm:text-sm transition-colors"
-                  >
-                    {post.author}
-                  </a>
-                ) : (
-                  <span class="font-bold text-white tracking-widest text-xs sm:text-sm">{post.author}</span>
-                )}
-                {socialInfo && (
-                  <a 
-                    href={socialInfo.href} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    class="text-[11px] text-brand-orange hover:text-brand-yellow transition-colors inline-flex items-center gap-1 font-semibold tracking-normal lowercase"
-                    title={`Visitar red de ${post.author}`}
-                  >
-                    <span>{socialInfo.handle}</span>
-                    <ExternalLink class="w-2.5 h-2.5" />
-                  </a>
+                <span class="text-zinc-600">/</span>
+                {post.category && (
+                  <span class="text-zinc-400 text-xs font-sans uppercase tracking-widest">
+                    {post.category}
+                  </span>
                 )}
               </div>
-            </div>
 
-            <span class="text-white/20 hidden sm:inline">•</span>
+              {/*  Título principal — Serif editorial  */}
+              <h1 class="font-serif text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight tracking-tight text-balance mb-5">
+                {post.title}
+              </h1>
 
-            <!-- Fecha de publicación formateada -->
-            <div class="flex flex-col">
-              <span class="text-[10px] text-brand-muted/70 tracking-widest uppercase">Fecha</span>
-              <span class="text-white text-xs tracking-wider">{formattedDate}</span>
-            </div>
+              {/*  Subtítulo  */}
+              {post.subtitle && (
+                <p class="font-sans text-lg md:text-xl text-zinc-400 leading-relaxed mb-6 max-w-2xl">
+                  {post.subtitle}
+                </p>
+              )}
 
-            <span class="text-white/20 hidden sm:inline">•</span>
+              {/*  Metadatos del artículo  */}
+              <div class="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-sans text-zinc-400 uppercase tracking-widest pt-2">
+                <span>
+                  <span class="text-[#E4572E] font-bold text-sm normal-case tracking-normal">por {post.author}</span>
+                </span>
+                {formattedDate && (
+                  <>
+                    <span class="text-zinc-700">·</span>
+                    <span>{formattedDate}</span>
+                  </>
+                )}
+                {post.read_time && (
+                  <>
+                    <span class="text-zinc-700">·</span>
+                    <span>{post.read_time}</span>
+                  </>
+                )}
+                <span class="text-zinc-700">·</span>
+                <span class="flex items-center gap-1.5 text-zinc-400">
+                  <svg class="w-3.5 h-3.5 text-[#E4572E]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.641 0-8.574-3.007-9.964-7.178Z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
+                  </svg>
+                  {(post.views ?? 0).toLocaleString('es-CO')} lecturas
+                </span>
+              </div>
 
-            <!-- Tiempo de lectura -->
-            <div class="flex flex-col">
-              <span class="text-[10px] text-brand-muted/70 tracking-widest uppercase">Lectura</span>
-              <span class="inline-flex items-center gap-1.5 text-brand-muted text-xs tracking-wider">
-                <Clock class="w-3.5 h-3.5 text-brand-orange shrink-0" />
-                <span>{post.read_time || '5 MIN DE LECTURA'}</span>
-              </span>
+              {/*  Separador terracota  */}
+              <div class="mt-8 w-16 h-[2px] bg-[#E4572E] rounded-full" />
             </div>
           </div>
         </header>
 
-        {/* 3. Portada Amplia en Alta Resolución */}
-        {post.cover_image && (
-          <section class="max-w-5xl mx-auto px-4 md:px-6 mb-10 lg:mb-14">
-            <div class="relative aspect-[21/9] sm:aspect-[2/1] rounded-2xl overflow-hidden bg-neutral-900 border border-white/10 shadow-2xl group">
-              <img 
-                src={post.cover_image} 
-                alt={post.title} 
-                class="w-full h-full object-cover transition-transform duration-1000 ease-out group-hover:scale-[1.02]"
-                loading="eager"
-              />
-              <div class="absolute inset-0 bg-gradient-to-t from-brand-ink/80 via-transparent to-transparent pointer-events-none"></div>
-            </div>
-            <p class="mt-3 text-xs text-brand-muted font-serif italic tracking-wide text-center sm:text-left">
-              Fotografía editorial: Colección Archivo Inmaterial 870tivo
-            </p>
-          </section>
-        )}
-
-        {/* 4. Cuerpo del Artículo con Tailwind Typography ('prose') */}
-        <article class="max-w-3xl mx-auto px-4 py-8">
-          
-          <div 
-            class="prose prose-invert prose-lg md:prose-xl max-w-none text-[#D3D3BF] 
-                   prose-headings:font-serif prose-headings:text-white prose-headings:tracking-tight
-                   prose-h2:text-2xl sm:prose-h2:text-3xl prose-h2:mt-12 prose-h2:mb-6
-                   prose-p:leading-[1.85] prose-p:mb-6 prose-p:text-[#D3D3BF]
-                   prose-a:text-brand-orange prose-a:underline hover:prose-a:text-brand-yellow
-                   prose-blockquote:border-l-4 prose-blockquote:border-brand-orange prose-blockquote:pl-6 prose-blockquote:py-2 prose-blockquote:font-serif prose-blockquote:italic prose-blockquote:text-white/95 prose-blockquote:bg-brand-darkCard/40 prose-blockquote:rounded-r-lg
-                   prose-img:rounded-xl prose-img:border prose-img:border-white/10 prose-img:mx-auto prose-img:shadow-xl
-                   prose-figcaption:text-center prose-figcaption:text-xs prose-figcaption:text-brand-muted prose-figcaption:italic prose-figcaption:mt-2
-                   first-letter:float-left first-letter:text-5xl first-letter:pr-3 first-letter:font-serif first-letter:text-brand-yellow first-letter:leading-none"
-            set:html={formattedContent}
-          />
-
-          {/* 5. Sección de Compartir Ensayo */}
-          <div class="mt-16 pt-10 border-t border-white/10">
-            <div class="bg-brand-darkCard/60 rounded-2xl p-6 sm:p-8 border border-white/5 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-6">
-              <div>
-                <div class="flex items-center gap-2 mb-1.5">
-                  <Share2 class="w-4 h-4 text-brand-turquoise" />
-                  <span class="text-xs font-bold uppercase tracking-[0.2em] text-brand-turquoise">Compartir Ensayo</span>
-                </div>
-                <h4 class="font-serif text-lg font-bold text-white">Difunde este pensamiento visual</h4>
-                <p class="text-xs text-brand-muted mt-0.5">Comparte esta lectura con tu red o copia el enlace directo.</p>
-              </div>
-
-              <!-- Botones de Compartir -->
-              <div class="flex flex-wrap items-center gap-2.5 w-full sm:w-auto justify-center sm:justify-end">
-                <!-- Botón Copiar Enlace -->
-                <button 
-                  type="button" 
-                  id="copyLinkBtn"
-                  class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold uppercase tracking-wider text-white hover:text-brand-yellow transition-all cursor-pointer active:scale-95"
-                  title="Copiar enlace al portapapeles"
-                >
-                  <Copy class="w-3.5 h-3.5 copy-icon text-brand-orange" />
-                  <Check class="w-3.5 h-3.5 check-icon text-emerald-400 hidden" />
-                  <span id="copyLinkText">Copiar Enlace</span>
-                </button>
-
-                <!-- Twitter / X -->
-                <a 
-                  id="shareTwitterBtn"
-                  href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(post.title)}&url=${encodeURIComponent(`https://870tivo.com/blog/${post.slug}`)}`}
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  class="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-brand-muted hover:text-white transition-all"
-                  title="Compartir en X / Twitter"
-                  aria-label="Compartir en X"
-                >
-                  <svg class="w-4 h-4 fill-currentColor" viewBox="0 0 24 24">
-                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                  </svg>
-                </a>
-
-                <!-- WhatsApp -->
-                <a 
-                  id="shareWhatsappBtn"
-                  href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`${post.title} — https://870tivo.com/blog/${post.slug}`)}`}
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  class="p-2.5 rounded-xl bg-white/5 hover:bg-emerald-500/20 border border-white/10 text-brand-muted hover:text-emerald-400 transition-all"
-                  title="Compartir en WhatsApp"
-                  aria-label="Compartir en WhatsApp"
-                >
-                  <svg class="w-4 h-4 fill-currentColor" viewBox="0 0 24 24">
-                    <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.976.58 1.96.924 3.149.924 3.182 0 5.767-2.587 5.767-5.766.001-3.187-2.575-5.766-5.767-5.766zm10.007 5.766c-.004 5.568-4.53 10.091-10.007 10.091-1.748 0-3.414-.46-4.887-1.282l-5.644 1.48 1.507-5.504c-.9-1.528-1.396-3.292-1.396-5.115.004-5.567 4.532-10.09 10.009-10.09 5.485 0 10.018 4.524 10.018 10.02z"/>
-                  </svg>
-                </a>
-              </div>
-            </div>
-          </div>
-
-          {/* 6. Caja de Autor con Enlace Dinámico */}
-          <div class="mt-12 pt-10 border-t border-white/10">
-            <div class="bg-brand-darkCard/70 rounded-2xl p-6 sm:p-8 border border-white/5 flex flex-col sm:flex-row items-center sm:items-start gap-6 shadow-xl">
-              {authorSlug ? (
-                <a href={`/autores/${authorSlug}`} class="shrink-0 group/avatar block focus:outline-none" aria-label={`Ver perfil de ${post.author}`}>
-                  {authorAvatarUrl ? (
-                    <div class="w-16 h-16 rounded-full overflow-hidden ring-2 ring-brand-orange/50 ring-offset-2 ring-offset-brand-ink shadow-lg">
-                      <img src={authorAvatarUrl} alt={post.author} class="w-full h-full object-cover transition-transform duration-300 group-hover/avatar:scale-105" />
-                    </div>
-                  ) : (
-                    <div class="w-16 h-16 rounded-full bg-brand-ink border-2 border-brand-orange/50 flex items-center justify-center font-serif font-bold text-xl text-brand-yellow shrink-0 shadow-lg tracking-wider group-hover/avatar:border-brand-yellow transition-colors">
-                      {authorInitials}
-                    </div>
-                  )}
-                </a>
-              ) : (
-                <div class="w-16 h-16 rounded-full bg-brand-ink border-2 border-brand-orange/50 flex items-center justify-center font-serif font-bold text-xl text-brand-yellow shrink-0 shadow-lg tracking-wider">
-                  {authorInitials}
-                </div>
-              )}
-
-              <div class="flex-grow text-center sm:text-left">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
-                  <h3 class="font-serif text-xl font-bold text-white tracking-wide">
-                    {authorSlug ? (
-                      <a href={`/autores/${authorSlug}`} class="hover:text-brand-orange transition-colors">
-                        {post.author}
-                      </a>
-                    ) : (
-                      post.author
-                    )}
-                  </h3>
-                  <div class="flex items-center justify-center sm:justify-start gap-3">
-                    {authorSlug && (
-                      <a
-                        href={`/autores/${authorSlug}`}
-                        class="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-brand-orange hover:text-white transition-colors"
-                      >
-                        <span>Ver Ficha</span>
-                        <ArrowRight class="w-3.5 h-3.5" />
-                      </a>
-                    )}
-                    {socialInfo && (
-                      <a 
-                        href={socialInfo.href} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        class="inline-flex items-center justify-center gap-1.5 text-xs font-bold uppercase tracking-widest text-brand-muted hover:text-brand-yellow transition-colors"
-                      >
-                        <span>{socialInfo.handle}</span>
-                      </a>
-                    )}
-                  </div>
-                </div>
-
-                <p class="text-sm text-brand-muted leading-relaxed mb-4">
-                  {authorBioText || 'Investigador visual y redactor en el colectivo 870tivo. Su obra explora la memoria urbana, la poesía visual en los espacios residuales y las narrativas de la transitoriedad a través de la imagen.'}
-                </p>
-
-                <div class="flex items-center justify-center sm:justify-start gap-4 text-xs font-semibold uppercase tracking-wider text-brand-muted/80">
-                  <span>Colectivo 870tivo</span>
-                  <span class="text-white/20">•</span>
-                  <a href="/autores" class="hover:text-white transition-colors">Directorio de Autores</a>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* 7. Sección de Comentarios / Likes interactiva */}
-          <div class="mt-12">
-            <CommentSection 
-              client:visible 
-              postId={post.id}
-              postSlug={post.slug}
-              initialLikes={post.likes ?? 0}
-            />
-          </div>
-
-          {/* 8. Botón inferior Volver al Inicio */}
-          <div class="pt-8 pb-4 text-center sm:text-left">
-            <a 
-              href="/" 
-              id="backToHomeBottom"
-              class="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.25em] text-brand-muted hover:text-brand-yellow transition-all duration-200 group"
-            >
-              <span class="inline-block transition-transform duration-200 group-hover:-translate-x-1">←</span>
-              <span>VOLVER AL INICIO</span>
-            </a>
-          </div>
-
-        </article>
-
-        {/* 9. Lecturas Recomendadas */}
-        {recommendedPosts.length > 0 && (
-          <section class="max-w-5xl mx-auto px-4 md:px-6 pt-12 pb-24 border-t border-white/10 mt-12">
-            <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
-              <div>
-                <div class="flex items-center gap-2.5 mb-2">
-                  <div class="w-3 h-3 bg-brand-orange rounded-sm"></div>
-                  <span class="text-xs uppercase tracking-[0.25em] font-bold text-brand-turquoise">Continuar Explorando</span>
-                </div>
-                <h2 class="font-serif text-2xl sm:text-3xl font-bold text-white tracking-tight">Lecturas recomendadas</h2>
-              </div>
-              <a 
-                href="/" 
-                class="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-brand-muted hover:text-brand-yellow transition-colors group"
+        {/*  ---
+             BARRA DE ACCIONES RÁPIDAS (Compartir)
+             ---  */}
+        <div class="max-w-3xl mx-auto px-4 md:px-6 w-full mb-10">
+          <div class="flex items-center justify-between border-y border-zinc-800 py-3 text-xs font-sans">
+            <span class="text-zinc-500 uppercase tracking-widest text-[11px] font-semibold">
+              Compartir este ensayo
+            </span>
+            <div class="flex items-center gap-3">
+              <button
+                type="button"
+                id="copyPostLinkBtn"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-sm bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-white hover:border-[#E4572E] transition-all"
+                title="Copiar enlace"
               >
-                <span>Ver todo el archivo</span>
-                <ArrowRight class="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                <svg class="w-3.5 h-3.5 text-[#E4572E]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244"/>
+                </svg>
+                <span id="copyPostLinkText">Copiar enlace</span>
+              </button>
+              <a
+                id="shareTwitterBtn"
+                href="#"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="p-1.5 rounded-sm bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white hover:border-zinc-700 transition-colors"
+                title="Compartir en X / Twitter"
+              >
+                <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                </svg>
+              </a>
+              <a
+                id="shareWhatsappBtn"
+                href="#"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="p-1.5 rounded-sm bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-emerald-400 hover:border-zinc-700 transition-colors"
+                title="Compartir en WhatsApp"
+              >
+                <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                  <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/>
+                </svg>
               </a>
             </div>
+          </div>
+        </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {recommendedPosts.map((item) => (
-                <a 
-                  href={`/blog/${item.slug}`} 
-                  class="group bg-brand-darkCard/40 hover:bg-brand-darkCard/80 border border-white/5 hover:border-brand-orange/40 rounded-xl p-6 sm:p-8 flex flex-col justify-between transition-all duration-300 hover:-translate-y-1 shadow-lg"
-                >
-                  <div>
-                    <div class="flex items-center justify-between gap-4 mb-4">
-                      <span class="text-brand-turquoise text-[11px] font-bold uppercase tracking-[0.2em]">
-                        {item.category || 'ENSAYO'}
-                      </span>
-                      <span class="text-brand-muted text-[11px] font-medium uppercase tracking-wider flex items-center gap-1">
-                        <Clock class="w-3 h-3 text-brand-orange" /> {item.read_time || '5 MIN'}
-                      </span>
-                    </div>
-                    <h3 class="font-serif text-xl sm:text-2xl font-bold text-white group-hover:text-brand-yellow transition-colors mb-3 leading-snug">
-                      {item.title}
-                    </h3>
-                    {item.subtitle && (
-                      <p class="text-brand-muted text-sm leading-relaxed mb-6 line-clamp-2 font-serif italic">
-                        {item.subtitle}
+        {/*  ---
+             CUERPO DEL ARTÍCULO — Tipografía Editorial
+             ---  */}
+        <article class="max-w-3xl mx-auto px-4 md:px-6 w-full pb-16">
+          {formattedContent ? (
+            <div
+              class="prose prose-invert prose-lg md:prose-xl
+                prose-p:font-sans prose-p:text-zinc-300 prose-p:leading-relaxed prose-p:font-normal
+                prose-headings:font-serif prose-headings:text-white prose-headings:font-bold
+                prose-h2:text-3xl prose-h2:mt-12 prose-h2:mb-4
+                prose-h3:text-2xl prose-h3:mt-10 prose-h3:mb-3
+                prose-a:text-[#E4572E] prose-a:no-underline hover:prose-a:underline
+                prose-strong:text-white prose-strong:font-bold
+                prose-em:text-zinc-300 prose-em:italic
+                prose-blockquote:border-l-[#E4572E] prose-blockquote:border-l-4 prose-blockquote:pl-6
+                prose-blockquote:text-zinc-400 prose-blockquote:not-italic prose-blockquote:font-serif prose-blockquote:text-xl
+                prose-hr:border-zinc-800
+                prose-img:rounded-sm prose-img:border prose-img:border-zinc-800
+                max-w-none"
+              set:html={formattedContent}
+            />
+          ) : (
+            <p class="font-sans text-zinc-500 text-sm italic text-center py-16">
+              Este artículo no tiene contenido disponible aún.
+            </p>
+          )}
+        </article>
+
+        {/*  ---
+             TARJETA DEL AUTOR
+             ---  */}
+        <div class="max-w-3xl mx-auto px-4 md:px-6 w-full pb-16">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pt-10 border-t border-zinc-800">
+            <div class="text-center sm:text-left">
+              <h4 class="font-serif text-xl font-bold text-white mb-1">
+                {authorSlug ? (
+                  <a href={`/autores/${authorSlug}`} class="hover:text-[#E4572E] transition-colors">
+                    {post.author}
+                  </a>
+                ) : (
+                  post.author
+                )}
+              </h4>
+              <div class="flex items-center justify-center sm:justify-start gap-3">
+                <span class="text-xs uppercase tracking-[0.2em] text-zinc-500 font-sans font-medium">
+                  Colaborador 870tivo
+                </span>
+                {authorSlug && (
+                  <>
+                    <span class="text-zinc-700">•</span>
+                    <a
+                      href={`/autores/${authorSlug}`}
+                      class="text-xs font-sans font-bold uppercase tracking-wider text-[#E4572E] hover:text-white transition-colors"
+                    >
+                      Ver ficha completa →
+                    </a>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {authorHandle && (
+              <a
+                href={`https://instagram.com/${authorHandle.replace(/^@/, '')}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex items-center justify-center gap-2 bg-[#181818] text-white text-xs font-sans font-bold uppercase tracking-widest px-6 py-3 rounded-sm border border-zinc-800 hover:border-[#E4572E] hover:text-[#E4572E] transition-all w-full sm:w-auto"
+              >
+                @{authorHandle.replace(/^@/, '')}
+              </a>
+            )}
+          </div>
+        </div>
+
+        {/*  ---
+             LECTURAS RECOMENDADAS
+             ---  */}
+        {recommendedPosts.length > 0 && (
+          <section class="max-w-4xl mx-auto px-4 md:px-6 w-full pb-16">
+            <div class="border-t border-zinc-800 pt-12 pb-8">
+              <div class="flex items-center gap-3 mb-8">
+                <div class="w-2.5 h-2.5 bg-[#E4572E] rounded-full" />
+                <h3 class="font-serif text-2xl font-bold text-white">
+                  Otras lecturas de la bitácora
+                </h3>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {recommendedPosts.map((rec) => (
+                  <a
+                    href={`/blog/${rec.slug}`}
+                    class="group flex flex-col p-6 rounded-sm bg-[#181818] border border-zinc-800 hover:border-[#E4572E]/50 transition-all"
+                  >
+                    <span class="text-[#E4572E] text-[10px] font-sans font-bold uppercase tracking-widest mb-2">
+                      {rec.category}
+                    </span>
+                    <h4 class="font-serif text-xl font-bold text-white group-hover:text-[#E4572E] transition-colors mb-2 leading-snug">
+                      {rec.title}
+                    </h4>
+                    {rec.subtitle && (
+                      <p class="font-sans text-xs text-zinc-400 line-clamp-2 leading-relaxed mb-4">
+                        {rec.subtitle}
                       </p>
                     )}
-                  </div>
-
-                  <div class="flex items-center justify-between pt-4 border-t border-white/5 mt-auto">
-                    <div class="flex items-center gap-2.5">
-                      <div class="w-7 h-7 rounded-full bg-brand-ink border border-white/10 flex items-center justify-center font-bold text-[10px] text-brand-yellow">
-                        {getAuthorInitials(item.author)}
-                      </div>
-                      <span class="text-xs font-medium text-white/70 uppercase tracking-wider">{item.author}</span>
+                    <div class="mt-auto pt-4 border-t border-zinc-800/60 flex items-center justify-between text-[11px] font-sans text-zinc-500">
+                      <span>por {rec.author}</span>
+                      <span class="text-[#E4572E] font-semibold group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
+                        Leer ensayo →
+                      </span>
                     </div>
-                    <span class="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-widest text-brand-orange group-hover:text-brand-yellow transition-colors">
-                      Leer <ArrowRight class="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-                    </span>
-                  </div>
-                </a>
-              ))}
+                  </a>
+                ))}
+              </div>
             </div>
           </section>
         )}
-      </>
-    ) : (
-      /* Estado 404 Editorial cuando el post no existe o no está publicado */
-      <div class="max-w-3xl mx-auto px-4 py-24 sm:py-32 text-center flex flex-col items-center">
-        <div class="w-20 h-20 rounded-full bg-brand-darkCard border border-brand-orange/40 flex items-center justify-center mb-8 shadow-inner">
-          <span class="font-serif text-3xl font-extrabold text-brand-yellow">404</span>
+
+        {/*  ---
+             COMENTARIOS Y LIKES
+             ---  */}
+        <div class="max-w-3xl mx-auto px-4 md:px-6 w-full pb-24">
+          <CommentSection
+            client:visible
+            postId={post.id}
+            postSlug={post.slug}
+            initialLikes={post.likes ?? 0}
+          />
         </div>
-        <span class="text-xs font-bold uppercase tracking-[0.25em] text-brand-orange mb-3">
+
+        {/*  ---
+             FOOTER NAVEGACIÓN
+             ---  */}
+        <div class="border-t border-zinc-800 py-10">
+          <div class="max-w-4xl mx-auto px-4 md:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <a
+              href="/blog"
+              class="inline-flex items-center gap-2 text-xs font-sans font-bold uppercase tracking-widest text-zinc-400 hover:text-[#E4572E] transition-colors group"
+            >
+              <svg class="w-4 h-4 group-hover:-translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"/>
+              </svg>
+              Volver a la bitácora
+            </a>
+            <a
+              href="/"
+              class="inline-flex flex-col items-center gap-1 group"
+            >
+              <div class="w-10 h-10 bg-[#E4572E] flex items-center justify-center font-bold text-white text-sm uppercase tracking-tighter rounded-sm group-hover:brightness-110 transition-all">
+                870
+              </div>
+              <span class="text-[10px] text-zinc-600 group-hover:text-[#E4572E] transition-colors uppercase tracking-widest font-sans">
+                Inicio
+              </span>
+            </a>
+          </div>
+        </div>
+      </>
+    )}
+
+    {!post && (
+      <section class="max-w-3xl mx-auto px-4 py-28 text-center flex flex-col items-center justify-center flex-grow">
+        <div class="select-none font-serif font-bold text-8xl md:text-9xl text-zinc-900 leading-none mb-2">
+          404
+        </div>
+
+        <div class="w-12 h-[2px] bg-[#E4572E] rounded-full mx-auto mb-6" />
+
+        <span class="text-xs font-sans font-bold uppercase tracking-[0.25em] text-[#E4572E] mb-3">
           Ensayo no disponible
         </span>
-        <h1 class="font-serif text-3xl sm:text-5xl font-bold text-white mb-6 tracking-tight leading-tight">
+
+        <h1 class="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-5 tracking-tight leading-tight max-w-xl">
           La publicación que buscas no existe o fue despublicada
         </h1>
-        <p class="text-brand-muted text-sm sm:text-base max-w-lg mb-10 leading-relaxed font-serif italic">
-          El artículo con identificador «{slug}» no se encuentra registrado en el archivo público de Galería 870tivo.
+
+        <p class="font-sans text-zinc-400 text-sm sm:text-base max-w-lg mb-10 leading-relaxed">
+          El artículo con el identificador &laquo;<span class="text-white font-mono text-xs">{slug}</span>&raquo; no se encuentra registrado en el archivo público de la plataforma cultural 870.
         </p>
-        <a 
-          href="/" 
-          id="backToHome404"
-          class="inline-flex items-center gap-2 px-8 py-3.5 rounded-full bg-brand-orange hover:bg-brand-yellow text-brand-ink font-bold text-xs uppercase tracking-[0.2em] shadow-lg shadow-brand-orange/20 transition-all hover:scale-105 active:scale-95"
-        >
-          <span>← Volver al Inicio</span>
-        </a>
-      </div>
+
+        <div class="flex flex-col sm:flex-row items-center gap-4">
+          <a
+            href="/blog"
+            class="inline-flex items-center gap-2 px-8 py-3.5 rounded-sm bg-[#E4572E] hover:brightness-110 text-white font-sans font-bold text-xs uppercase tracking-[0.2em] shadow-lg shadow-[#E4572E]/20 transition-all hover:scale-105 active:scale-95"
+          >
+            <span>Explorar Bitácora</span>
+          </a>
+          <a
+            href="/"
+            class="inline-flex items-center gap-2 px-8 py-3.5 rounded-sm bg-transparent border border-zinc-700 hover:border-zinc-500 text-zinc-300 hover:text-white font-sans font-bold text-xs uppercase tracking-[0.2em] transition-all"
+          >
+            <span>&larr; Volver al Inicio</span>
+          </a>
+        </div>
+
+        <div class="mt-16 flex flex-col items-center gap-2 opacity-30">
+          <div class="w-8 h-8 bg-zinc-600 flex items-center justify-center font-bold text-white text-xs uppercase tracking-tighter rounded-sm">
+            870
+          </div>
+          <span class="text-[10px] text-zinc-600 uppercase tracking-widest font-sans">870tivo</span>
+        </div>
+      </section>
     )}
 
   </main>
 </BaseLayout>
 
 <script>
-  // Script interactivo para la sección 'Compartir Ensayo'
-  const copyBtn = document.getElementById('copyLinkBtn');
-  const copyText = document.getElementById('copyLinkText');
-  const copyIcon = document.querySelector('.copy-icon');
-  const checkIcon = document.querySelector('.check-icon');
-
-  copyBtn?.addEventListener('click', async () => {
-    try {
-      await navigator.clipboard.writeText(window.location.href);
-      if (copyText) copyText.textContent = '¡Enlace Copiado!';
-      copyIcon?.classList.add('hidden');
-      checkIcon?.classList.remove('hidden');
-      copyBtn.classList.add('border-emerald-500/50', 'bg-emerald-500/10', 'text-emerald-400');
-
-      setTimeout(() => {
-        if (copyText) copyText.textContent = 'Copiar Enlace';
-        copyIcon?.classList.remove('hidden');
-        checkIcon?.classList.add('hidden');
-        copyBtn.classList.remove('border-emerald-500/50', 'bg-emerald-500/10', 'text-emerald-400');
-      }, 2500);
-    } catch (e) {
-      console.error('Error al copiar al portapapeles:', e);
-    }
-  });
-
-  // Actualizar URLs de compartir con la URL real del navegador en cliente
+  // ── Script de cliente: Compartir y Registro de Vista ─────────────────────
   if (typeof window !== 'undefined') {
+    const copyBtn = document.getElementById('copyPostLinkBtn');
+    const copyText = document.getElementById('copyPostLinkText');
+
+    copyBtn?.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(window.location.href);
+        if (copyText) copyText.textContent = '¡Enlace copiado!';
+        copyBtn.classList.add('border-emerald-500/50', 'text-emerald-400');
+        setTimeout(() => {
+          if (copyText) copyText.textContent = 'Copiar enlace';
+          copyBtn.classList.remove('border-emerald-500/50', 'text-emerald-400');
+        }, 2500);
+      } catch (err) {
+        console.error('Error al copiar al portapapeles:', err);
+      }
+    });
+
     const twitterBtn = document.getElementById('shareTwitterBtn') as HTMLAnchorElement | null;
     const whatsappBtn = document.getElementById('shareWhatsappBtn') as HTMLAnchorElement | null;
     const currentUrl = window.location.href;
-    const pageTitle = document.title;
+    const title = document.title;
 
     if (twitterBtn) {
-      twitterBtn.href = `https://twitter.com/intent/tweet?text=${encodeURIComponent(pageTitle)}&url=${encodeURIComponent(currentUrl)}`;
+      twitterBtn.href = `https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(currentUrl)}`;
     }
     if (whatsappBtn) {
-      whatsappBtn.href = `https://api.whatsapp.com/send?text=${encodeURIComponent(`${pageTitle} — ${currentUrl}`)}`;
-    }
-
-    // Registro silencioso de vistas (1 por sesión en sessionStorage)
-    const mainEl = document.querySelector('main[data-post-slug]') as HTMLElement | null;
-    const postSlug = mainEl?.dataset?.postSlug;
-    if (postSlug) {
-      const storageKey = `viewed_post_${postSlug}`;
-      if (!sessionStorage.getItem(storageKey)) {
-        sessionStorage.setItem(storageKey, '1');
-        fetch('/api/posts/view', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ slug: postSlug }),
-        }).catch(() => {
-          // Fallo silencioso en segundo plano
-        });
-      }
+      whatsappBtn.href = `https://api.whatsapp.com/send?text=${encodeURIComponent(`${title} — ${currentUrl}`)}`;
     }
   }
 </script>
