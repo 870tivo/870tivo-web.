@@ -76,7 +76,7 @@ function timeAgo(dateStr: string): string {
     </div>
 
     <!-- Contador de comentarios -->
-    <span class="px-2.5 py-1 rounded-lg bg-zinc-900 border border-zinc-800 text-[11px] font-mono text-slate-300 font-semibold">
+    <span class="px-2.5 py-1 rounded-lg bg-zinc-900 border border-zinc-800 text-[11px] font-sans text-slate-300 font-semibold">
       {commentsList.length} pendientes
     </span>
   </div>
@@ -111,7 +111,7 @@ function timeAgo(dateStr: string): string {
                   {comm.author_name}
                 </span>
                 <span class="text-zinc-600 text-xs">·</span>
-                <span class="font-mono text-[10px] text-slate-500 shrink-0">
+                <span class="font-sans text-[11px] text-slate-500 shrink-0">
                   {timeAgo(comm.created_at)}
                 </span>
               </div>
@@ -122,7 +122,7 @@ function timeAgo(dateStr: string): string {
                   href={`/blog/${postSlug}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="text-[10px] font-mono text-[#F2B134] hover:underline truncate max-w-[140px] sm:max-w-[180px] hidden sm:inline-block"
+                  class="text-[11px] font-sans font-medium text-[#F2B134] hover:underline truncate max-w-[140px] sm:max-w-[180px] hidden sm:inline-block"
                   title={`Ver en «${postTitle}»`}
                 >
                   en: {postTitle} ↗
@@ -206,7 +206,7 @@ function timeAgo(dateStr: string): string {
       <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
       <span>Filtro antispam activo</span>
     </div>
-    <span class="text-[11px] text-zinc-500 font-mono">Supabase Realtime</span>
+    <span class="text-[11px] text-zinc-500 font-sans">Supabase Realtime</span>
   </div>
 </div>
 

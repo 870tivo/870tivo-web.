@@ -224,10 +224,10 @@ const categoryLabels: Record<keyof ActivityCounts, string> = {
 
     <!-- Métrica principal -->
     <div class="relative">
-      <div class="text-4xl font-mono font-bold text-slate-100 tracking-tight leading-none tabular-nums">
+      <div class="text-4xl font-sans font-bold text-slate-100 tracking-tight leading-none tabular-nums">
         {formatNumber(viewsThisMonth)}
       </div>
-      <div class="text-xs font-semibold text-slate-400 mt-1.5">
+      <div class="text-xs font-semibold text-slate-400 mt-1.5 font-sans">
         Lecturas del Mes
       </div>
     </div>
@@ -273,10 +273,10 @@ const categoryLabels: Record<keyof ActivityCounts, string> = {
             {topPost.title}
           </p>
           <div class="flex items-center gap-2 mt-2">
-            <span class="font-mono text-2xl font-bold text-[#F2B134] tabular-nums">
+            <span class="font-sans text-2xl font-bold text-[#F2B134] tabular-nums">
               {formatNumber(topPost.views)}
             </span>
-            <span class="text-xs text-zinc-500">vistas</span>
+            <span class="text-xs text-zinc-500 font-sans">vistas</span>
           </div>
         </>
       ) : (
@@ -289,8 +289,8 @@ const categoryLabels: Record<keyof ActivityCounts, string> = {
       <div class="relative">
         <!-- Barra de porcentaje -->
         <div class="flex items-center justify-between mb-1">
-          <span class="text-[11px] text-zinc-500">Participación en tráfico</span>
-          <span class="text-[11px] font-mono font-bold text-[#F2B134]">{topPost.pct}%</span>
+          <span class="text-[11px] text-zinc-500 font-sans">Participación en tráfico</span>
+          <span class="text-[11px] font-sans font-bold text-[#F2B134] tabular-nums">{topPost.pct}%</span>
         </div>
         <div class="h-1.5 w-full rounded-full bg-zinc-800 overflow-hidden">
           <div
@@ -326,10 +326,10 @@ const categoryLabels: Record<keyof ActivityCounts, string> = {
     <div class="relative grid grid-cols-2 gap-3">
       <!-- Likes -->
       <div>
-        <div class="text-3xl font-mono font-bold text-slate-100 tabular-nums leading-none">
+        <div class="text-3xl font-sans font-bold text-slate-100 tabular-nums leading-none">
           {formatNumber(totalLikes)}
         </div>
-        <div class="flex items-center gap-1 mt-1.5">
+        <div class="flex items-center gap-1 mt-1.5 font-sans">
           <svg class="w-3 h-3 text-[#E4572E]" fill="currentColor" viewBox="0 0 24 24">
             <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
           </svg>
@@ -338,10 +338,10 @@ const categoryLabels: Record<keyof ActivityCounts, string> = {
       </div>
       <!-- Comentarios -->
       <div>
-        <div class="text-3xl font-mono font-bold text-slate-100 tabular-nums leading-none">
+        <div class="text-3xl font-sans font-bold text-slate-100 tabular-nums leading-none">
           {formatNumber(totalComments)}
         </div>
-        <div class="flex items-center gap-1 mt-1.5">
+        <div class="flex items-center gap-1 mt-1.5 font-sans">
           <svg class="w-3 h-3 text-[#F2B134]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
           </svg>
@@ -352,9 +352,9 @@ const categoryLabels: Record<keyof ActivityCounts, string> = {
 
     <!-- Engagement total combinado -->
     <div class="relative pt-3 border-t border-zinc-800">
-      <div class="text-[11px] text-zinc-500">
+      <div class="text-[11px] text-zinc-500 font-sans">
         Total de interacciones:
-        <span class="font-mono font-bold text-purple-400 ml-1">{formatNumber(totalLikes + totalComments)}</span>
+        <span class="font-sans font-bold text-purple-400 tabular-nums ml-1">{formatNumber(totalLikes + totalComments)}</span>
       </div>
     </div>
   </article>
@@ -370,7 +370,7 @@ const categoryLabels: Record<keyof ActivityCounts, string> = {
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
         </svg>
       </span>
-      <span class={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full border ${
+      <span class={`text-[10px] font-sans font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full border ${
         totalActiveActivities > 0
           ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
           : 'text-zinc-600 bg-zinc-800 border-zinc-700'
@@ -381,16 +381,16 @@ const categoryLabels: Record<keyof ActivityCounts, string> = {
 
     <!-- Contador total grande -->
     <div class="relative">
-      <div class="text-4xl font-mono font-bold text-slate-100 tabular-nums leading-none">
+      <div class="text-4xl font-sans font-bold text-slate-100 tabular-nums leading-none">
         {totalActiveActivities}
       </div>
-      <div class="text-xs font-semibold text-slate-400 mt-1.5">
+      <div class="text-xs font-semibold text-slate-400 mt-1.5 font-sans">
         Actividades programadas
       </div>
     </div>
 
     <!-- Desglose por categoría -->
-    <div class="relative space-y-1.5">
+    <div class="relative space-y-1.5 font-sans">
       {(Object.entries(activityCounts) as [keyof ActivityCounts, number][]).map(([cat, count]) => (
         <div class="flex items-center justify-between">
           <span class="text-[11px] text-zinc-500">{categoryLabels[cat]}</span>
@@ -402,7 +402,7 @@ const categoryLabels: Record<keyof ActivityCounts, string> = {
                 style={`width: ${totalActiveActivities > 0 ? Math.round((count / totalActiveActivities) * 100) : 0}%`}
               ></div>
             </div>
-            <span class="font-mono text-[11px] font-semibold text-slate-400 w-3 text-right">{count}</span>
+            <span class="font-sans text-[11px] font-semibold text-slate-400 w-3 text-right tabular-nums">{count}</span>
           </div>
         </div>
       ))}

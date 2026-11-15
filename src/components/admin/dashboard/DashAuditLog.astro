@@ -181,7 +181,7 @@ function formatTime(dateStr: string): string {
     </div>
 
     <!-- Indicador En Vivo -->
-    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-900 border border-zinc-800 text-[11px] font-mono text-slate-300 font-semibold">
+    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-900 border border-zinc-800 text-[11px] font-sans text-slate-300 font-semibold">
       <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
       <span>En vivo</span>
     </span>
@@ -208,7 +208,7 @@ function formatTime(dateStr: string): string {
               <!-- Fila de usuario y acción -->
               <div class="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 text-xs">
                 <!-- Nombre/Email del usuario -->
-                <span class="font-mono font-bold text-slate-200">
+                <span class="font-sans font-semibold text-slate-200">
                   {item.user_email}
                 </span>
 
@@ -224,7 +224,7 @@ function formatTime(dateStr: string): string {
               </div>
 
               <!-- Metadata: Tipo de entidad + Tiempo transcurrido -->
-              <div class="flex items-center gap-2 mt-1 text-[11px] font-mono text-slate-500">
+              <div class="flex items-center gap-2 mt-1 text-[11px] font-sans text-slate-500">
                 <span class={`font-semibold ${cfg.textClass}`}>
                   [{cfg.label}]
                 </span>
@@ -246,7 +246,7 @@ function formatTime(dateStr: string): string {
       </svg>
       <span>Trazabilidad y persistencia de operaciones</span>
     </div>
-    <span class="text-[11px] text-zinc-500 font-mono">audit_log</span>
+    <span class="text-[11px] text-zinc-500 font-sans">audit_log</span>
   </div>
 </div>
 
