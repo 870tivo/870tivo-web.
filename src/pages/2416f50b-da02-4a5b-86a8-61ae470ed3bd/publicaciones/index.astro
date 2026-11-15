@@ -7,6 +7,7 @@
 import AdminLayout from '../../../layouts/AdminLayout.astro';
 import PublicationEditorModal from '../../../components/admin/PublicationEditorModal.astro';
 import CreateAuthorModal from '../../../components/admin/CreateAuthorModal.astro';
+import PostInfoModal from '../../../components/admin/PostInfoModal.astro';
 import Card from '../../../components/common/Card.astro';
 import Button from '../../../components/common/Button.astro';
 import Pagination from '../../../components/common/Pagination.astro';
@@ -370,17 +371,26 @@ function getPageUrl(p: number) {
                 <!-- Actions -->
                 <td class="py-4 px-6 text-right whitespace-nowrap">
                   <div class="inline-flex items-center gap-1.5">
-                    <a 
-                      href={`/blog/${post.slug}`} 
-                      target="_blank"
-                      class="p-2 rounded-xl text-[#78716A] dark:text-slate-400 hover:text-[#1F1B16] dark:hover:text-white hover:bg-[#FAF6F0] dark:hover:bg-slate-800 transition-colors"
-                      title="Ver en vivo"
+                    <button 
+                      type="button"
+                      class="view-post-btn p-2 rounded-xl text-[#78716A] dark:text-slate-400 hover:text-[#1F1B16] dark:hover:text-white hover:bg-[#FAF6F0] dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                      title="Ver detalle y métricas de la publicación"
+                      data-id={post.id}
+                      data-slug={post.slug}
+                      data-title={post.title}
+                      data-cover={post.cover_image || '/assets/logo/870.jpeg'}
+                      data-author={post.author}
+                      data-category={post.category || 'EDITORIAL'}
+                      data-status={post.status}
+                      data-date={formatPostDate(post.created_at)}
+                      data-views={post.views ?? 0}
+                      data-likes={post.likes ?? 0}
                     >
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                       </svg>
-                    </a>
+                    </button>
                     <button 
                       type="button" 
                       class="p-2 rounded-xl text-[#78716A] dark:text-slate-400 hover:text-[#E4572E] dark:hover:text-amber-400 hover:bg-[#E4572E]/10 transition-colors edit-btn cursor-pointer"
@@ -580,6 +590,9 @@ function getPageUrl(p: number) {
 
   <!-- MODAL INDEPENDIENTE PARA CREAR AUTORES -->
   <CreateAuthorModal />
+
+  <!-- MODAL DE DETALLE Y MÉTRICAS ("VER") -->
+  <PostInfoModal />
 
 </AdminLayout>
 
@@ -987,5 +1000,243 @@ function getPageUrl(p: number) {
       confirmDeletePostBtn.disabled = false;
       confirmDeletePostBtn.textContent = 'Sí, Eliminar Borrador';
     }
+  });
+
+  // ─── PostInfoModal: Detalle y Métricas ("Ver") ────────────────────────────
+  const infoModal = document.getElementById('postInfoModal') as HTMLElement | null;
+  const infoCard = document.getElementById('postInfoModalCard') as HTMLElement | null;
+  const closeInfoBtn = document.getElementById('closePostInfoModalBtn') as HTMLButtonElement | null;
+  const closeInfoFooterBtn = document.getElementById('closePostInfoModalFooterBtn') as HTMLButtonElement | null;
+  const infoPublicLink = document.getElementById('postInfoPublicLink') as HTMLAnchorElement | null;
+  const infoCover = document.getElementById('postInfoCover') as HTMLImageElement | null;
+  const infoCategory = document.getElementById('postInfoCategory') as HTMLElement | null;
+  const infoStatusPill = document.getElementById('postInfoStatusPill') as HTMLElement | null;
+  const infoStatusDot = document.getElementById('postInfoStatusDot') as HTMLElement | null;
+  const infoStatusText = document.getElementById('postInfoStatusText') as HTMLElement | null;
+  const infoTitle = document.getElementById('postInfoTitle') as HTMLElement | null;
+  const infoAuthor = document.getElementById('postInfoAuthor') as HTMLElement | null;
+  const infoDate = document.getElementById('postInfoDate') as HTMLElement | null;
+  const infoViewsCount = document.getElementById('postInfoViewsCount') as HTMLElement | null;
+  const infoLikesCount = document.getElementById('postInfoLikesCount') as HTMLElement | null;
+  const infoCommentsBadge = document.getElementById('postInfoCommentsCountBadge') as HTMLElement | null;
+  const infoCommentsLoading = document.getElementById('postInfoCommentsLoading') as HTMLElement | null;
+  const infoCommentsEmpty = document.getElementById('postInfoCommentsEmpty') as HTMLElement | null;
+  const infoCommentsList = document.getElementById('postInfoCommentsList') as HTMLElement | null;
+
+  const viewPostBtns = document.querySelectorAll('.view-post-btn') as NodeListOf<HTMLButtonElement>;
+
+  function formatCommentDate(dateStr: string): string {
+    try {
+      const d = new Date(dateStr);
+      return new Intl.DateTimeFormat('es-CO', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      }).format(d);
+    } catch {
+      return dateStr;
+    }
+  }
+
+  function closePostInfoModal() {
+    if (!infoModal || !infoCard) return;
+    infoModal.classList.remove('opacity-100');
+    infoModal.classList.add('opacity-0', 'pointer-events-none');
+    infoCard.classList.remove('scale-100');
+    infoCard.classList.add('scale-95');
+  }
+
+  closeInfoBtn?.addEventListener('click', closePostInfoModal);
+  closeInfoFooterBtn?.addEventListener('click', closePostInfoModal);
+
+  infoModal?.addEventListener('click', (e) => {
+    if (e.target === infoModal) closePostInfoModal();
+  });
+
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && infoModal && !infoModal.classList.contains('pointer-events-none')) {
+      closePostInfoModal();
+    }
+  });
+
+  async function loadCommentsForPost(postId: string) {
+    if (!infoCommentsLoading || !infoCommentsEmpty || !infoCommentsList || !infoCommentsBadge) return;
+
+    infoCommentsLoading.classList.remove('hidden');
+    infoCommentsEmpty.classList.add('hidden');
+    infoCommentsList.innerHTML = '';
+    infoCommentsBadge.textContent = '0';
+
+    try {
+      const res = await fetch(`/api/admin/comments?postId=${encodeURIComponent(postId)}`);
+      const data = await res.json();
+
+      infoCommentsLoading.classList.add('hidden');
+
+      if (!res.ok || !data.success || !Array.isArray(data.comments) || data.comments.length === 0) {
+        infoCommentsEmpty.classList.remove('hidden');
+        infoCommentsBadge.textContent = '0';
+        return;
+      }
+
+      const comments = data.comments;
+      infoCommentsBadge.textContent = String(comments.length);
+
+      comments.forEach((c: { id: string; author_name: string; content: string; created_at: string }) => {
+        const item = document.createElement('div');
+        item.className = 'p-3.5 rounded-xl bg-[#FAF6F0] dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] flex items-start justify-between gap-3 transition-all duration-300';
+        item.setAttribute('data-comment-id', c.id);
+
+        const leftCol = document.createElement('div');
+        leftCol.className = 'min-w-0 flex-1';
+
+        const authorRow = document.createElement('div');
+        authorRow.className = 'flex items-center gap-2 flex-wrap mb-1';
+
+        const authorName = document.createElement('span');
+        authorName.className = 'font-bold text-xs text-[#1F1B16] dark:text-white';
+        authorName.textContent = c.author_name || 'Anónimo';
+
+        const commentDate = document.createElement('span');
+        commentDate.className = 'text-[10px] text-[#78716A] dark:text-neutral-400';
+        commentDate.textContent = formatCommentDate(c.created_at);
+
+        authorRow.appendChild(authorName);
+        authorRow.appendChild(commentDate);
+
+        const contentP = document.createElement('p');
+        contentP.className = 'text-xs text-[#78716A] dark:text-neutral-300 leading-relaxed whitespace-pre-wrap break-words';
+        contentP.textContent = c.content;
+
+        leftCol.appendChild(authorRow);
+        leftCol.appendChild(contentP);
+
+        // Botón Eliminar comentario
+        const deleteBtn = document.createElement('button');
+        deleteBtn.type = 'button';
+        deleteBtn.className = 'p-1.5 text-neutral-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors shrink-0 cursor-pointer';
+        deleteBtn.title = 'Eliminar comentario';
+        deleteBtn.innerHTML = `
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+        `;
+
+        deleteBtn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          deleteBtn.disabled = true;
+          deleteBtn.classList.add('opacity-50');
+
+          try {
+            const delRes = await fetch(`/api/admin/comments/${encodeURIComponent(c.id)}`, {
+              method: 'DELETE',
+            });
+            const delData = await delRes.json();
+
+            if (!delRes.ok || !delData.success) {
+              throw new Error(delData.message || 'Error al eliminar el comentario.');
+            }
+
+            item.style.opacity = '0';
+            item.style.transform = 'translateX(10px)';
+            setTimeout(() => {
+              item.remove();
+              const remaining = infoCommentsList.querySelectorAll('[data-comment-id]');
+              if (infoCommentsBadge) infoCommentsBadge.textContent = String(remaining.length);
+              if (remaining.length === 0 && infoCommentsEmpty) {
+                infoCommentsEmpty.classList.remove('hidden');
+              }
+            }, 250);
+
+            showToast('Comentario eliminado exitosamente.');
+          } catch (err: any) {
+            alert(err.message || 'No se pudo eliminar el comentario.');
+            deleteBtn.disabled = false;
+            deleteBtn.classList.remove('opacity-50');
+          }
+        });
+
+        item.appendChild(leftCol);
+        item.appendChild(deleteBtn);
+        infoCommentsList.appendChild(item);
+      });
+    } catch (err) {
+      console.error('Error al cargar comentarios:', err);
+      infoCommentsLoading.classList.add('hidden');
+      infoCommentsEmpty.classList.remove('hidden');
+      infoCommentsBadge.textContent = '0';
+    }
+  }
+
+  viewPostBtns.forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const postId = btn.getAttribute('data-id') || '';
+      const slug = btn.getAttribute('data-slug') || '';
+      const title = btn.getAttribute('data-title') || 'Publicación';
+      const cover = btn.getAttribute('data-cover') || '/assets/logo/870.jpeg';
+      const author = btn.getAttribute('data-author') || 'Redacción';
+      const category = btn.getAttribute('data-category') || 'EDITORIAL';
+      const status = btn.getAttribute('data-status') || 'borrador';
+      const date = btn.getAttribute('data-date') || '';
+      const views = btn.getAttribute('data-views') || '0';
+      const likes = btn.getAttribute('data-likes') || '0';
+
+      if (!infoModal || !infoCard) return;
+
+      // Inyectar valores en la vista
+      if (infoTitle) infoTitle.textContent = title;
+      if (infoAuthor) infoAuthor.textContent = author;
+      if (infoDate) infoDate.textContent = date;
+      if (infoCategory) infoCategory.textContent = category;
+      if (infoViewsCount) infoViewsCount.textContent = Number(views).toLocaleString('es-CO');
+      if (infoLikesCount) infoLikesCount.textContent = Number(likes).toLocaleString('es-CO');
+
+      if (infoCover) {
+        infoCover.src = cover;
+        infoCover.onerror = () => {
+          infoCover.src = '/assets/logo/870.jpeg';
+        };
+      }
+
+      if (infoPublicLink) {
+        infoPublicLink.href = `/blog/${slug}`;
+      }
+
+      // Estilo dinámico de estado
+      const isPub = status === 'publicado';
+      const isArch = status === 'archivado';
+
+      if (infoStatusPill && infoStatusDot && infoStatusText) {
+        if (isPub) {
+          infoStatusPill.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold border bg-[#2F4B3A]/10 text-[#2F4B3A] dark:bg-emerald-500/10 dark:text-emerald-400 border-[#2F4B3A]/25 dark:border-emerald-500/20';
+          infoStatusDot.className = 'w-1.5 h-1.5 rounded-full bg-[#2F4B3A] dark:bg-emerald-400 animate-pulse';
+          infoStatusText.textContent = 'Publicado';
+        } else if (isArch) {
+          infoStatusPill.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold border bg-slate-500/15 text-slate-700 dark:bg-slate-500/20 dark:text-slate-300 border-slate-500/30';
+          infoStatusDot.className = 'w-1.5 h-1.5 rounded-full bg-slate-500';
+          infoStatusText.textContent = 'Archivado';
+        } else {
+          infoStatusPill.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold border bg-[#F2B134]/15 text-[#966B0D] dark:bg-amber-500/10 dark:text-amber-400 border-[#F2B134]/30 dark:border-amber-500/20';
+          infoStatusDot.className = 'w-1.5 h-1.5 rounded-full bg-[#F2B134]';
+          infoStatusText.textContent = 'Borrador';
+        }
+      }
+
+      // Abrir modal
+      infoModal.classList.remove('opacity-0', 'pointer-events-none');
+      infoModal.classList.add('opacity-100');
+      infoCard.classList.remove('scale-95');
+      infoCard.classList.add('scale-100');
+
+      // Consultar comentarios del post
+      if (postId) {
+        loadCommentsForPost(postId);
+      }
+    });
   });
 </script>

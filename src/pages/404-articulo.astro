@@ -1,0 +1,58 @@
+---
+/**
+ * src/pages/404-articulo.astro
+ * Página 404 elegante cuando un slug de artículo no existe en Supabase.
+ */
+export const prerender = false;
+
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Artículo no encontrado — 870tivo" description="Este artículo no existe o ya no está disponible.">
+  <main class="flex-grow flex flex-col items-center justify-center bg-[#111111] text-slate-100 min-h-screen px-4 -mt-[72px]">
+
+    <!-- Marca de agua numérica -->
+    <div class="select-none font-serif font-bold text-[12rem] leading-none text-zinc-900 mb-0 mt-16 md:mt-0">
+      404
+    </div>
+
+    <div class="text-center max-w-lg -mt-6 relative z-10">
+      <!-- Separador naranja -->
+      <div class="w-12 h-[2px] bg-[#E4572E] rounded-full mx-auto mb-8" />
+
+      <h1 class="font-serif text-3xl md:text-4xl font-bold text-white mb-4 leading-tight">
+        Este artículo no existe.
+      </h1>
+      <p class="font-sans text-zinc-400 text-base leading-relaxed mb-10">
+        La publicación que buscas no está disponible, fue retirada o el enlace es incorrecto.
+        Puedes explorar el resto de nuestra bitácora cultural.
+      </p>
+
+      <!-- Acciones -->
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+        <a
+          href="/blog"
+          class="inline-flex items-center gap-2 bg-[#E4572E] text-white text-xs font-sans font-bold uppercase tracking-widest px-7 py-3 rounded-sm hover:brightness-110 transition-all"
+        >
+          Ir al Blog
+        </a>
+        <a
+          href="/"
+          class="inline-flex items-center gap-2 bg-transparent border border-zinc-700 text-zinc-300 text-xs font-sans font-bold uppercase tracking-widest px-7 py-3 rounded-sm hover:border-zinc-500 hover:text-white transition-all"
+        >
+          Volver al Inicio
+        </a>
+      </div>
+
+      <!-- Logo 870 -->
+      <div class="mt-14 flex flex-col items-center gap-2 opacity-30">
+        <div class="w-10 h-10 bg-zinc-500 flex items-center justify-center font-bold text-white text-sm uppercase tracking-tighter rounded-sm">
+          870
+        </div>
+        <span class="text-[10px] text-zinc-600 uppercase tracking-widest font-sans">870tivo</span>
+      </div>
+    </div>
+
+  </main>
+</BaseLayout>
+

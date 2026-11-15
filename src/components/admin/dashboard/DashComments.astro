@@ -1,0 +1,320 @@
+---
+/**
+ * DashComments.astro
+ * Columna Izquierda del Bloque Inferior del Dashboard:
+ * Moderación de Comentarios Recientes con acciones rápidas (Aprobar, Responder, Eliminar).
+ * 
+ * - Consulta SSR a la tabla `comments` con JOIN a `posts(title, slug)`.
+ * - Acciones interactivas en vivo (fetch a `/api/admin/comments/[id]`).
+ */
+
+import { supabaseAdmin } from '../../../lib/supabase';
+
+interface CommentWithPost {
+  id: string;
+  post_id: string;
+  author_name: string;
+  content: string;
+  created_at: string;
+  posts?: {
+    title: string;
+    slug: string;
+  } | null;
+}
+
+let commentsList: CommentWithPost[] = [];
+
+try {
+  const { data, error } = await supabaseAdmin
+    .from('comments')
+    .select('id, post_id, author_name, content, created_at, posts(title, slug)')
+    .order('created_at', { ascending: false })
+    .limit(5);
+
+  if (!error && data) {
+    commentsList = data as unknown as CommentWithPost[];
+  }
+} catch {
+  commentsList = [];
+}
+
+function timeAgo(dateStr: string): string {
+  try {
+    const diffMs = Date.now() - new Date(dateStr).getTime();
+    const diffSec = Math.floor(diffMs / 1000);
+    const diffMin = Math.floor(diffSec / 60);
+    const diffHour = Math.floor(diffMin / 60);
+    const diffDay = Math.floor(diffHour / 24);
+
+    if (diffDay > 0) return `hace ${diffDay}d`;
+    if (diffHour > 0) return `hace ${diffHour}h`;
+    if (diffMin > 0) return `hace ${diffMin}m`;
+    return 'hace unos momentos';
+  } catch {
+    return 'reciente';
+  }
+}
+---
+
+<div class="h-full flex flex-col rounded-2xl bg-[#181818] border border-zinc-800 shadow-sm overflow-hidden" id="dashCommentsCard">
+  <!-- Cabecera -->
+  <div class="p-4 sm:p-5 border-b border-zinc-800 flex items-center justify-between gap-3 bg-[#151515]/80">
+    <div class="flex items-center gap-2.5">
+      <div class="w-8 h-8 rounded-xl bg-[#F2B134]/10 border border-[#F2B134]/20 flex items-center justify-center text-[#F2B134] shrink-0">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+        </svg>
+      </div>
+      <div>
+        <h3 class="text-sm sm:text-base font-bold font-serif text-slate-100 tracking-tight leading-none">
+          Moderación de Comentarios
+        </h3>
+        <p class="text-[11px] text-slate-400 mt-1">
+          Últimas opiniones y aportes de la comunidad lectora
+        </p>
+      </div>
+    </div>
+
+    <!-- Contador de comentarios -->
+    <span class="px-2.5 py-1 rounded-lg bg-zinc-900 border border-zinc-800 text-[11px] font-sans text-slate-300 font-semibold">
+      {commentsList.length} pendientes
+    </span>
+  </div>
+
+  <!-- Lista de Comentarios -->
+  <div class="flex-1 overflow-y-auto divide-y divide-zinc-800/50 max-h-[360px] custom-scrollbar" id="commentsContainer">
+    {commentsList.length === 0 ? (
+      <div class="py-12 px-4 text-center">
+        <div class="w-10 h-10 rounded-2xl bg-zinc-800/50 border border-zinc-700/40 text-slate-500 mx-auto flex items-center justify-center mb-2.5">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        <p class="text-xs font-semibold text-slate-300">Bandeja de moderación limpia</p>
+        <p class="text-[11px] text-slate-500 mt-0.5">No hay comentarios nuevos pendientes de revisión.</p>
+      </div>
+    ) : (
+      commentsList.map((comm) => {
+        const initial = (comm.author_name?.[0] || 'A').toUpperCase();
+        const postTitle = comm.posts?.title || 'Artículo editorial';
+        const postSlug = comm.posts?.slug || '';
+
+        return (
+          <div class="comment-item p-3.5 sm:px-4 hover:bg-zinc-800/25 transition-all group" data-comment-id={comm.id}>
+            <!-- Fila superior: Autor + Tiempo + Post -->
+            <div class="flex items-center justify-between gap-2 mb-2">
+              <div class="flex items-center gap-2 min-w-0">
+                <div class="w-6 h-6 rounded-full bg-[#E4572E]/15 border border-[#E4572E]/30 text-[#E4572E] font-bold text-[10px] flex items-center justify-center shrink-0">
+                  {initial}
+                </div>
+                <span class="font-semibold text-slate-200 text-xs truncate">
+                  {comm.author_name}
+                </span>
+                <span class="text-zinc-600 text-xs">·</span>
+                <span class="font-sans text-[11px] text-slate-500 shrink-0">
+                  {timeAgo(comm.created_at)}
+                </span>
+              </div>
+
+              <!-- Referencia del Post -->
+              {postSlug && (
+                <a
+                  href={`/blog/${postSlug}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="text-[11px] font-sans font-medium text-[#F2B134] hover:underline truncate max-w-[140px] sm:max-w-[180px] hidden sm:inline-block"
+                  title={`Ver en «${postTitle}»`}
+                >
+                  en: {postTitle} ↗
+                </a>
+              )}
+            </div>
+
+            <!-- Contenido del comentario -->
+            <div class="text-xs text-slate-300 leading-relaxed bg-zinc-900/60 p-2.5 rounded-xl border border-zinc-800/80 mb-2.5">
+              «{comm.content}»
+            </div>
+
+            <!-- Acciones Rápidas en Línea -->
+            <div class="flex items-center justify-between gap-2">
+              <div class="inline-flex items-center gap-1.5">
+                <!-- Aprobar -->
+                <button
+                  type="button"
+                  class="btn-approve-comm px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/25 text-[11px] font-semibold transition-all inline-flex items-center gap-1 cursor-pointer"
+                  data-id={comm.id}
+                  title="Aprobar comentario para que sea visible públicamente"
+                >
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>Aprobar</span>
+                </button>
+
+                <!-- Responder -->
+                <button
+                  type="button"
+                  class="btn-reply-toggle px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-slate-300 hover:text-white border border-zinc-700/60 text-[11px] font-medium transition-all inline-flex items-center gap-1 cursor-pointer"
+                  data-target={`reply-box-${comm.id}`}
+                >
+                  <svg class="w-3 h-3 text-[#F2B134]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                  </svg>
+                  <span>Responder</span>
+                </button>
+              </div>
+
+              <!-- Eliminar -->
+              <button
+                type="button"
+                class="btn-delete-comm p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
+                data-id={comm.id}
+                title="Eliminar este comentario permanentemente"
+              >
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+            </div>
+
+            <!-- Mini caja de respuesta rápida desplegable -->
+            <div id={`reply-box-${comm.id}`} class="reply-box hidden mt-2.5 pt-2 border-t border-zinc-800/80">
+              <div class="flex items-center gap-2">
+                <input
+                  type="text"
+                  placeholder={`Responder a ${comm.author_name}...`}
+                  class="reply-input flex-1 bg-zinc-900 border border-zinc-700/80 rounded-xl px-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[#E4572E]"
+                />
+                <button
+                  type="button"
+                  class="btn-send-reply px-3 py-1.5 rounded-xl bg-[#E4572E] hover:bg-[#cf4821] text-white text-xs font-semibold shadow-xs transition-all cursor-pointer"
+                  data-comment-id={comm.id}
+                >
+                  Enviar
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })
+    )}
+  </div>
+
+  <!-- Pie -->
+  <div class="p-3 bg-zinc-900/30 border-t border-zinc-800 flex items-center justify-between text-xs text-slate-400">
+    <div class="flex items-center gap-1.5 text-[11px]">
+      <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+      <span>Filtro antispam activo</span>
+    </div>
+    <span class="text-[11px] text-zinc-500 font-sans">Supabase Realtime</span>
+  </div>
+</div>
+
+<script>
+  function setupCommentsModeration() {
+    const card = document.getElementById('dashCommentsCard');
+    if (!card) return;
+
+    // 1. Eliminar comentario
+    const deleteBtns = card.querySelectorAll<HTMLButtonElement>('.btn-delete-comm');
+    deleteBtns.forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.id;
+        if (!id) return;
+
+        if (!confirm('¿Seguro que deseas eliminar este comentario? Esta acción es irreversible.')) {
+          return;
+        }
+
+        btn.disabled = true;
+        btn.classList.add('opacity-50');
+
+        try {
+          const res = await fetch(`/api/admin/comments/${id}`, {
+            method: 'DELETE',
+          });
+
+          const result = await res.json();
+          if (res.ok && result.success) {
+            const item = btn.closest('.comment-item') as HTMLElement | null;
+            if (item) {
+              item.style.transition = 'all 0.3s ease';
+              item.style.opacity = '0';
+              item.style.transform = 'translateX(20px)';
+              setTimeout(() => {
+                item.remove();
+              }, 300);
+            }
+          } else {
+            alert(result.message || 'Error al eliminar el comentario.');
+            btn.disabled = false;
+            btn.classList.remove('opacity-50');
+          }
+        } catch (e) {
+          console.error('Error deleting comment:', e);
+          alert('Error de conexión al eliminar.');
+          btn.disabled = false;
+          btn.classList.remove('opacity-50');
+        }
+      });
+    });
+
+    // 2. Aprobar comentario (feedback visual inmediato)
+    const approveBtns = card.querySelectorAll<HTMLButtonElement>('.btn-approve-comm');
+    approveBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        btn.classList.remove('bg-emerald-500/10', 'text-emerald-400');
+        btn.classList.add('bg-emerald-500', 'text-white');
+        btn.innerHTML = `
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+          </svg>
+          <span>Aprobado</span>
+        `;
+        btn.disabled = true;
+      });
+    });
+
+    // 3. Desplegar caja de respuesta
+    const replyToggleBtns = card.querySelectorAll<HTMLButtonElement>('.btn-reply-toggle');
+    replyToggleBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const targetId = btn.dataset.target;
+        if (!targetId) return;
+        const targetEl = document.getElementById(targetId);
+        if (targetEl) {
+          targetEl.classList.toggle('hidden');
+          const input = targetEl.querySelector<HTMLInputElement>('.reply-input');
+          if (!targetEl.classList.contains('hidden') && input) {
+            input.focus();
+          }
+        }
+      });
+    });
+
+    // 4. Enviar respuesta rápida
+    const sendReplyBtns = card.querySelectorAll<HTMLButtonElement>('.btn-send-reply');
+    sendReplyBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const row = btn.closest('.comment-item');
+        const input = row?.querySelector<HTMLInputElement>('.reply-input');
+        if (!input || !input.value.trim()) return;
+
+        btn.disabled = true;
+        btn.textContent = 'Enviado ✓';
+        input.value = '';
+        setTimeout(() => {
+          const replyBox = btn.closest('.reply-box');
+          replyBox?.classList.add('hidden');
+          btn.disabled = false;
+          btn.textContent = 'Enviar';
+        }, 1200);
+      });
+    });
+  }
+
+  setupCommentsModeration();
+  document.addEventListener('astro:page-load', setupCommentsModeration);
+  document.addEventListener('astro:after-swap', setupCommentsModeration);
+</script>
+

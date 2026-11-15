@@ -24,10 +24,10 @@ const isProfileActive = activeModule === 'profile';
   class="fixed inset-y-0 left-0 z-50 w-72 bg-white dark:bg-[#141414] border-r border-[#E5DFD5] dark:border-[#282828] flex flex-col justify-between transition-all duration-300 ease-in-out -translate-x-full lg:translate-x-0"
   aria-label="Barra lateral de administración"
 >
-  <!-- Top: Logo & Branding -->
-  <div class="h-16 px-5 border-b border-[#E5DFD5] dark:border-[#282828] flex items-center justify-between">
-    <a href="/2416f50b-da02-4a5b-86a8-61ae470ed3bd/dashboard" class="flex items-center gap-3 group">
-      <div class="relative">
+  <!-- Top: Logo & Branding + Collapse Button -->
+  <div class="h-16 px-4 border-b border-[#E5DFD5] dark:border-[#282828] flex items-center justify-between sidebar-header-inner relative">
+    <a href="/2416f50b-da02-4a5b-86a8-61ae470ed3bd/dashboard" class="flex items-center gap-3 group min-w-0" title="870tivo Control Studio">
+      <div class="relative shrink-0">
         <img 
           src="/assets/logo/870.jpeg" 
           alt="870tivo Logo" 
@@ -35,20 +35,33 @@ const isProfileActive = activeModule === 'profile';
         />
         <span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-[#2F4B3A] border-2 border-white dark:border-[#141414] rounded-full"></span>
       </div>
-      <div class="flex flex-col">
+      <div class="flex flex-col min-w-0 sidebar-brand-text">
         <div class="flex items-center gap-1.5">
-          <span class="font-serif font-bold text-base leading-tight tracking-tight text-[#1F1B16] dark:text-white group-hover:text-[#F2B134] transition-colors">
+          <span class="font-serif font-bold text-base leading-tight tracking-tight text-[#1F1B16] dark:text-white group-hover:text-[#F2B134] transition-colors truncate">
             870tivo
           </span>
-          <span class="text-[9px] font-semibold uppercase px-1.5 py-0.5 rounded bg-[#2F4B3A]/15 dark:bg-[#2F4B3A]/20 text-[#2F4B3A] dark:text-[#A7C7B3] border border-[#2F4B3A]/30">
+          <span class="text-[9px] font-semibold uppercase px-1.5 py-0.5 rounded bg-[#2F4B3A]/15 dark:bg-[#2F4B3A]/20 text-[#2F4B3A] dark:text-[#A7C7B3] border border-[#2F4B3A]/30 shrink-0">
             Studio
           </span>
         </div>
-        <span class="text-[10px] text-[#78716A] dark:text-neutral-400 font-medium">
+        <span class="text-[10px] text-[#78716A] dark:text-neutral-400 font-medium truncate">
           Control Panel
         </span>
       </div>
     </a>
+
+    <!-- Desktop Collapse Button (Header) -->
+    <button 
+      type="button" 
+      id="collapseSidebarBtn"
+      class="sidebar-header-toggle hidden lg:flex p-1.5 text-neutral-500 hover:text-[#1F1B16] dark:text-neutral-400 dark:hover:text-white rounded-lg hover:bg-[#F5EFE6] dark:hover:bg-[#222222] transition-colors cursor-pointer shrink-0"
+      aria-label="Contraer o expandir barra lateral"
+      title="Contraer menú (Icon-Rail)"
+    >
+      <svg class="w-4 h-4 transition-transform duration-300 sidebar-collapse-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+      </svg>
+    </button>
 
     <!-- Mobile Close Button -->
     <button 
@@ -68,99 +81,107 @@ const isProfileActive = activeModule === 'profile';
 
     <!-- SECTION 1: DASHBOARDS / PRINCIPAL -->
     <div>
-      <div class="px-3 pb-1.5 text-xs font-semibold text-[#78716A] dark:text-neutral-500 uppercase tracking-wider text-[11px]">
-        Dashboards
+      <div class="sidebar-heading px-3 pb-1.5">
+        <span class="sidebar-heading-text text-xs font-semibold text-[#78716A] dark:text-neutral-500 uppercase tracking-wider text-[11px]">
+          Dashboards
+        </span>
+        <div class="sidebar-heading-divider hidden h-px bg-zinc-800 my-1"></div>
       </div>
 
       <nav class="space-y-1 mt-1">
         <!-- Overview -->
         <a 
           href="/2416f50b-da02-4a5b-86a8-61ae470ed3bd/dashboard" 
-          class={`flex items-center gap-3 px-3 py-2 rounded-xl transition-all ${
+          class={`sidebar-link flex items-center gap-3 px-3 py-2 rounded-xl transition-all ${
             isDashboardActive 
               ? 'bg-[#F5EFE6] dark:bg-[#1E1E1E] text-[#1F1B16] dark:text-white font-medium border border-[#E5DFD5] dark:border-[#282828] shadow-sm' 
               : 'text-[#78716A] dark:text-neutral-400 hover:text-[#1F1B16] dark:hover:text-white hover:bg-[#F5EFE6] dark:hover:bg-white/5'
           }`}
+          title="Overview / Dashboard"
         >
           <svg class={`w-4 h-4 shrink-0 ${isDashboardActive ? 'text-[#E4572E]' : 'text-[#78716A] dark:text-neutral-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
           </svg>
-          <span class="truncate">Overview</span>
+          <span class="sidebar-label truncate">Overview</span>
           {isDashboardActive && (
-            <span class="ml-auto w-1.5 h-1.5 rounded-full bg-[#E4572E]"></span>
+            <span class="sidebar-active-dot ml-auto w-1.5 h-1.5 rounded-full bg-[#E4572E]"></span>
           )}
         </a>
 
         <!-- Publicaciones (Direct Link) -->
         <a 
           href="/2416f50b-da02-4a5b-86a8-61ae470ed3bd/publicaciones" 
-          class={`flex items-center gap-3 px-3 py-2 rounded-xl transition-all ${
+          class={`sidebar-link flex items-center gap-3 px-3 py-2 rounded-xl transition-all ${
             isEditorialActive 
               ? 'bg-[#F5EFE6] dark:bg-[#1E1E1E] text-[#1F1B16] dark:text-white font-medium border border-[#E5DFD5] dark:border-[#282828] shadow-sm' 
               : 'text-[#78716A] dark:text-neutral-400 hover:text-[#1F1B16] dark:hover:text-white hover:bg-[#F5EFE6] dark:hover:bg-white/5'
           }`}
+          title="Publicaciones & Ensayos"
         >
           <svg class={`w-4 h-4 shrink-0 ${isEditorialActive ? 'text-[#F2B134]' : 'text-[#78716A] dark:text-neutral-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
           </svg>
-          <span class="truncate">Publicaciones</span>
+          <span class="sidebar-label truncate">Publicaciones</span>
           {isEditorialActive && (
-            <span class="ml-auto w-1.5 h-1.5 rounded-full bg-[#F2B134]"></span>
+            <span class="sidebar-active-dot ml-auto w-1.5 h-1.5 rounded-full bg-[#F2B134]"></span>
           )}
         </a>
 
         <!-- Actividades & Eventos (Direct Link) -->
         <a 
           href="/2416f50b-da02-4a5b-86a8-61ae470ed3bd/actividades" 
-          class={`flex items-center gap-3 px-3 py-2 rounded-xl transition-all ${
+          class={`sidebar-link flex items-center gap-3 px-3 py-2 rounded-xl transition-all ${
             isActivitiesActive 
               ? 'bg-[#F5EFE6] dark:bg-[#1E1E1E] text-[#1F1B16] dark:text-white font-medium border border-[#E5DFD5] dark:border-[#282828] shadow-sm' 
               : 'text-[#78716A] dark:text-neutral-400 hover:text-[#1F1B16] dark:hover:text-white hover:bg-[#F5EFE6] dark:hover:bg-white/5'
           }`}
+          title="Actividades & Programación Cultural"
         >
           <svg class={`w-4 h-4 shrink-0 ${isActivitiesActive ? 'text-[#E4572E]' : 'text-[#78716A] dark:text-neutral-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
-          <span class="truncate">Actividades & Eventos</span>
+          <span class="sidebar-label truncate">Actividades & Eventos</span>
           {isActivitiesActive && (
-            <span class="ml-auto w-1.5 h-1.5 rounded-full bg-[#E4572E]"></span>
+            <span class="sidebar-active-dot ml-auto w-1.5 h-1.5 rounded-full bg-[#E4572E]"></span>
           )}
         </a>
 
         <!-- Autores (Direct Link) -->
         <a 
           href="/2416f50b-da02-4a5b-86a8-61ae470ed3bd/autores" 
-          class={`flex items-center gap-3 px-3 py-2 rounded-xl transition-all ${
+          class={`sidebar-link flex items-center gap-3 px-3 py-2 rounded-xl transition-all ${
             isAuthorsActive 
               ? 'bg-[#F5EFE6] dark:bg-[#1E1E1E] text-[#1F1B16] dark:text-white font-medium border border-[#E5DFD5] dark:border-[#282828] shadow-sm' 
               : 'text-[#78716A] dark:text-neutral-400 hover:text-[#1F1B16] dark:hover:text-white hover:bg-[#F5EFE6] dark:hover:bg-white/5'
           }`}
+          title="Autores & Redacción"
         >
           <svg class={`w-4 h-4 shrink-0 ${isAuthorsActive ? 'text-[#E4572E]' : 'text-[#78716A] dark:text-neutral-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
           </svg>
-          <span class="truncate">Autores & Redacción</span>
+          <span class="sidebar-label truncate">Autores & Redacción</span>
           {isAuthorsActive && (
-            <span class="ml-auto w-1.5 h-1.5 rounded-full bg-[#E4572E]"></span>
+            <span class="sidebar-active-dot ml-auto w-1.5 h-1.5 rounded-full bg-[#E4572E]"></span>
           )}
         </a>
 
         <!-- Galería & Proyectos (Direct Link) -->
         <a 
           href="/2416f50b-da02-4a5b-86a8-61ae470ed3bd/galeria" 
-          class={`flex items-center gap-3 px-3 py-2 rounded-xl transition-all ${
+          class={`sidebar-link flex items-center gap-3 px-3 py-2 rounded-xl transition-all ${
             isGalleryActive 
               ? 'bg-[#F5EFE6] dark:bg-[#1E1E1E] text-[#1F1B16] dark:text-white font-medium border border-[#E5DFD5] dark:border-[#282828] shadow-sm' 
               : 'text-[#78716A] dark:text-neutral-400 hover:text-[#1F1B16] dark:hover:text-white hover:bg-[#F5EFE6] dark:hover:bg-white/5'
           }`}
+          title="Galería & Artes Plásticas"
         >
           <svg class={`w-4 h-4 shrink-0 ${isGalleryActive ? 'text-[#2F4B3A]' : 'text-[#78716A] dark:text-neutral-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
-          <span class="truncate">Galería & Proyectos</span>
+          <span class="sidebar-label truncate">Galería & Proyectos</span>
           {isGalleryActive && (
-            <span class="ml-auto w-1.5 h-1.5 rounded-full bg-[#2F4B3A]"></span>
+            <span class="sidebar-active-dot ml-auto w-1.5 h-1.5 rounded-full bg-[#2F4B3A]"></span>
           )}
         </a>
       </nav>
@@ -168,44 +189,49 @@ const isProfileActive = activeModule === 'profile';
 
     <!-- SECTION 2: CONFIGURACIÓN -->
     <div>
-      <div class="px-3 pb-1.5 text-xs font-semibold text-[#78716A] dark:text-neutral-500 uppercase tracking-wider text-[11px]">
-        Configuración
+      <div class="sidebar-heading px-3 pb-1.5">
+        <span class="sidebar-heading-text text-xs font-semibold text-[#78716A] dark:text-neutral-500 uppercase tracking-wider text-[11px]">
+          Configuración
+        </span>
+        <div class="sidebar-heading-divider hidden h-px bg-zinc-800 my-1"></div>
       </div>
 
       <nav class="space-y-1 mt-1">
         <!-- Gestión de Roles -->
         <a 
           href="/2416f50b-da02-4a5b-86a8-61ae470ed3bd/roles" 
-          class={`flex items-center gap-3 px-3 py-2 rounded-xl transition-all ${
+          class={`sidebar-link flex items-center gap-3 px-3 py-2 rounded-xl transition-all ${
             isRolesActive 
               ? 'bg-[#F5EFE6] dark:bg-[#1E1E1E] text-[#1F1B16] dark:text-white font-medium border border-[#E5DFD5] dark:border-[#282828] shadow-sm' 
               : 'text-[#78716A] dark:text-neutral-400 hover:text-[#1F1B16] dark:hover:text-white hover:bg-[#F5EFE6] dark:hover:bg-white/5'
           }`}
+          title="Gestión de Roles RBAC"
         >
           <svg class={`w-4 h-4 shrink-0 ${isRolesActive ? 'text-[#E4572E]' : 'text-[#78716A] dark:text-neutral-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
           </svg>
-          <span class="truncate">Gestión de Roles</span>
+          <span class="sidebar-label truncate">Gestión de Roles</span>
           {isRolesActive && (
-            <span class="ml-auto w-1.5 h-1.5 rounded-full bg-[#E4572E]"></span>
+            <span class="sidebar-active-dot ml-auto w-1.5 h-1.5 rounded-full bg-[#E4572E]"></span>
           )}
         </a>
 
         <!-- Gestión de Usuarios -->
         <a 
           href="/2416f50b-da02-4a5b-86a8-61ae470ed3bd/usuarios" 
-          class={`flex items-center gap-3 px-3 py-2 rounded-xl transition-all ${
+          class={`sidebar-link flex items-center gap-3 px-3 py-2 rounded-xl transition-all ${
             isUsersActive 
               ? 'bg-[#F5EFE6] dark:bg-[#1E1E1E] text-[#1F1B16] dark:text-white font-medium border border-[#E5DFD5] dark:border-[#282828] shadow-sm' 
               : 'text-[#78716A] dark:text-neutral-400 hover:text-[#1F1B16] dark:hover:text-white hover:bg-[#F5EFE6] dark:hover:bg-white/5'
           }`}
+          title="Gestión de Usuarios"
         >
           <svg class={`w-4 h-4 shrink-0 ${isUsersActive ? 'text-[#F2B134]' : 'text-[#78716A] dark:text-neutral-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
           </svg>
-          <span class="truncate">Gestión de Usuarios</span>
+          <span class="sidebar-label truncate">Gestión de Usuarios</span>
           {isUsersActive && (
-            <span class="ml-auto w-1.5 h-1.5 rounded-full bg-[#F2B134]"></span>
+            <span class="sidebar-active-dot ml-auto w-1.5 h-1.5 rounded-full bg-[#F2B134]"></span>
           )}
         </a>
       </nav>
@@ -213,8 +239,11 @@ const isProfileActive = activeModule === 'profile';
 
     <!-- SECTION 3: ACCESO PÚBLICO -->
     <div class="pt-3 border-t border-[#E5DFD5] dark:border-[#282828]">
-      <div class="px-3 pb-1.5 text-xs font-semibold text-[#78716A] dark:text-neutral-500 uppercase tracking-wider text-[11px]">
-        Acceso Público
+      <div class="sidebar-heading px-3 pb-1.5">
+        <span class="sidebar-heading-text text-xs font-semibold text-[#78716A] dark:text-neutral-500 uppercase tracking-wider text-[11px]">
+          Acceso Público
+        </span>
+        <div class="sidebar-heading-divider hidden h-px bg-zinc-800 my-1"></div>
       </div>
 
       <nav class="space-y-1 mt-1">
@@ -222,15 +251,16 @@ const isProfileActive = activeModule === 'profile';
           href="/" 
           target="_blank" 
           rel="noopener noreferrer"
-          class="flex items-center justify-between px-3 py-2 rounded-xl text-[#78716A] dark:text-neutral-400 hover:text-[#1F1B16] dark:hover:text-white hover:bg-[#F5EFE6] dark:hover:bg-white/5 transition-all group"
+          class="sidebar-link flex items-center justify-between px-3 py-2 rounded-xl text-[#78716A] dark:text-neutral-400 hover:text-[#1F1B16] dark:hover:text-white hover:bg-[#F5EFE6] dark:hover:bg-white/5 transition-all group"
+          title="Ver Sitio Principal (Abre en nueva pestaña)"
         >
           <div class="flex items-center gap-3 min-w-0">
             <svg class="w-4 h-4 text-[#78716A] dark:text-neutral-400 group-hover:text-[#E4572E] transition-colors shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
             </svg>
-            <span class="truncate">Ver Sitio Principal</span>
+            <span class="sidebar-label truncate">Ver Sitio Principal</span>
           </div>
-          <span class="text-[10px] px-1.5 py-0.5 rounded bg-[#FAF6F0] dark:bg-[#181818] text-[#78716A] dark:text-neutral-400 border border-[#E5DFD5] dark:border-[#282828] group-hover:border-[#E4572E]/40 group-hover:text-[#E4572E] transition-colors">
+          <span class="sidebar-label text-[10px] px-1.5 py-0.5 rounded bg-[#FAF6F0] dark:bg-[#181818] text-[#78716A] dark:text-neutral-400 border border-[#E5DFD5] dark:border-[#282828] group-hover:border-[#E4572E]/40 group-hover:text-[#E4572E] transition-colors">
             Web
           </span>
         </a>
@@ -239,9 +269,23 @@ const isProfileActive = activeModule === 'profile';
 
   </div>
 
-  <!-- Bottom: User Account Card & Logout -->
+  <!-- Bottom: Rail Collapse Toggle & User Account Card & Logout -->
   <div class="p-3 border-t border-[#E5DFD5] dark:border-[#282828] bg-[#FAF6F0] dark:bg-[#111111]">
-    <div class={`p-2.5 rounded-xl border transition-all flex items-center justify-between gap-2.5 ${isProfileActive ? 'bg-[#F5EFE6] dark:bg-[#1E1E1E] border-[#E4572E]/50 shadow-sm' : 'bg-white dark:bg-[#181818] border-[#E5DFD5] dark:border-[#282828]'}`}>
+    
+    <!-- Botón de Colapso Icon-Rail (Desktop) -->
+    <button 
+      type="button" 
+      id="toggleSidebarRailBtn"
+      class="sidebar-rail-btn w-full mb-2 hidden lg:flex items-center gap-2.5 px-3 py-2 rounded-xl text-neutral-500 hover:text-[#1F1B16] dark:text-neutral-400 dark:hover:text-white hover:bg-[#F5EFE6] dark:hover:bg-white/5 transition-all text-xs font-medium cursor-pointer"
+      title="Contraer / Expandir menú lateral"
+    >
+      <svg class="w-4 h-4 shrink-0 transition-transform duration-300 sidebar-collapse-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+      </svg>
+      <span class="sidebar-label truncate">Contraer menú</span>
+    </button>
+
+    <div class={`sidebar-user-card p-2.5 rounded-xl border transition-all flex items-center justify-between gap-2.5 ${isProfileActive ? 'bg-[#F5EFE6] dark:bg-[#1E1E1E] border-[#E4572E]/50 shadow-sm' : 'bg-white dark:bg-[#181818] border-[#E5DFD5] dark:border-[#282828]'}`}>
       <a 
         href="/2416f50b-da02-4a5b-86a8-61ae470ed3bd/profile" 
         class="flex items-center gap-2.5 min-w-0 flex-1 group cursor-pointer"
@@ -250,7 +294,7 @@ const isProfileActive = activeModule === 'profile';
         <div class="w-8 h-8 rounded-lg bg-[#E4572E] flex items-center justify-center text-white font-bold text-xs shrink-0 group-hover:scale-105 transition-transform shadow-sm">
           {(userEmail?.[0] || 'A').toUpperCase()}
         </div>
-        <div class="flex flex-col min-w-0">
+        <div class="flex flex-col min-w-0 sidebar-user-details">
           <span class="text-xs font-semibold text-[#1F1B16] dark:text-white truncate max-w-[115px] group-hover:text-[#F2B134] transition-colors" id="sidebarUserEmail" title={userEmail || 'Administrador'}>
             {userEmail || 'Administrador'}
           </span>
@@ -264,7 +308,7 @@ const isProfileActive = activeModule === 'profile';
       <button 
         type="button" 
         id="sidebarLogoutBtn"
-        class="p-1.5 rounded-lg text-neutral-500 dark:text-neutral-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 border border-transparent hover:border-red-500/20 transition-all duration-200 cursor-pointer shrink-0"
+        class="sidebar-logout-btn p-1.5 rounded-lg text-neutral-500 dark:text-neutral-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 border border-transparent hover:border-red-500/20 transition-all duration-200 cursor-pointer shrink-0"
         title="Cerrar sesión de forma segura"
       >
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -289,6 +333,8 @@ const isProfileActive = activeModule === 'profile';
   const backdrop = document.getElementById('sidebarBackdrop');
   const closeBtn = document.getElementById('closeSidebarBtn');
   const sidebarLogoutBtn = document.getElementById('sidebarLogoutBtn');
+  const collapseSidebarBtn = document.getElementById('collapseSidebarBtn');
+  const toggleSidebarRailBtn = document.getElementById('toggleSidebarRailBtn');
 
   // Close sidebar on mobile
   function closeMobileSidebar() {
@@ -299,29 +345,27 @@ const isProfileActive = activeModule === 'profile';
   closeBtn?.addEventListener('click', closeMobileSidebar);
   backdrop?.addEventListener('click', closeMobileSidebar);
 
-  // Accordion toggle behavior for group items
-  const toggles = document.querySelectorAll('.sidebar-group-toggle');
-  toggles.forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const targetId = btn.getAttribute('data-target');
-      if (!targetId) return;
-      const targetEl = document.getElementById(targetId);
-      const chevron = btn.querySelector('.chevron-icon');
+  // Toggle Collapse Desktop (Icon-Rail) con persistencia en localStorage
+  function toggleSidebarCollapse() {
+    const isCurrentlyCollapsed = document.documentElement.classList.contains('sidebar-collapsed');
+    const nextCollapsed = !isCurrentlyCollapsed;
 
-      if (targetEl) {
-        const isHidden = targetEl.classList.contains('hidden');
-        if (isHidden) {
-          targetEl.classList.remove('hidden');
-          chevron?.classList.add('rotate-90', 'text-slate-200');
-          btn.setAttribute('aria-expanded', 'true');
-        } else {
-          targetEl.classList.add('hidden');
-          chevron?.classList.remove('rotate-90', 'text-slate-200');
-          btn.setAttribute('aria-expanded', 'false');
-        }
-      }
-    });
-  });
+    if (nextCollapsed) {
+      document.documentElement.classList.add('sidebar-collapsed');
+    } else {
+      document.documentElement.classList.remove('sidebar-collapsed');
+    }
+
+    try {
+      localStorage.setItem('admin_sidebar_collapsed', String(nextCollapsed));
+    } catch (e) {}
+
+    // Dispatch event para componentes que escuchen el redimensionamiento
+    window.dispatchEvent(new CustomEvent('sidebar-toggle', { detail: { collapsed: nextCollapsed } }));
+  }
+
+  collapseSidebarBtn?.addEventListener('click', toggleSidebarCollapse);
+  toggleSidebarRailBtn?.addEventListener('click', toggleSidebarCollapse);
 
   // Logout handler: acción explícita del usuario
   sidebarLogoutBtn?.addEventListener('click', async () => {

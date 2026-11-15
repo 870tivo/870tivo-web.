@@ -12,9 +12,17 @@ interface Props {
   authorSlug?: string;
   date: string;
   description?: string;
+  postId?: string;
+  postSlug?: string;
+  initialLikes?: number;
 }
 
-const { title, author, authorHandle, authorSlug, date, description } = Astro.props;
+const {
+  title, author, authorHandle, authorSlug, date, description,
+  postId = '',
+  postSlug = '',
+  initialLikes = 0,
+} = Astro.props;
 ---
 
 <BaseLayout title={`${title} - 870tivo`} description={description}>
@@ -26,6 +34,6 @@ const { title, author, authorHandle, authorSlug, date, description } = Astro.pro
     <div class="max-w-3xl mx-auto px-4 md:px-6 w-full">
       <AuthorCard author={author} authorHandle={authorHandle} authorSlug={authorSlug} />
     </div>
-    <CommentSection client:visible />
+    <CommentSection client:visible postId={postId} postSlug={postSlug} initialLikes={initialLikes} />
   </main>
 </BaseLayout>

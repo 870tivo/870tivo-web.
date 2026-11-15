@@ -15,6 +15,8 @@ export interface SupabasePost {
   content: string;
   read_time: string;
   status: 'publicado' | 'borrador' | 'archivado';
+  views: number;
+  likes: number;
   created_at: string;
   updated_at: string;
 }
