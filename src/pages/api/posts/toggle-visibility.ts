@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { setPostVisibility, getVisibilityMap } from '../../../lib/postVisibility';
 import { supabaseAdmin } from '../../../lib/supabase';
+import { notifySubscribersOnPublish } from '../../../lib/newsletter';
 
 export const prerender = false;
 
@@ -33,6 +34,28 @@ export const POST: APIRoute = async ({ request }) => {
         .from('posts')
         .update({ status: newStatus, updated_at: new Date().toISOString() })
         .eq('slug', slug);
+
+      if (isPublished) {
+        supabaseAdmin
+          .from('posts')
+          .select('title, slug, subtitle, category, author, cover_image')
+          .eq('slug', slug)
+          .single()
+          .then(({ data: postData }) => {
+            if (postData) {
+              notifySubscribersOnPublish({
+                title: postData.title,
+                slug: postData.slug,
+                subtitle: postData.subtitle,
+                category: postData.category,
+                author: postData.author,
+                coverImage: postData.cover_image,
+              }).catch((err) =>
+                console.error('[toggle-visibility] Error notificando suscriptores:', err)
+              );
+            }
+          });
+      }
     } catch (sbErr) {
       console.error('Error al actualizar visibilidad en Supabase:', sbErr);
     }
