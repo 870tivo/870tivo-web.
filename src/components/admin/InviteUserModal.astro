@@ -43,19 +43,19 @@ const defaultRoleId = viewerRole ? viewerRole.id : '';
   <!-- Error Banner (hidden by default) -->
   <div 
     id="inviteModalError" 
-    class="hidden mb-5 p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 text-xs flex items-start gap-2.5"
+    class="hidden mb-5 p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 flex items-start gap-2.5"
   >
     <svg class="w-4 h-4 shrink-0 text-red-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
     </svg>
-    <span id="inviteModalErrorMsg" class="font-medium">Ocurrió un error al enviar la invitación.</span>
+    <span id="inviteModalErrorMsg" class="admin-error-text">Ocurrió un error al enviar la invitación.</span>
   </div>
 
   <!-- Invite Form -->
-  <form id="inviteUserForm" class="space-y-5" novalidate>
+  <form id="inviteUserForm" class="space-y-5 font-sans" novalidate>
     <!-- Email Field -->
     <div>
-      <label for="inviteEmailInput" class="block text-xs font-bold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider mb-1.5">
+      <label for="inviteEmailInput" class="block admin-label text-neutral-700 dark:text-neutral-300 mb-1.5">
         Correo Electrónico *
       </label>
       <div class="relative">
@@ -66,27 +66,27 @@ const defaultRoleId = viewerRole ? viewerRole.id : '';
           required
           autocomplete="email"
           placeholder="ejemplo@870tivo.com" 
-          class="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-[#141414] border border-[#E5DFD5] dark:border-[#282828] focus:border-[#E4572E] rounded-xl text-xs text-[#1F1B16] dark:text-white placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-[#E4572E] transition-all"
+          class="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-[#141414] border border-[#E5DFD5] dark:border-[#282828] focus:border-[#E4572E] rounded-xl admin-input text-[#1F1B16] dark:text-white focus:outline-none focus:ring-1 focus:ring-[#E4572E] transition-all"
         />
         <svg class="w-4 h-4 text-neutral-400 absolute left-3.5 top-3 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
         </svg>
       </div>
-      <p class="text-[11px] text-neutral-500 dark:text-neutral-400 mt-1">
+      <p class="admin-helper-text text-neutral-500 dark:text-neutral-400 mt-1">
         A este buzón llegará la invitación con el enlace de acceso inicial.
       </p>
     </div>
 
     <!-- Initial Role Field -->
     <div>
-      <label for="inviteRoleSelect" class="block text-xs font-bold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider mb-1.5">
+      <label for="inviteRoleSelect" class="block admin-label text-neutral-700 dark:text-neutral-300 mb-1.5">
         Rol Inicial Asignado
       </label>
       <div class="relative">
         <select 
           id="inviteRoleSelect" 
           name="roleId" 
-          class="w-full pl-10 pr-9 py-2.5 bg-white dark:bg-[#141414] border border-[#E5DFD5] dark:border-[#282828] focus:border-[#E4572E] rounded-xl text-xs font-medium text-[#1F1B16] dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-[#E4572E] cursor-pointer transition-all appearance-none"
+          class="w-full pl-10 pr-9 py-2.5 bg-white dark:bg-[#141414] border border-[#E5DFD5] dark:border-[#282828] focus:border-[#E4572E] rounded-xl admin-input font-medium text-[#1F1B16] dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-[#E4572E] cursor-pointer transition-all appearance-none"
         >
           <option value="" selected={!defaultRoleId} class="bg-white dark:bg-[#181818] text-neutral-500 dark:text-neutral-400">
             Sin Rol / Viewer (Sin privilegios administrativos)
@@ -108,13 +108,13 @@ const defaultRoleId = viewerRole ? viewerRole.id : '';
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
         </svg>
       </div>
-      <p class="text-[11px] text-neutral-500 dark:text-neutral-400 mt-1">
+      <p class="admin-helper-text text-neutral-500 dark:text-neutral-400 mt-1">
         Por defecto se recomienda asignar el rol de menor privilegio. Puedes modificarlo posteriormente en la tabla.
       </p>
     </div>
 
     <!-- Information Callout -->
-    <div class="p-3.5 rounded-xl bg-[#2F4B3A]/10 border border-[#2F4B3A]/20 text-[#2F4B3A] dark:text-[#A7C7B3] text-xs flex items-start gap-2.5">
+    <div class="p-3.5 rounded-xl bg-[#2F4B3A]/10 border border-[#2F4B3A]/20 text-[#2F4B3A] dark:text-[#A7C7B3] font-sans text-xs flex items-start gap-2.5">
       <svg class="w-4 h-4 text-[#2F4B3A] shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
@@ -124,7 +124,7 @@ const defaultRoleId = viewerRole ? viewerRole.id : '';
     </div>
 
     <!-- Action Buttons -->
-    <div class="flex items-center justify-end gap-3 pt-3 border-t border-[#E5DFD5] dark:border-[#282828]">
+    <div class="flex items-center justify-end gap-3 pt-3 border-t border-[#E5DFD5] dark:border-[#282828] font-sans">
       <Button
         type="button" 
         id="cancelInviteBtn"

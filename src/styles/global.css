@@ -1,3 +1,55 @@
+/* ============================================================
+ * SISTEMA TIPOGRÁFICO — 870tivo
+ * ============================================================
+ *
+ *  font-sans  → Inter            → UI, cuerpo, nav, botones, labels, datos, admin
+ *  font-serif → Playfair Display → Títulos editoriales: h1, h2, h3 de sección y modales
+ *
+ *  Pesos cargados (definidos en src/config/fonts.ts):
+ *    Inter:            400 | 500 | 600 | 700 | 800
+ *    Playfair Display: 400 | 400 italic | 600 | 700
+ *
+ *  Escala de uso (Portal público):
+ *    Display XL  → font-serif font-bold     text-7xl   tracking-tighter
+ *    Display L   → font-serif font-bold     text-5xl   tracking-tighter
+ *    Heading     → font-serif font-semibold text-3xl   tracking-tight
+ *    Subheading  → font-sans  font-semibold text-xl
+ *    Body        → font-sans  font-normal   text-base  leading-relaxed
+ *    Label UI    → font-sans  font-medium   text-sm
+ *    Caption     → font-sans  font-normal   text-xs    text-brand-muted
+ *    Overline    → font-sans  font-bold     text-xs    uppercase tracking-widest
+ *
+ *  Escala compartida de módulos admin (Referencia: Publicaciones):
+ *    .admin-eyebrow       → font-sans  font-bold     text-xs             uppercase tracking-widest
+ *    .admin-page-title    → font-serif font-bold     text-2xl sm:text-3xl tracking-tight leading-tight
+ *    .admin-page-subtitle → font-sans                text-xs  sm:text-sm  leading-relaxed
+ *    .admin-section-title → font-serif font-bold     text-base           tracking-tight leading-snug
+ *    .admin-modal-title   → font-serif font-bold     text-xl  sm:text-2xl tracking-tight leading-snug
+ *    .admin-kpi-label     → font-sans  font-bold     text-[11px]         uppercase tracking-wider
+ *    .admin-kpi-value     → font-sans  font-bold     text-2xl            tracking-tight leading-none tabular-nums
+ *    .admin-table-head    → font-sans  font-bold     text-[11px]         uppercase tracking-wider
+ *    .admin-item-title    → font-sans  font-semibold text-sm             leading-snug
+ *    .admin-item-subtitle → font-sans                text-[11px]         leading-relaxed
+ *    .admin-meta          → font-sans  font-medium   text-xs
+ *    .admin-micro         → font-sans  font-medium   text-[10px]
+ *    .admin-label         → font-sans  font-bold     text-xs             uppercase tracking-wider
+ *    .admin-badge         → font-sans  font-semibold text-[10px]
+ *    .admin-status-pill   → font-sans  font-semibold text-[11px]
+ *    .admin-tab               → font-sans  font-semibold text-xs
+ *    .admin-empty-title       → font-sans  font-bold     text-sm
+ *    .admin-empty-description → font-sans                text-xs             leading-relaxed
+ *    .admin-input             → font-sans                text-xs             leading-normal placeholder:text-[#A8A29E]
+ *    .admin-helper-text       → font-sans                text-[11px]         leading-relaxed
+ *    .admin-error-text        → font-sans  font-medium   text-xs             leading-relaxed
+ *    .admin-toast             → font-sans  font-medium   text-xs
+ *
+ *  Regla para nuevos módulos admin:
+ *    Usa SIEMPRE estas clases `.admin-*` en lugar de clases tipográficas sueltas
+ *    (`font-serif`, `font-sans`, `text-*`, `font-*`, `tracking-*`) para mantener
+ *    la escala unificada del panel.
+ *  Regla de oro: ¿Título principal de módulo, sección o modal? → font-serif. ¿Todo lo demás? → font-sans
+ * ============================================================ */
+
 @import "tailwindcss/base";
 @import "tailwindcss/components";
 @import "tailwindcss/utilities";
@@ -52,6 +104,95 @@
 
   body {
     @apply bg-brand-bg text-brand-ink dark:bg-brand-darkBg dark:text-brand-darkInk font-sans antialiased selection:bg-brand-primary selection:text-white transition-colors duration-200;
+  }
+}
+
+@layer components {
+  .admin-eyebrow {
+    @apply font-sans text-xs font-bold uppercase tracking-widest;
+  }
+
+  .admin-page-title {
+    @apply font-serif text-2xl sm:text-3xl font-bold tracking-tight leading-tight;
+    text-wrap: balance;
+  }
+
+  .admin-page-subtitle {
+    @apply font-sans text-xs sm:text-sm leading-relaxed;
+    text-wrap: pretty;
+  }
+
+  .admin-section-title {
+    @apply font-serif text-base font-bold tracking-tight leading-snug;
+    text-wrap: balance;
+  }
+
+  .admin-modal-title {
+    @apply font-serif text-xl sm:text-2xl font-bold tracking-tight leading-snug;
+    text-wrap: balance;
+  }
+
+  .admin-kpi-label {
+    @apply font-sans text-[11px] font-bold uppercase tracking-wider;
+  }
+
+  .admin-kpi-value {
+    @apply font-sans text-2xl font-bold tracking-tight leading-none tabular-nums;
+  }
+
+  .admin-table-head {
+    @apply font-sans text-[11px] font-bold uppercase tracking-wider;
+  }
+
+  .admin-item-title {
+    @apply font-sans text-sm font-semibold leading-snug;
+  }
+
+  .admin-item-subtitle {
+    @apply font-sans text-[11px] leading-relaxed;
+  }
+
+  .admin-meta {
+    @apply font-sans text-xs font-medium;
+  }
+
+  .admin-micro {
+    @apply font-sans text-[10px] font-medium;
+  }
+
+  .admin-label {
+    @apply font-sans text-xs font-bold uppercase tracking-wider;
+  }
+
+  .admin-badge {
+    @apply font-sans text-[10px] font-semibold;
+  }
+
+  .admin-status-pill {
+    @apply font-sans text-[11px] font-semibold;
+  }
+
+  .admin-tab {
+    @apply font-sans text-xs font-semibold;
+  }
+
+  .admin-empty-title {
+    @apply font-sans text-sm font-bold;
+  }
+  .admin-empty-description {
+    @apply font-sans text-xs leading-relaxed;
+  }
+  .admin-input {
+    @apply font-sans text-xs leading-normal placeholder:text-[#A8A29E] dark:placeholder:text-neutral-500;
+  }
+  .admin-helper-text {
+    @apply font-sans text-[11px] leading-relaxed;
+  }
+  .admin-error-text {
+    @apply font-sans text-xs font-medium leading-relaxed;
+  }
+  .admin-toast {
+    @apply font-sans text-xs font-medium;
   }
 }
 

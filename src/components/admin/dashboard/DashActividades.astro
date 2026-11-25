@@ -142,7 +142,7 @@ function formatEventDate(dateStr: string): string {
         </svg>
       </div>
       <div>
-        <h3 class="text-sm sm:text-base font-bold font-serif text-slate-100 tracking-tight leading-none">
+        <h3 class="admin-section-title text-slate-100">
           Programación Cultural
         </h3>
         <p class="text-[11px] text-slate-400 mt-1">
@@ -166,7 +166,7 @@ function formatEventDate(dateStr: string): string {
 
   <!-- Filtro Rápido de Categorías (Pills) -->
   <div class="px-4 py-2.5 bg-zinc-900/40 border-b border-zinc-800/80 flex items-center gap-1.5 overflow-x-auto text-xs no-scrollbar">
-    <span class="text-[11px] text-slate-500 font-medium mr-1 uppercase tracking-wider shrink-0">Filtro:</span>
+    <span class="admin-kpi-label text-slate-500 mr-1 shrink-0">Filtro:</span>
     <button
       type="button"
       data-filter="all"
@@ -207,7 +207,7 @@ function formatEventDate(dateStr: string): string {
   <!-- Lista Compacta de Actividades -->
   <div class="flex-1 overflow-y-auto divide-y divide-zinc-800/50 max-h-[380px] custom-scrollbar" id="activitiesListContainer">
     {activitiesList.length === 0 ? (
-      <div class="py-12 text-center text-slate-500 text-xs italic">
+      <div class="py-12 text-center admin-empty-description text-slate-500 italic">
         No hay actividades programadas.
       </div>
     ) : (
@@ -237,7 +237,7 @@ function formatEventDate(dateStr: string): string {
               <div class="min-w-0 flex-1">
                 <a
                   href={`${adminBase}/actividades?edit=${act.slug}`}
-                  class="font-semibold text-slate-200 group-hover:text-emerald-400 transition-colors truncate block text-xs"
+                  class="font-sans text-xs sm:text-sm font-semibold text-slate-200 group-hover:text-emerald-400 transition-colors truncate block"
                   title={act.title}
                 >
                   {act.title}

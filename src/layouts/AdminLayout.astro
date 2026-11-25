@@ -3,6 +3,7 @@ import '../styles/global.css';
 import AdminSidebar from '../components/admin/AdminSidebar.astro';
 import AdminHeader from '../components/admin/AdminHeader.astro';
 import AdminSessionGuard from '../components/admin/AdminSessionGuard.astro';
+import { FONTS_URL } from '../config/fonts';
 
 interface Props {
   title?: string;
@@ -28,7 +29,6 @@ const {
 const user = Astro.locals.user;
 const userEmail = user?.email || '';
 const userFullName = Astro.locals.userFullName || '';
-const fontsUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,400&display=swap';
 ---
 
 <!doctype html>
@@ -44,7 +44,7 @@ const fontsUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;60
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href={fontsUrl} rel="stylesheet" />
+    <link href={FONTS_URL} rel="stylesheet" />
 
     <!-- Anti-flicker Theme & Sidebar State Script -->
     <script is:inline>

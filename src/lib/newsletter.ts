@@ -1,5 +1,5 @@
-import nodemailer from 'nodemailer';
 import { supabaseAdmin } from './supabase';
+import { createGmailTransporter, getGmailCredentials, getSiteUrl } from './mailer';
 
 export interface PublishAlertPayload {
   title: string;
@@ -14,7 +14,7 @@ export interface PublishAlertPayload {
  * Genera la plantilla HTML responsive con la estética editorial y minimalista de 870.
  */
 export function buildPublicationEmailTemplate(payload: PublishAlertPayload): string {
-  const siteUrl = process.env.PUBLIC_SITE_URL || 'https://870tivo-web.vercel.app';
+  const siteUrl = getSiteUrl();
   const postUrl = `${siteUrl}/blog/${payload.slug}`;
   const authorName = payload.author?.trim() || 'Colectivo 870';
   const categoryBadge = payload.category?.toUpperCase() || 'EDITORIAL';
@@ -201,11 +201,11 @@ export async function notifySubscribersOnPublish(
       };
     }
 
-    const gmailUser = import.meta.env.GMAIL_USER || process.env.GMAIL_USER || '870colectivo@gmail.com';
-    const gmailPass = import.meta.env.GMAIL_APP_PASSWORD || process.env.GMAIL_APP_PASSWORD;
+    const { user: gmailUser } = getGmailCredentials();
+    const transporter = createGmailTransporter();
 
     // Si aún no se han configurado las credenciales en .env, registramos aviso claro
-    if (!gmailPass) {
+    if (!transporter) {
       const msg = `[Newsletter] Envío simulado: se encontró ${subscribers.length} suscriptor(es), pero falta configurar GMAIL_APP_PASSWORD en .env para el envío real desde ${gmailUser}.`;
       console.warn(msg);
       return {
@@ -214,15 +214,6 @@ export async function notifySubscribersOnPublish(
         message: msg,
       };
     }
-
-    // Configurar transporte SMTP seguro con Nodemailer para Gmail
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: gmailUser,
-        pass: gmailPass,
-      },
-    });
 
     const htmlContent = buildPublicationEmailTemplate(payload);
 

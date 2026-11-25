@@ -153,7 +153,7 @@ try {
         </svg>
       </div>
       <div>
-        <h3 class="text-sm sm:text-base font-bold font-serif text-slate-100 tracking-tight leading-none">
+        <h3 class="admin-section-title text-slate-100">
           Catálogo & Gestión Editorial
         </h3>
         <p class="text-[11px] text-slate-400 mt-1">
@@ -218,9 +218,9 @@ try {
          TAB 1: BLOG / ENSAYOS
     ────────────────────────────────────────────────────────── -->
     <div id="dash-tab-blog" class="tab-panel block" role="tabpanel" aria-labelledby="btn-tab-blog">
-      <table class="w-full text-left border-collapse text-xs">
+      <table class="w-full text-left border-collapse font-sans text-xs">
         <thead>
-          <tr class="border-b border-zinc-800/80 bg-zinc-900/50 text-slate-400 text-[11px] uppercase tracking-wider font-semibold">
+          <tr class="border-b border-zinc-800/80 bg-zinc-900/50 text-slate-400 admin-table-head">
             <th class="py-3 px-4">Artículo & Autor</th>
             <th class="py-3 px-4 text-center">Vistas</th>
             <th class="py-3 px-4 text-center">Estado</th>
@@ -238,7 +238,7 @@ try {
                     href={`/blog/${post.slug}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    class="font-semibold text-slate-200 group-hover:text-[#E4572E] transition-colors truncate block text-xs"
+                    class="font-sans text-xs sm:text-sm font-semibold text-slate-200 group-hover:text-[#E4572E] transition-colors truncate block"
                     title={`Ver «${post.title}» en vivo`}
                   >
                     {post.title}
@@ -330,9 +330,9 @@ try {
          TAB 2: GALERÍA
     ────────────────────────────────────────────────────────── -->
     <div id="dash-tab-galeria" class="tab-panel hidden" role="tabpanel" aria-labelledby="btn-tab-galeria">
-      <table class="w-full text-left border-collapse text-xs">
+      <table class="w-full text-left border-collapse font-sans text-xs">
         <thead>
-          <tr class="border-b border-zinc-800/80 bg-zinc-900/50 text-slate-400 text-[11px] uppercase tracking-wider font-semibold">
+          <tr class="border-b border-zinc-800/80 bg-zinc-900/50 text-slate-400 admin-table-head">
             <th class="py-3 px-4">Obra / Exposición</th>
             <th class="py-3 px-4 text-center">Categoría</th>
             <th class="py-3 px-4 text-center">Estado</th>
@@ -342,7 +342,7 @@ try {
         <tbody class="divide-y divide-zinc-800/50">
           {galleryList.length === 0 ? (
             <tr>
-              <td colspan="4" class="py-8 text-center text-slate-500 italic">
+              <td colspan="4" class="py-8 text-center admin-empty-description text-slate-500 italic">
                 No hay obras registradas en la Galería aún.
               </td>
             </tr>
@@ -359,7 +359,7 @@ try {
                         class="w-8 h-8 rounded-lg object-cover border border-zinc-800 shrink-0"
                         loading="lazy"
                       />
-                      <span class="font-semibold text-slate-200 group-hover:text-[#F2B134] transition-colors truncate block text-xs max-w-[160px] sm:max-w-xs">
+                      <span class="font-sans text-xs sm:text-sm font-semibold text-slate-200 group-hover:text-[#F2B134] transition-colors truncate block max-w-[160px] sm:max-w-xs">
                         {item.title}
                       </span>
                     </div>
@@ -433,9 +433,9 @@ try {
          TAB 3: AUTORES
     ────────────────────────────────────────────────────────── -->
     <div id="dash-tab-autores" class="tab-panel hidden" role="tabpanel" aria-labelledby="btn-tab-autores">
-      <table class="w-full text-left border-collapse text-xs">
+      <table class="w-full text-left border-collapse font-sans text-xs">
         <thead>
-          <tr class="border-b border-zinc-800/80 bg-zinc-900/50 text-slate-400 text-[11px] uppercase tracking-wider font-semibold">
+          <tr class="border-b border-zinc-800/80 bg-zinc-900/50 text-slate-400 admin-table-head">
             <th class="py-3 px-4">Autor / Colaborador</th>
             <th class="py-3 px-4">Contacto / Red</th>
             <th class="py-3 px-4 text-center">Rol</th>
@@ -445,7 +445,7 @@ try {
         <tbody class="divide-y divide-zinc-800/50">
           {authorsList.length === 0 ? (
             <tr>
-              <td colspan="4" class="py-8 text-center text-slate-500 italic">
+              <td colspan="4" class="py-8 text-center admin-empty-description text-slate-500 italic">
                 No hay autores registrados.
               </td>
             </tr>
@@ -465,7 +465,7 @@ try {
                       <div class="w-7 h-7 rounded-lg bg-[#E4572E]/15 border border-[#E4572E]/30 text-[#E4572E] font-bold text-[11px] flex items-center justify-center shrink-0">
                         {initials}
                       </div>
-                      <span class="font-semibold text-slate-200 group-hover:text-[#E4572E] transition-colors truncate block text-xs">
+                      <span class="font-sans text-xs sm:text-sm font-semibold text-slate-200 group-hover:text-[#E4572E] transition-colors truncate block">
                         {author.name}
                       </span>
                     </div>

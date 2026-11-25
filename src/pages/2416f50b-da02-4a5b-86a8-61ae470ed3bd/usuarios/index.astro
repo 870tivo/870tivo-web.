@@ -133,16 +133,20 @@ function getUserInitials(name?: string | null, email?: string | null): string {
   <!-- Header with Actions -->
   <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
     <div>
-      <h1 class="text-2xl sm:text-3xl font-bold text-[#1F1B16] dark:text-white tracking-tight">
+      <div class="flex items-center gap-2 mb-1 flex-wrap font-sans">
+        <span class="admin-eyebrow text-[#E4572E]">Equipo & Accesos</span>
+        <span class="text-xs px-2.5 py-0.5 rounded-full bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] text-[#1F1B16] dark:text-neutral-300 font-semibold tabular-nums">{totalUsers} Usuarios Registrados</span>
+      </div>
+      <h1 class="admin-page-title text-[#1F1B16] dark:text-white">
         Usuarios & Asignación de Roles
       </h1>
-      <p class="text-xs sm:text-sm text-[#78716A] dark:text-slate-400 mt-1 max-w-2xl">
+      <p class="admin-page-subtitle text-[#78716A] dark:text-slate-400 mt-1 max-w-2xl">
         Administra las cuentas de usuario registradas y asigna el rol correspondiente a cada miembro de tu equipo.
       </p>
     </div>
 
     <!-- Quick Action: Manage Roles & Invite User -->
-    <div class="flex flex-wrap items-center gap-3">
+    <div class="flex flex-wrap items-center gap-3 font-sans">
       <Button
         variant="secondary"
         href="/2416f50b-da02-4a5b-86a8-61ae470ed3bd/roles"
@@ -171,87 +175,87 @@ function getUserInitials(name?: string | null, email?: string | null): string {
   <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
     <Card variant="default" padding="md" class="metric-card">
       <div class="flex items-center justify-between mb-2">
-        <span class="text-xs text-[#78716A] dark:text-neutral-400 font-medium">Usuarios Registrados</span>
+        <span class="admin-kpi-label text-[#78716A] dark:text-neutral-400">Usuarios Registrados</span>
         <span class="p-2 rounded-xl bg-[#E4572E]/10 text-[#E4572E]">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
           </svg>
         </span>
       </div>
-      <div class="text-2xl font-extrabold text-[#1F1B16] dark:text-white">{totalUsers}</div>
-      <div class="text-xs text-[#78716A] dark:text-neutral-400 mt-1">Total registrados</div>
+      <div class="admin-kpi-value text-[#1F1B16] dark:text-white">{totalUsers}</div>
+      <div class="font-sans text-xs text-[#78716A] dark:text-neutral-400 mt-1">Total registrados</div>
     </Card>
 
     <Card variant="default" padding="md" class="metric-card">
       <div class="flex items-center justify-between mb-2">
-        <span class="text-xs text-[#78716A] dark:text-neutral-400 font-medium">Con Rol Asignado</span>
+        <span class="admin-kpi-label text-[#78716A] dark:text-neutral-400">Con Rol Asignado</span>
         <span class="p-2 rounded-xl bg-[#2F4B3A]/20 text-[#2F4B3A] dark:text-[#A7C7B3]">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
         </span>
       </div>
-      <div class="text-2xl font-extrabold text-[#2F4B3A] dark:text-[#A7C7B3]">{usersWithRole}</div>
-      <div class="text-xs text-[#78716A] dark:text-neutral-400 mt-1">Con permisos activos</div>
+      <div class="admin-kpi-value text-[#2F4B3A] dark:text-[#A7C7B3]">{usersWithRole}</div>
+      <div class="font-sans text-xs text-[#78716A] dark:text-neutral-400 mt-1">Con permisos activos</div>
     </Card>
 
     <Card variant="default" padding="md" class="metric-card">
       <div class="flex items-center justify-between mb-2">
-        <span class="text-xs text-[#78716A] dark:text-neutral-400 font-medium">Sin Rol Asignado</span>
+        <span class="admin-kpi-label text-[#78716A] dark:text-neutral-400">Sin Rol Asignado</span>
         <span class="p-2 rounded-xl bg-[#F2B134]/15 text-[#966B0D] dark:text-[#F2B134]">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
         </span>
       </div>
-      <div class="text-2xl font-extrabold text-[#966B0D] dark:text-[#F2B134]">{usersWithoutRole}</div>
-      <div class="text-xs text-[#78716A] dark:text-neutral-400 mt-1">Pendientes de asignar</div>
+      <div class="admin-kpi-value text-[#966B0D] dark:text-[#F2B134]">{usersWithoutRole}</div>
+      <div class="font-sans text-xs text-[#78716A] dark:text-neutral-400 mt-1">Pendientes de asignar</div>
     </Card>
 
     <Card variant="default" padding="md" class="metric-card">
       <div class="flex items-center justify-between mb-2">
-        <span class="text-xs text-[#78716A] dark:text-neutral-400 font-medium">Roles Disponibles</span>
+        <span class="admin-kpi-label text-[#78716A] dark:text-neutral-400">Roles Disponibles</span>
         <span class="p-2 rounded-xl bg-[#E4572E]/10 text-[#E4572E]">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
           </svg>
         </span>
       </div>
-      <div class="text-2xl font-extrabold text-[#1F1B16] dark:text-white">{roles.length}</div>
-      <div class="text-xs text-[#78716A] dark:text-neutral-400 mt-1">En catálogo</div>
+      <div class="admin-kpi-value text-[#1F1B16] dark:text-white">{roles.length}</div>
+      <div class="font-sans text-xs text-[#78716A] dark:text-neutral-400 mt-1">En catálogo</div>
     </Card>
   </section>
 
   {fetchError && (
-    <div class="p-4 mb-6 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-300 text-xs">
+    <div class="p-4 mb-6 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-300 font-sans text-xs">
       <strong>Error:</strong> {fetchError}
     </div>
   )}
 
   <!-- Filter & Search Bar -->
-  <Card variant="subtle" padding="sm" class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+  <Card variant="subtle" padding="sm" class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4 font-sans">
     <!-- Status Tabs -->
-    <div class="flex items-center gap-1.5 overflow-x-auto pb-2 md:pb-0" id="userFilterTabs">
+    <div class="flex items-center gap-1.5 overflow-x-auto pb-2 md:pb-0 font-sans" id="userFilterTabs">
       <button 
         type="button" 
         data-filter="all"
-        class="user-tab-btn active px-3.5 py-1.5 rounded-xl bg-[#E4572E]/15 border border-[#E4572E]/30 text-[#E4572E] text-xs font-semibold whitespace-nowrap cursor-pointer transition-all"
+        class="user-tab-btn admin-tab active px-3.5 py-1.5 rounded-xl bg-[#E4572E]/15 border border-[#E4572E]/30 text-[#E4572E] whitespace-nowrap cursor-pointer transition-all"
       >
-        Todos (<span id="countAllUsers">{totalUsers}</span>)
+        Todos (<span id="countAllUsers" class="tabular-nums">{totalUsers}</span>)
       </button>
       <button 
         type="button" 
         data-filter="with-role"
-        class="user-tab-btn px-3.5 py-1.5 rounded-xl border border-transparent text-[#78716A] dark:text-neutral-400 hover:text-[#1F1B16] dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 text-xs font-medium whitespace-nowrap cursor-pointer transition-all"
+        class="user-tab-btn admin-tab px-3.5 py-1.5 rounded-xl border border-transparent text-[#78716A] dark:text-neutral-400 hover:text-[#1F1B16] dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 whitespace-nowrap cursor-pointer transition-all"
       >
-        Con Rol (<span id="countWithRole">{usersWithRole}</span>)
+        Con Rol (<span id="countWithRole" class="tabular-nums">{usersWithRole}</span>)
       </button>
       <button 
         type="button" 
         data-filter="without-role"
-        class="user-tab-btn px-3.5 py-1.5 rounded-xl border border-transparent text-[#78716A] dark:text-neutral-400 hover:text-[#1F1B16] dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 text-xs font-medium whitespace-nowrap cursor-pointer transition-all"
+        class="user-tab-btn admin-tab px-3.5 py-1.5 rounded-xl border border-transparent text-[#78716A] dark:text-neutral-400 hover:text-[#1F1B16] dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 whitespace-nowrap cursor-pointer transition-all"
       >
-        Sin Rol (<span id="countWithoutRole">{usersWithoutRole}</span>)
+        Sin Rol (<span id="countWithoutRole" class="tabular-nums">{usersWithoutRole}</span>)
       </button>
     </div>
 
@@ -259,15 +263,15 @@ function getUserInitials(name?: string | null, email?: string | null): string {
     <SearchInput 
       id="userSearchInput" 
       placeholder="Buscar por nombre, correo o ID..."
-      wrapperClass="w-full md:w-80"
+      wrapperClass="w-full md:w-80 font-sans"
     />
   </Card>
 
   <!-- Users Table -->
-  <Card padding="none" variant="default" class="overflow-hidden mb-10">
+  <Card padding="none" variant="default" class="overflow-hidden mb-10 font-sans">
     <div class="overflow-x-auto">
-      <table class="w-full text-left text-xs text-[#1F1B16] dark:text-neutral-300" id="usersTable">
-        <thead class="bg-[#FAF6F0] dark:bg-[#141414] text-xs font-semibold uppercase tracking-widest text-[#78716A] dark:text-neutral-400 border-b border-[#E5DFD5] dark:border-[#282828]">
+      <table class="w-full text-left text-xs text-[#1F1B16] dark:text-neutral-300 font-sans" id="usersTable">
+        <thead class="bg-[#FAF6F0] dark:bg-[#141414] admin-table-head text-[#78716A] dark:text-neutral-400 border-b border-[#E5DFD5] dark:border-[#282828]">
           <tr>
             <th scope="col" class="py-4 px-6 min-w-[280px]">Usuario & Correo</th>
             <th scope="col" class="py-4 px-6 whitespace-nowrap min-w-[160px]">Fecha Registro</th>
@@ -317,7 +321,7 @@ function getUserInitials(name?: string | null, email?: string | null): string {
                       <!-- Título Principal: full_name destacado (o Sin activar / Invitación pendiente) -->
                       <div class="flex items-center gap-2">
                         {user.full_name ? (
-                          <span class="font-semibold text-sm text-[#1F1B16] dark:text-white group-hover:text-[#E4572E] dark:group-hover:text-[#F2B134] transition-colors truncate">
+                          <span class="admin-item-title text-[#1F1B16] dark:text-white group-hover:text-[#E4572E] dark:group-hover:text-[#F2B134] transition-colors truncate">
                             {user.full_name}
                           </span>
                         ) : (
@@ -329,7 +333,7 @@ function getUserInitials(name?: string | null, email?: string | null): string {
                       </div>
 
                       <!-- Texto Secundario: Correo electrónico -->
-                      <div class="text-xs text-[#78716A] dark:text-neutral-400 truncate mt-0.5">
+                      <div class="admin-item-subtitle text-[#78716A] dark:text-neutral-400 truncate mt-0.5">
                         {user.email}
                       </div>
                     </div>
@@ -338,8 +342,8 @@ function getUserInitials(name?: string | null, email?: string | null): string {
 
                 <!-- Date -->
                 <td class="py-4 px-6 whitespace-nowrap">
-                  <span class="text-[#1F1B16] dark:text-neutral-300 font-medium">{dateFormatted}</span>
-                  <div class="text-xs text-[#78716A] dark:text-neutral-500 mt-0.5">
+                  <span class="admin-meta text-[#1F1B16] dark:text-neutral-300 tabular-nums">{dateFormatted}</span>
+                  <div class="admin-item-subtitle text-[#78716A] dark:text-neutral-500 mt-0.5">
                     {user.last_sign_in_at ? 'Conectado recientemente' : 'Sin inicio de sesión'}
                   </div>
                 </td>
@@ -348,7 +352,7 @@ function getUserInitials(name?: string | null, email?: string | null): string {
                 <td class="py-4 px-6 whitespace-nowrap">
                   <div class="relative w-52">
                     <select 
-                      class="role-select w-full pl-3 pr-8 py-2 bg-white dark:bg-[#141414] border border-[#E5DFD5] dark:border-[#282828] hover:border-[#E4572E]/50 focus:border-[#E4572E] rounded-xl text-xs font-medium text-[#1F1B16] dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-[#E4572E] cursor-pointer transition-all duration-150 disabled:opacity-60 disabled:cursor-not-allowed disabled:bg-neutral-100 dark:disabled:bg-[#181818] disabled:hover:border-[#E5DFD5] dark:disabled:hover:border-[#282828]"
+                      class="role-select w-full pl-3 pr-8 py-2 bg-white dark:bg-[#141414] border border-[#E5DFD5] dark:border-[#282828] hover:border-[#E4572E]/50 focus:border-[#E4572E] rounded-xl admin-input font-medium text-[#1F1B16] dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-[#E4572E] cursor-pointer transition-all duration-150 disabled:opacity-60 disabled:cursor-not-allowed disabled:bg-neutral-100 dark:disabled:bg-[#181818] disabled:hover:border-[#E5DFD5] dark:disabled:hover:border-[#282828]"
                       data-user-id={user.id}
                       data-user-email={user.email}
                       data-original-role={user.roleId || ''}
@@ -382,7 +386,8 @@ function getUserInitials(name?: string | null, email?: string | null): string {
                     {!user.full_name ? (
                       <button
                         type="button"
-                        class="resend-invite-btn inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-amber-700 dark:text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition-all cursor-pointer active:scale-95 shadow-2xs"
+                        class="resend-invite-btn inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-amber-700 dark:text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition-all cursor-pointer active:scale-95 shadow-2xs disabled:opacity-60 disabled:cursor-not-allowed"
+                        data-user-id={user.id}
                         data-email={user.email}
                         title={`Reenviar invitación de activación a ${user.email}`}
                       >
@@ -408,8 +413,8 @@ function getUserInitials(name?: string | null, email?: string | null): string {
         <svg class="w-8 h-8 mx-auto text-neutral-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
         </svg>
-        <p class="font-medium text-neutral-300">No se encontraron usuarios coincidentes</p>
-        <p class="text-[11px] text-neutral-400 mt-1">Ajusta los términos de búsqueda o selecciona otra pestaña.</p>
+        <p class="admin-empty-title text-[#1F1B16] dark:text-white">No se encontraron usuarios coincidentes</p>
+        <p class="admin-empty-description text-neutral-400 mt-1">Ajusta los términos de búsqueda o selecciona otra pestaña.</p>
       </div>
     </div>
   </Card>
@@ -423,7 +428,7 @@ function getUserInitials(name?: string | null, email?: string | null): string {
     class="fixed bottom-6 right-6 z-50 transform translate-y-10 opacity-0 pointer-events-none transition-all duration-300 flex items-center gap-3 px-4 py-3 rounded-xl bg-[#181818] border border-[#2F4B3A]/60 text-white shadow-xl"
   >
     <span class="w-2.5 h-2.5 rounded-full bg-[#2F4B3A]"></span>
-    <span id="userToastMessage" class="text-xs font-medium text-neutral-200">Rol asignado exitosamente</span>
+    <span id="userToastMessage" class="admin-toast text-neutral-200">Rol asignado exitosamente</span>
   </div>
 
 </AdminLayout>
@@ -440,20 +445,28 @@ function getUserInitials(name?: string | null, email?: string | null): string {
 
   const toastNotification = document.getElementById('userToastNotification');
   const toastMessage = document.getElementById('userToastMessage');
+  const toastDot = toastNotification?.querySelector('span:first-child') as HTMLElement | null;
 
   let currentFilter = 'all';
+  let toastTimeout: ReturnType<typeof setTimeout> | null = null;
 
   function showToast(message: string, isError = false) {
     if (!toastNotification || !toastMessage) return;
     toastMessage.textContent = message;
 
-    if (isError) {
-      toastNotification.className = 'fixed bottom-6 right-6 z-50 transform translate-y-0 opacity-100 transition-all duration-300 flex items-center gap-3 px-4 py-3 rounded-2xl bg-slate-900 border border-red-500/40 text-white shadow-xl shadow-slate-950/60';
-    } else {
-      toastNotification.className = 'fixed bottom-6 right-6 z-50 transform translate-y-0 opacity-100 transition-all duration-300 flex items-center gap-3 px-4 py-3 rounded-2xl bg-slate-900 border border-emerald-500/40 text-white shadow-xl shadow-slate-950/60';
+    if (toastTimeout) {
+      clearTimeout(toastTimeout);
     }
 
-    setTimeout(() => {
+    if (isError) {
+      toastNotification.className = 'fixed bottom-6 right-6 z-50 transform translate-y-0 opacity-100 transition-all duration-300 flex items-center gap-3 px-4 py-3 rounded-2xl bg-slate-900 border border-red-500/40 text-white shadow-xl shadow-slate-950/60';
+      if (toastDot) toastDot.className = 'w-2.5 h-2.5 rounded-full bg-red-500 shrink-0';
+    } else {
+      toastNotification.className = 'fixed bottom-6 right-6 z-50 transform translate-y-0 opacity-100 transition-all duration-300 flex items-center gap-3 px-4 py-3 rounded-2xl bg-slate-900 border border-emerald-500/40 text-white shadow-xl shadow-slate-950/60';
+      if (toastDot) toastDot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0';
+    }
+
+    toastTimeout = setTimeout(() => {
       toastNotification.classList.remove('opacity-100', 'translate-y-0');
       toastNotification.classList.add('opacity-0', 'pointer-events-none', 'translate-y-10');
     }, 3500);
@@ -512,12 +525,12 @@ function getUserInitials(name?: string | null, email?: string | null): string {
   filterTabs.forEach((tab) => {
     tab.addEventListener('click', () => {
       filterTabs.forEach((t) => {
-        t.classList.remove('active', 'bg-[#E4572E]/15', 'border-[#E4572E]/30', 'text-[#E4572E]', 'font-semibold');
-        t.classList.add('text-neutral-400', 'border-transparent', 'font-medium');
+        t.classList.remove('active', 'bg-[#E4572E]/15', 'border-[#E4572E]/30', 'text-[#E4572E]');
+        t.classList.add('text-[#78716A]', 'dark:text-neutral-400', 'border-transparent');
       });
 
-      tab.classList.add('active', 'bg-[#E4572E]/15', 'border-[#E4572E]/30', 'text-[#E4572E]', 'font-semibold');
-      tab.classList.remove('text-neutral-400', 'border-transparent', 'font-medium');
+      tab.classList.add('active', 'bg-[#E4572E]/15', 'border-[#E4572E]/30', 'text-[#E4572E]');
+      tab.classList.remove('text-[#78716A]', 'dark:text-neutral-400', 'border-transparent');
 
       currentFilter = tab.getAttribute('data-filter') || 'all';
       applyFilters();
@@ -626,44 +639,59 @@ function getUserInitials(name?: string | null, email?: string | null): string {
   resendButtons.forEach((btn) => {
     btn.addEventListener('click', async (e) => {
       e.preventDefault();
-      const email = btn.getAttribute('data-email');
-      if (!email) return;
+      if (btn.disabled) return;
+
+      const userId = btn.getAttribute('data-user-id') || '';
+      const email = btn.getAttribute('data-email') || '';
+      if (!userId && !email) return;
 
       const icon = btn.querySelector('.resend-icon');
       const spinner = btn.querySelector('.resend-spinner');
       const text = btn.querySelector('.resend-text');
 
       btn.disabled = true;
+      btn.setAttribute('aria-busy', 'true');
       icon?.classList.add('hidden');
       spinner?.classList.remove('hidden');
-      if (text) text.textContent = 'Enviando...';
+      if (text) text.textContent = 'Reenviando...';
+
+      let cooldownActive = false;
 
       try {
         const res = await fetch('/api/admin/users/resend-invite', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email }),
+          body: JSON.stringify({
+            userId: userId || undefined,
+            email: email || undefined,
+          }),
         });
 
-        const data = await res.json();
-        if (data.success) {
-          showToast(data.message || `Invitación reenviada a ${email}`);
-          if (text) text.textContent = '¡Enviado!';
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.success) {
+          showToast(data.message || `Invitación reenviada exitosamente a ${email}`);
+          if (text) text.textContent = '¡Reenviado!';
+          cooldownActive = true;
           setTimeout(() => {
             if (text) text.textContent = 'Reenviar';
-          }, 3000);
+            btn.disabled = false;
+            btn.removeAttribute('aria-busy');
+          }, 2500);
         } else {
-          showToast(data.message || 'No se pudo reenviar la invitación', true);
+          showToast(data.message || 'No se pudo reenviar la invitación.', true);
           if (text) text.textContent = 'Reenviar';
         }
       } catch (err) {
         console.error('Error al reenviar invitación:', err);
-        showToast('Error de conexión con el servidor', true);
+        showToast('Error de conexión con el servidor. Inténtalo de nuevo.', true);
         if (text) text.textContent = 'Reenviar';
       } finally {
-        btn.disabled = false;
         spinner?.classList.add('hidden');
         icon?.classList.remove('hidden');
+        if (!cooldownActive) {
+          btn.disabled = false;
+          btn.removeAttribute('aria-busy');
+        }
       }
     });
   });

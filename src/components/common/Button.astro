@@ -42,7 +42,7 @@ const sizeClasses: Record<string, string> = {
   lg: 'px-5 py-2.5 text-xs sm:text-sm font-bold uppercase tracking-wider rounded-xl gap-2',
 };
 
-const baseClasses = 'inline-flex items-center justify-center transition-all cursor-pointer select-none disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none active:translate-y-0.5';
+const baseClasses = 'inline-flex items-center justify-center font-sans transition-all cursor-pointer select-none disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none active:translate-y-0.5';
 const combinedClasses = `${baseClasses} ${variantClasses[variant] || variantClasses.primary} ${sizeClasses[size] || sizeClasses.md} ${className}`.trim();
 ---
 

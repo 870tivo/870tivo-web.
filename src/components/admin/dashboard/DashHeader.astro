@@ -49,7 +49,7 @@ const roleBadge = roleLabels[userRole?.toLowerCase()] ?? userRole ?? 'Administra
       <!-- Fila: badge de rol + separador + correo -->
       <div class="flex flex-wrap items-center gap-2">
         <!-- Badge rol -->
-        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#E4572E]/15 border border-[#E4572E]/30 text-[#E4572E] text-[11px] font-semibold tracking-wide uppercase">
+        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#E4572E]/15 border border-[#E4572E]/30 text-[#E4572E] text-[11px] font-semibold tracking-wider uppercase">
           <span class="w-1.5 h-1.5 rounded-full bg-[#E4572E] animate-pulse"></span>
           {roleBadge}
         </span>
@@ -64,12 +64,12 @@ const roleBadge = roleLabels[userRole?.toLowerCase()] ?? userRole ?? 'Administra
       </div>
 
       <!-- Saludo principal -->
-      <h1 class="text-2xl sm:text-3xl font-bold font-serif text-slate-100 tracking-tight leading-none">
+      <h1 class="admin-page-title text-slate-100">
         Hola, <span class="text-[#E4572E]">{userName}</span>
       </h1>
 
       <!-- Subtítulo de contexto -->
-      <p class="text-xs text-slate-500">
+      <p class="admin-page-subtitle text-slate-400">
         Centro de control operativo · 870 Plataforma Cultural
       </p>
     </div>
@@ -82,7 +82,7 @@ const roleBadge = roleLabels[userRole?.toLowerCase()] ?? userRole ?? 'Administra
       <!-- + Crear Publicación -->
       <a
         href={`${adminBase}/publicaciones?new=1`}
-        class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#E4572E] hover:bg-[#cf4821] text-white text-xs font-bold shadow-sm transition-all active:scale-95 select-none"
+        class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#E4572E] hover:bg-[#cf4821] text-white text-xs font-semibold shadow-sm transition-all active:scale-95 select-none"
         title="Crear nueva publicación editorial"
       >
         <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
