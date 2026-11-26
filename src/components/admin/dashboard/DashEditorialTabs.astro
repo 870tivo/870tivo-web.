@@ -600,7 +600,7 @@ try {
         btn.classList.add('opacity-50');
 
         try {
-          const res = await fetch('/api/posts/toggle-visibility', {
+          const res = await fetch('/api/admin/posts/toggle-visibility', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ slug, isPublished: targetPublished }),

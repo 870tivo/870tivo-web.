@@ -776,7 +776,7 @@ function getPageUrl(p: number) {
     modalConfirmBtn.textContent = 'Guardando...';
 
     try {
-      const response = await fetch('/api/posts/toggle-visibility', {
+      const response = await fetch('/api/admin/posts/toggle-visibility', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ slug, isPublished: targetPublished }),
@@ -784,7 +784,7 @@ function getPageUrl(p: number) {
 
       const result = await response.json();
 
-      if (result.success) {
+      if (response.ok && result.success) {
         btn.setAttribute('data-published', String(targetPublished));
         btn.setAttribute('aria-checked', String(targetPublished));
 
