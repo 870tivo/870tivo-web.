@@ -121,22 +121,22 @@ function formatDate(isoDate: string): string {
 }
 ---
 
-<AdminLayout title="Gestión de Autores | 870tivo Control Studio" activeModule="autores">
+<AdminLayout title="Gestión de Autores | 870tivo Control Studio" headerTitle="Autores & Redacción" activeModule="autores">
   
   <div class="space-y-6 sm:space-y-8 max-w-7xl mx-auto">
     
     <!-- HEADER EDITORIAL -->
     <header class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-6 border-b border-[#E5DFD5] dark:border-[#282828]">
       <div class="space-y-1">
-        <div class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#E4572E]">
-          <span>Studio Editorial</span>
+        <div class="flex items-center gap-2 font-sans">
+          <span class="admin-eyebrow text-[#E4572E]">Studio Editorial</span>
           <span class="text-[#78716A] dark:text-neutral-500">•</span>
-          <span class="text-[#78716A] dark:text-neutral-400">Firmas & Colaboradores</span>
+          <span class="font-sans text-xs font-medium text-[#78716A] dark:text-neutral-400">Firmas & Colaboradores</span>
         </div>
-        <h1 class="text-2xl sm:text-3xl font-serif font-bold text-[#1F1B16] dark:text-white tracking-tight">
+        <h1 class="admin-page-title text-[#1F1B16] dark:text-white">
           Gestión de Autores
         </h1>
-        <p class="text-xs sm:text-sm text-[#78716A] dark:text-neutral-400 max-w-2xl">
+        <p class="admin-page-subtitle text-[#78716A] dark:text-neutral-400 max-w-2xl">
           Administra las firmas editoriales, redactores y perfiles de redes sociales vinculados a las publicaciones de 870tivo.
         </p>
       </div>
@@ -170,7 +170,7 @@ function formatDate(isoDate: string): string {
       <!-- Badge de Conteo -->
       <div class="flex items-center gap-2 self-start sm:self-center">
         <span class="text-xs text-[#78716A] dark:text-neutral-400 font-medium">Total de autores:</span>
-        <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#FAF6F0] dark:bg-[#1A1A1A] text-[#1F1B16] dark:text-white border border-[#E5DFD5] dark:border-[#282828]">
+        <span class="px-2.5 py-0.5 rounded-full text-xs font-bold tabular-nums bg-[#FAF6F0] dark:bg-[#1A1A1A] text-[#1F1B16] dark:text-white border border-[#E5DFD5] dark:border-[#282828]">
           {totalAuthors}
         </span>
       </div>
@@ -179,9 +179,9 @@ function formatDate(isoDate: string): string {
     <!-- TABLA DE AUTORES -->
     <Card class="overflow-hidden border border-[#E5DFD5] dark:border-[#282828] bg-white dark:bg-[#141414] shadow-xs rounded-2xl p-0">
       <div class="overflow-x-auto">
-        <table class="w-full text-left border-collapse text-xs sm:text-sm">
+        <table class="w-full text-left border-collapse font-sans text-xs">
           <thead>
-            <tr class="border-b border-[#E5DFD5] dark:border-[#282828] bg-[#FAF6F0]/70 dark:bg-[#181818]/60 text-[11px] font-bold uppercase tracking-wider text-[#78716A] dark:text-neutral-400">
+            <tr class="border-b border-[#E5DFD5] dark:border-[#282828] bg-[#FAF6F0]/70 dark:bg-[#181818]/60 admin-table-head text-[#78716A] dark:text-neutral-400">
               <th scope="col" class="py-3.5 px-4 sm:px-6">Autor / Redactor</th>
               <th scope="col" class="py-3.5 px-4 sm:px-6">Enlace / Perfil Social</th>
               <th scope="col" class="py-3.5 px-4 sm:px-6 text-center">Artículos</th>
@@ -200,10 +200,10 @@ function formatDate(isoDate: string): string {
                       </svg>
                     </div>
                     <div>
-                      <h4 class="font-serif font-bold text-base text-[#1F1B16] dark:text-white">
+                      <h4 class="admin-empty-title text-[#1F1B16] dark:text-white">
                         {searchQuery ? 'Sin resultados para la búsqueda' : 'No hay autores registrados'}
                       </h4>
-                      <p class="text-xs text-[#78716A] dark:text-neutral-400 mt-1">
+                      <p class="admin-empty-description text-[#78716A] dark:text-neutral-400 mt-1">
                         {searchQuery 
                           ? `No encontramos autores que coincidan con «${searchQuery}».`
                           : 'Crea el primer redactor para vincularlo a las publicaciones de la revista.'}
@@ -241,7 +241,7 @@ function formatDate(isoDate: string): string {
                     <!-- Nombre y Avatar -->
                     <td class="py-3.5 px-4 sm:px-6">
                       <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-xl bg-[#FAF6F0] dark:bg-[#1E1E1E] border border-[#E5DFD5] dark:border-[#282828] overflow-hidden flex items-center justify-center font-serif font-bold text-xs text-[#E4572E] shadow-2xs shrink-0">
+                        <div class="w-10 h-10 rounded-xl bg-[#FAF6F0] dark:bg-[#1E1E1E] border border-[#E5DFD5] dark:border-[#282828] overflow-hidden flex items-center justify-center font-sans font-bold text-xs text-[#E4572E] shadow-2xs shrink-0">
                           {author.avatar_url ? (
                             <img 
                               src={author.avatar_url} 
@@ -249,22 +249,22 @@ function formatDate(isoDate: string): string {
                               class="w-full h-full object-cover" 
                               onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
                             />
-                            <div class="hidden w-full h-full items-center justify-center font-serif font-bold text-xs text-[#E4572E]">
+                            <div class="hidden w-full h-full items-center justify-center font-sans font-bold text-xs text-[#E4572E]">
                               {initials}
                             </div>
                           ) : (
-                            <div class="w-full h-full flex items-center justify-center font-serif font-bold text-xs text-[#E4572E]">
+                            <div class="w-full h-full flex items-center justify-center font-sans font-bold text-xs text-[#E4572E]">
                               {initials}
                             </div>
                           )}
                         </div>
                         <div class="min-w-0">
                           <div class="flex items-center gap-2 flex-wrap">
-                            <span class="font-medium text-[#1F1B16] dark:text-white block truncate">
+                            <span class="admin-item-title text-[#1F1B16] dark:text-white block truncate">
                               {author.name}
                             </span>
                             {author.specialty && (
-                              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#E4572E]/10 text-[#E4572E] border border-[#E4572E]/20">
+                              <span class="inline-flex items-center px-2 py-0.5 rounded-full admin-badge bg-[#E4572E]/10 text-[#E4572E] border border-[#E4572E]/20">
                                 {author.specialty}
                               </span>
                             )}
@@ -279,7 +279,7 @@ function formatDate(isoDate: string): string {
                               </a>
                             )}
                           </div>
-                          <p class="text-[10px] text-[#78716A] dark:text-neutral-400 truncate max-w-xs">
+                          <p class="admin-item-subtitle text-[#78716A] dark:text-neutral-400 truncate max-w-xs">
                             {author.bio || 'Firma Editorial'}
                           </p>
                         </div>
@@ -309,7 +309,7 @@ function formatDate(isoDate: string): string {
 
                     <!-- Conteo de Artículos -->
                     <td class="py-3.5 px-4 sm:px-6 text-center">
-                      <span class={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold ${
+                      <span class={`inline-flex items-center px-2 py-0.5 rounded-full admin-status-pill tabular-nums ${
                         author.post_count > 0 
                           ? 'bg-[#2F4B3A]/10 text-[#2F4B3A] dark:text-[#A7C7B3] border border-[#2F4B3A]/20'
                           : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400'
@@ -319,7 +319,7 @@ function formatDate(isoDate: string): string {
                     </td>
 
                     <!-- Fecha de Registro -->
-                    <td class="py-3.5 px-4 sm:px-6 text-xs text-[#78716A] dark:text-neutral-400 font-mono">
+                    <td class="py-3.5 px-4 sm:px-6 admin-meta tabular-nums text-[#78716A] dark:text-neutral-400">
                       {formatDate(author.created_at)}
                     </td>
 
@@ -376,7 +376,7 @@ function formatDate(isoDate: string): string {
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
         </svg>
       </div>
-      <h3 class="font-serif font-bold text-base text-[#1F1B16] dark:text-white mb-1.5">
+      <h3 class="admin-modal-title text-lg sm:text-xl text-[#1F1B16] dark:text-white mb-1.5">
         ¿Eliminar este autor?
       </h3>
       <p id="deleteAuthorModalMessage" class="text-xs text-[#78716A] dark:text-neutral-400 mb-6 leading-relaxed">
@@ -407,7 +407,7 @@ function formatDate(isoDate: string): string {
     class="fixed bottom-6 right-6 z-50 transform translate-y-10 opacity-0 pointer-events-none transition-all duration-300 flex items-center gap-3 px-4 py-3 rounded-xl bg-[#181818] border border-[#2F4B3A]/60 text-white shadow-xl"
   >
     <span class="w-2.5 h-2.5 rounded-full bg-[#2F4B3A]"></span>
-    <span id="toastMessage" class="text-xs font-medium text-neutral-200">Operación exitosa</span>
+    <span id="toastMessage" class="admin-toast text-neutral-200">Operación exitosa</span>
   </div>
 
 </AdminLayout>

@@ -1,4 +1,6 @@
 ---
+import NewsletterSubscribe from './NewsletterSubscribe.astro';
+
 const CORREO_OFICIAL = 'mailto:CORREO_OFICIAL_DEL_COLECTIVO?subject=Envio%20de%20obra%20o%20proyecto';
 ---
 
@@ -9,72 +11,7 @@ const CORREO_OFICIAL = 'mailto:CORREO_OFICIAL_DEL_COLECTIVO?subject=Envio%20de%2
     <div class="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-16 py-16 md:py-24 border-b border-brand-ink/10 dark:border-white/10">
 
       <!-- Bloque izquierdo: Suscripción amigable -->
-      <div class="flex flex-col gap-5">
-        <div>
-          <span class="text-[10px] font-bold uppercase tracking-[0.3em] text-brand-orange dark:text-brand-orange block mb-3">
-            Publicaciones
-          </span>
-          <h2 class="font-serif text-2xl md:text-3xl font-bold tracking-tight text-brand-ink dark:text-white leading-snug">
-            Recibe un aviso por correo<br class="hidden sm:block" /> en cada nueva publicación
-          </h2>
-          <p class="mt-2 text-sm text-brand-muted max-w-xs">
-            Sin spam. Solo cuando algo nuevo aparece en 870tivo.
-          </p>
-        </div>
-
-        <!-- Formulario de suscripción -->
-        <form
-          id="form-suscripcion"
-          class="flex flex-col sm:flex-row items-stretch gap-2 max-w-sm"
-          novalidate
-        >
-          <label for="input-correo" class="sr-only">Tu correo electrónico</label>
-          <input
-            id="input-correo"
-            name="email"
-            type="email"
-            required
-            autocomplete="email"
-            placeholder="tu@correo.com"
-            class="
-              flex-1 min-w-0 px-4 py-3
-              text-sm font-medium
-              bg-brand-bg dark:bg-brand-ink
-              text-brand-ink dark:text-brand-darkInk
-              placeholder:text-brand-muted/60
-              border border-brand-ink/20 dark:border-white/10
-              rounded-sm
-              focus:outline-none focus:ring-2 focus:ring-brand-orange/50
-              transition-colors
-            "
-          />
-          <button
-            type="submit"
-            id="btn-suscribir"
-            class="
-              shrink-0 px-6 py-3
-              bg-brand-ink dark:bg-brand-bg
-              text-brand-bg dark:text-brand-ink
-              text-xs font-bold uppercase tracking-[0.2em]
-              rounded-sm
-              hover:bg-brand-orange dark:hover:bg-brand-orange
-              hover:text-white dark:hover:text-white
-              transition-all duration-200
-              disabled:opacity-50 disabled:cursor-not-allowed
-            "
-          >
-            Avisarme
-          </button>
-        </form>
-
-        <!-- Feedback del formulario -->
-        <p
-          id="msg-suscripcion"
-          role="status"
-          aria-live="polite"
-          class="text-xs font-medium hidden"
-        ></p>
-      </div>
+      <NewsletterSubscribe />
 
       <!-- Bloque derecho: Envía tu obra -->
       <div class="flex flex-col justify-center md:items-end gap-4 md:text-right">
@@ -150,66 +87,3 @@ const CORREO_OFICIAL = 'mailto:CORREO_OFICIAL_DEL_COLECTIVO?subject=Envio%20de%2
   <!-- Línea editorial inferior -->
   <div class="absolute bottom-0 left-0 w-full h-[2px] bg-editorial-primary opacity-80"></div>
 </footer>
-
-<script>
-  // ── Lógica de suscripción por correo ──────────────────────────────────────
-  const form   = document.getElementById('form-suscripcion') as HTMLFormElement | null;
-  const input  = document.getElementById('input-correo')     as HTMLInputElement | null;
-  const btn    = document.getElementById('btn-suscribir')    as HTMLButtonElement | null;
-  const msgEl  = document.getElementById('msg-suscripcion')  as HTMLParagraphElement | null;
-
-  type FeedbackState = 'success' | 'error' | 'duplicate';
-
-  const FEEDBACK: Record<FeedbackState, { text: string; classes: string }> = {
-    success:   { text: '✓ Listo. Te avisamos en cada nueva publicación.',  classes: 'text-green-600 dark:text-green-400' },
-    error:     { text: '✗ Algo salió mal. Intenta de nuevo más tarde.',    classes: 'text-red-500 dark:text-red-400' },
-    duplicate: { text: '· Ya estás en la lista. ¡Gracias por tu interés!', classes: 'text-brand-muted' },
-  };
-
-  function showFeedback(state: FeedbackState): void {
-    if (!msgEl) return;
-    const { text, classes } = FEEDBACK[state];
-    msgEl.textContent = text;
-    msgEl.className = `text-xs font-medium ${classes}`;
-    msgEl.classList.remove('hidden');
-  }
-
-  function setLoading(loading: boolean): void {
-    if (!btn || !input) return;
-    btn.disabled   = loading;
-    input.disabled = loading;
-    btn.textContent = loading ? 'Enviando…' : 'Avisarme';
-  }
-
-  form?.addEventListener('submit', async (e: SubmitEvent) => {
-    e.preventDefault();
-    if (!input || !msgEl) return;
-
-    const email = input.value.trim();
-    if (!email) return;
-
-    setLoading(true);
-    msgEl.classList.add('hidden');
-
-    try {
-      const res = await fetch('/api/public/subscribe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      });
-
-      if (res.status === 409) {
-        showFeedback('duplicate');
-      } else if (res.ok) {
-        showFeedback('success');
-        input.value = '';
-      } else {
-        showFeedback('error');
-      }
-    } catch {
-      showFeedback('error');
-    } finally {
-      setLoading(false);
-    }
-  });
-</script>

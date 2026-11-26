@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { savePost } from '../../../../lib/customPosts';
 import { supabaseAdmin } from '../../../../lib/supabase';
+import { notifySubscribersOnPublish } from '../../../../lib/newsletter';
 
 export const prerender = false;
 
@@ -88,6 +89,20 @@ export const POST: APIRoute = async ({ request }) => {
       }
     } catch (sbErr) {
       console.error('Error de conexión con Supabase en save.ts:', sbErr);
+    }
+
+    // Si el estado es publicado, notificar en segundo plano a los suscriptores
+    if (postStatus === 'publicado') {
+      notifySubscribersOnPublish({
+        title: saved.title,
+        slug: finalSlug,
+        subtitle: subtitle?.trim() || null,
+        category: badge?.trim() || 'EDITORIAL',
+        author: author?.trim() || 'Redactor 870tivo',
+        coverImage: heroImage?.trim() || null,
+      }).catch((notifyErr) => {
+        console.error('[save.ts] Error al despachar notificaciones:', notifyErr);
+      });
     }
 
     return new Response(

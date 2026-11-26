@@ -136,7 +136,7 @@ function formatDate(dateStr: string) {
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
         </svg>
       </div>
-      <h3 class="text-xl font-bold text-white mb-2">Acceso Restringido</h3>
+      <h3 class="admin-modal-title text-white mb-2">Acceso Restringido</h3>
       <p class="text-sm text-slate-400 mb-6">
         No tienes los permisos necesarios para visualizar el catálogo de la galería de arte. Contacta a un administrador para solicitar el permiso <code class="text-amber-400 bg-slate-800 px-1.5 py-0.5 rounded">galeria.read</code>.
       </p>
@@ -153,19 +153,19 @@ function formatDate(dateStr: string) {
       {/* Header Principal con Acciones */}
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div class="flex items-center gap-2 mb-1.5">
-            <span class="text-xs uppercase font-bold tracking-widest text-[#E4572E]">Curaduría & Obras</span>
-            <span class="text-xs px-2.5 py-0.5 rounded-full bg-white dark:bg-slate-800 border border-[#E5DFD5] dark:border-slate-700/60 text-[#1F1B16] dark:text-slate-300 font-semibold">
+          <div class="flex items-center gap-2 mb-1.5 font-sans">
+            <span class="admin-eyebrow text-[#E4572E]">Curaduría & Obras</span>
+            <span class="text-xs px-2.5 py-0.5 rounded-full bg-white dark:bg-slate-800 border border-[#E5DFD5] dark:border-slate-700/60 text-[#1F1B16] dark:text-slate-300 font-semibold tabular-nums">
               {totalCount} Obras Registradas
             </span>
-            <span class="text-xs px-2 py-0.5 rounded-full bg-[#E4572E]/10 border border-[#E4572E]/20 text-[#E4572E] font-medium">
+            <span class="text-xs px-2 py-0.5 rounded-full bg-[#E4572E]/10 border border-[#E4572E]/20 text-[#E4572E] font-medium font-mono">
               Bucket: gallery-media
             </span>
           </div>
-          <h2 class="text-2xl sm:text-3xl font-extrabold text-[#1F1B16] dark:text-white tracking-tight">
+          <h1 class="admin-page-title text-[#1F1B16] dark:text-white">
             Galería de Arte & Proyectos
-          </h2>
-          <p class="text-xs sm:text-sm text-[#78716A] dark:text-slate-400 mt-1 max-w-2xl leading-relaxed">
+          </h1>
+          <p class="admin-page-subtitle text-[#78716A] dark:text-slate-400 mt-1 max-w-2xl">
             Administra el catálogo visual de obras, sube imágenes en alta resolución a Supabase Storage y controla qué piezas se exhiben públicamente en el portal de Galería 870tivo.
           </p>
         </div>
@@ -220,9 +220,9 @@ function formatDate(dateStr: string) {
         {/* Total */}
         <Card variant="default" padding="sm" class="metric-card flex items-center justify-between">
           <div>
-            <span class="text-[11px] font-medium text-[#78716A] dark:text-neutral-400 uppercase tracking-wider block">Total Obras</span>
-            <span class="text-2xl font-bold text-[#1F1B16] dark:text-white mt-1 block">{totalCount}</span>
-            <span class="text-[11px] text-[#78716A] dark:text-neutral-500 mt-0.5 block">En catálogo</span>
+            <span class="admin-kpi-label text-[#78716A] dark:text-neutral-400 block">Total Obras</span>
+            <span class="admin-kpi-value text-[#1F1B16] dark:text-white mt-1.5 block">{totalCount}</span>
+            <span class="text-[11px] text-[#78716A] dark:text-neutral-500 mt-1 block">En catálogo</span>
           </div>
           <div class="w-11 h-11 rounded-xl bg-[#E4572E]/10 border border-[#E4572E]/20 flex items-center justify-center text-[#E4572E]">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -234,9 +234,9 @@ function formatDate(dateStr: string) {
         {/* Publicadas */}
         <Card variant="default" padding="sm" class="metric-card flex items-center justify-between">
           <div>
-            <span class="text-[11px] font-medium text-[#2F4B3A] dark:text-[#A7C7B3] uppercase tracking-wider block">Publicadas</span>
-            <span class="text-2xl font-bold text-[#2F4B3A] dark:text-[#A7C7B3] mt-1 block">{publishedCount}</span>
-            <span class="text-[11px] text-[#78716A] dark:text-neutral-400 mt-0.5 block">Visibles en web</span>
+            <span class="admin-kpi-label text-[#2F4B3A] dark:text-[#A7C7B3] block">Publicadas</span>
+            <span class="admin-kpi-value text-[#2F4B3A] dark:text-[#A7C7B3] mt-1.5 block">{publishedCount}</span>
+            <span class="text-[11px] text-[#78716A] dark:text-neutral-400 mt-1 block">Visibles en web</span>
           </div>
           <div class="w-11 h-11 rounded-xl bg-[#2F4B3A]/10 dark:bg-[#2F4B3A]/20 border border-[#2F4B3A]/25 flex items-center justify-center text-[#2F4B3A] dark:text-[#A7C7B3]">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -249,9 +249,9 @@ function formatDate(dateStr: string) {
         {/* Borradores */}
         <Card variant="default" padding="sm" class="metric-card flex items-center justify-between">
           <div>
-            <span class="text-[11px] font-medium text-[#966B0D] dark:text-[#F2B134] uppercase tracking-wider block">Borradores</span>
-            <span class="text-2xl font-bold text-[#966B0D] dark:text-[#F2B134] mt-1 block">{draftCount}</span>
-            <span class="text-[11px] text-[#78716A] dark:text-neutral-400 mt-0.5 block">En curaduría</span>
+            <span class="admin-kpi-label text-[#966B0D] dark:text-[#F2B134] block">Borradores</span>
+            <span class="admin-kpi-value text-[#966B0D] dark:text-[#F2B134] mt-1.5 block">{draftCount}</span>
+            <span class="text-[11px] text-[#78716A] dark:text-neutral-400 mt-1 block">En curaduría</span>
           </div>
           <div class="w-11 h-11 rounded-xl bg-[#F2B134]/15 border border-[#F2B134]/25 flex items-center justify-center text-[#966B0D] dark:text-[#F2B134]">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -263,7 +263,7 @@ function formatDate(dateStr: string) {
         {/* Storage Bucket */}
         <Card variant="default" padding="sm" class="metric-card flex items-center justify-between">
           <div>
-            <span class="text-[11px] font-medium text-[#78716A] dark:text-neutral-400 uppercase tracking-wider block">Almacenamiento</span>
+            <span class="admin-kpi-label text-[#78716A] dark:text-neutral-400 block">Almacenamiento</span>
             <span class="text-sm font-bold text-[#1F1B16] dark:text-neutral-200 mt-1.5 block truncate max-w-[140px] font-mono">gallery-media</span>
             <span class="text-[11px] text-[#2F4B3A] dark:text-[#A7C7B3] mt-0.5 block">Supabase Storage</span>
           </div>
@@ -283,7 +283,7 @@ function formatDate(dateStr: string) {
           <button 
             type="button"
             data-filter-status="all" 
-            class={`gallery-tab-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap cursor-pointer transition-all ${
+            class={`gallery-tab-btn admin-tab px-3.5 py-1.5 rounded-xl whitespace-nowrap cursor-pointer transition-all ${
               statusFilter === 'all'
                 ? 'active bg-[#E4572E]/15 border border-[#E4572E]/30 text-[#E4572E] shadow-sm'
                 : 'border border-transparent text-neutral-400 hover:text-white hover:bg-white/5'
@@ -294,7 +294,7 @@ function formatDate(dateStr: string) {
           <button 
             type="button"
             data-filter-status="publicado" 
-            class={`gallery-tab-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap cursor-pointer transition-all ${
+            class={`gallery-tab-btn admin-tab px-3.5 py-1.5 rounded-xl whitespace-nowrap cursor-pointer transition-all ${
               statusFilter === 'publicado'
                 ? 'active bg-[#2F4B3A]/20 border border-[#2F4B3A]/30 text-[#A7C7B3] shadow-sm'
                 : 'border border-transparent text-neutral-400 hover:text-white hover:bg-white/5'
@@ -305,7 +305,7 @@ function formatDate(dateStr: string) {
           <button 
             type="button"
             data-filter-status="borrador" 
-            class={`gallery-tab-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap cursor-pointer transition-all ${
+            class={`gallery-tab-btn admin-tab px-3.5 py-1.5 rounded-xl whitespace-nowrap cursor-pointer transition-all ${
               statusFilter === 'borrador'
                 ? 'active bg-[#F2B134]/15 border border-[#F2B134]/30 text-[#F2B134] shadow-sm'
                 : 'border border-transparent text-neutral-400 hover:text-white hover:bg-white/5'
@@ -322,7 +322,7 @@ function formatDate(dateStr: string) {
           <div class="relative min-w-[160px]">
             <select 
               id="categoryFilterSelect" 
-              class="w-full px-3 py-2 bg-[#141414] border border-[#282828] rounded-xl text-xs text-neutral-200 focus:outline-none focus:border-[#E4572E] focus:ring-1 focus:ring-[#E4572E] cursor-pointer appearance-none pr-8 transition-colors"
+              class="w-full px-3 py-2 bg-[#141414] border border-[#282828] rounded-xl admin-input text-neutral-200 focus:outline-none focus:border-[#E4572E] focus:ring-1 focus:ring-[#E4572E] cursor-pointer appearance-none pr-8 transition-colors"
             >
               <option value="all" selected={categoryFilter === 'all'}>Todas las Categorías</option>
               {GALLERY_CATEGORIES.map((cat) => (
@@ -377,12 +377,12 @@ function formatDate(dateStr: string) {
               {/* Badges superiores */}
               <div class="absolute top-3 inset-x-3 flex items-center justify-between gap-2 pointer-events-none">
                 {/* Badge de Categoría */}
-                <span class="px-2.5 py-0.5 rounded-lg bg-[#111111]/80 border border-[#E4572E]/30 text-[#E4572E] font-semibold text-[10px] uppercase tracking-wider shadow-sm">
+                <span class="px-2.5 py-0.5 rounded-lg bg-[#111111]/80 border border-[#E4572E]/30 text-[#E4572E] admin-badge uppercase tracking-wider shadow-sm">
                   {item.category}
                 </span>
 
                 {/* Badge de Estado */}
-                <span class={`status-badge px-2.5 py-0.5 rounded-lg font-bold text-[10px] tracking-wide flex items-center gap-1.5 shadow-sm ${
+                <span class={`status-badge px-2.5 py-0.5 rounded-lg admin-status-pill tracking-wide flex items-center gap-1.5 shadow-sm ${
                   item.status === 'publicado'
                     ? 'bg-[#2F4B3A]/80 border border-[#2F4B3A]/40 text-[#A7C7B3]'
                     : 'bg-[#F2B134]/20 border border-[#F2B134]/40 text-[#F2B134]'
@@ -406,7 +406,7 @@ function formatDate(dateStr: string) {
             {/* Contenido de la Ficha Técnica */}
             <div class="p-4 flex-1 flex flex-col justify-between">
               <div>
-                <h3 class="text-sm font-bold text-[#1F1B16] dark:text-white group-hover:text-[#E4572E] dark:group-hover:text-amber-300 transition-colors line-clamp-1" title={item.title}>
+                <h3 class="admin-item-title text-[#1F1B16] dark:text-white group-hover:text-[#E4572E] dark:group-hover:text-amber-300 transition-colors line-clamp-1" title={item.title}>
                   {item.title}
                 </h3>
                 {item.description ? (
@@ -420,7 +420,7 @@ function formatDate(dateStr: string) {
 
               {/* Barra inferior: Fecha y Acciones */}
               <div class="pt-3 mt-3 border-t border-[#E5DFD5] dark:border-slate-800/80 flex items-center justify-between gap-2">
-                <span class="text-[11px] text-[#78716A] dark:text-slate-500 font-medium">
+                <span class="text-[11px] text-[#78716A] dark:text-slate-500 font-medium tabular-nums">
                   {formatDate(item.created_at)}
                 </span>
 
@@ -494,8 +494,8 @@ function formatDate(dateStr: string) {
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </div>
-          <h4 class="text-sm font-bold text-white mb-1">Sin resultados encontrados</h4>
-          <p class="text-xs text-slate-400 mb-4">
+          <h4 class="admin-empty-title text-white mb-1">Sin resultados encontrados</h4>
+          <p class="admin-empty-description text-slate-400 mb-4">
             {searchQuery 
               ? `No hay obras que coincidan con la búsqueda «${searchQuery}».` 
               : 'No hay obras que coincidan con los filtros aplicados.'}
@@ -554,7 +554,7 @@ function formatDate(dateStr: string) {
       />
 
       <div class="mt-4 text-center">
-        <h4 id="lightboxTitle" class="text-lg font-bold text-white"></h4>
+        <h4 id="lightboxTitle" class="admin-section-title text-lg text-white"></h4>
         <a 
           id="lightboxExternalLink" 
           href="" 
@@ -584,7 +584,7 @@ function formatDate(dateStr: string) {
         </svg>
       </div>
 
-      <h3 class="text-xl font-bold text-white mb-2">¿Eliminar esta obra?</h3>
+      <h3 class="admin-modal-title text-white mb-2">¿Eliminar esta obra?</h3>
       <p class="text-xs text-slate-300 leading-relaxed mb-4">
         Estás a punto de eliminar permanentemente la obra <strong id="deleteTargetTitle" class="text-white"></strong>. Esta acción removerá el registro de la base de datos y eliminará el archivo del bucket de <strong>Supabase Storage</strong>.
       </p>
@@ -619,7 +619,7 @@ function formatDate(dateStr: string) {
   >
     <div class="relative w-full max-w-lg rounded-2xl bg-[#FAF6F0] dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] p-6 sm:p-8 shadow-2xl text-[#1F1B16] dark:text-[#FAF6F0]">
       <div class="flex items-center justify-between mb-5">
-        <h3 id="editMetadataModalTitle" class="text-lg font-bold text-[#1F1B16] dark:text-white">
+        <h3 id="editMetadataModalTitle" class="admin-modal-title text-xl text-[#1F1B16] dark:text-white">
           Editar Metadatos de la Obra
         </h3>
         <button 
@@ -638,25 +638,25 @@ function formatDate(dateStr: string) {
 
         <!-- Título -->
         <div>
-          <label for="editItemTitle" class="block text-xs font-bold uppercase tracking-wider mb-1.5 text-neutral-700 dark:text-neutral-200">
+          <label for="editItemTitle" class="block admin-label mb-1.5 text-neutral-700 dark:text-neutral-200">
             Título *
           </label>
           <input 
             type="text" 
             id="editItemTitle" 
             required
-            class="w-full px-3.5 py-2.5 bg-white dark:bg-[#141414] border border-[#E5DFD5] dark:border-[#282828] rounded-xl text-xs text-[#1F1B16] dark:text-white focus:outline-none focus:border-[#E4572E] focus:ring-1 focus:ring-[#E4572E]"
+            class="w-full px-3.5 py-2.5 bg-white dark:bg-[#141414] border border-[#E5DFD5] dark:border-[#282828] rounded-xl admin-input text-[#1F1B16] dark:text-white focus:outline-none focus:border-[#E4572E] focus:ring-1 focus:ring-[#E4572E]"
           />
         </div>
 
         <!-- Categoría -->
         <div>
-          <label for="editItemCategory" class="block text-xs font-bold uppercase tracking-wider mb-1.5 text-neutral-700 dark:text-neutral-200">
+          <label for="editItemCategory" class="block admin-label mb-1.5 text-neutral-700 dark:text-neutral-200">
             Categoría *
           </label>
           <select 
             id="editItemCategory" 
-            class="w-full px-3.5 py-2.5 bg-white dark:bg-[#141414] border border-[#E5DFD5] dark:border-[#282828] rounded-xl text-xs text-[#1F1B16] dark:text-white focus:outline-none focus:border-[#E4572E] focus:ring-1 focus:ring-[#E4572E] cursor-pointer"
+            class="w-full px-3.5 py-2.5 bg-white dark:bg-[#141414] border border-[#E5DFD5] dark:border-[#282828] rounded-xl admin-input text-[#1F1B16] dark:text-white focus:outline-none focus:border-[#E4572E] focus:ring-1 focus:ring-[#E4572E] cursor-pointer"
           >
             {GALLERY_CATEGORIES.map((cat) => (
               <option value={cat.toLowerCase()}>{cat}</option>
@@ -666,19 +666,19 @@ function formatDate(dateStr: string) {
 
         <!-- Descripción -->
         <div>
-          <label for="editItemDescription" class="block text-xs font-bold uppercase tracking-wider mb-1.5 text-neutral-700 dark:text-neutral-200">
+          <label for="editItemDescription" class="block admin-label mb-1.5 text-neutral-700 dark:text-neutral-200">
             Descripción / Ficha Técnica
           </label>
           <textarea 
             id="editItemDescription" 
             rows="3" 
-            class="w-full px-3.5 py-2.5 bg-white dark:bg-[#141414] border border-[#E5DFD5] dark:border-[#282828] rounded-xl text-xs text-[#1F1B16] dark:text-white focus:outline-none focus:border-[#E4572E] focus:ring-1 focus:ring-[#E4572E] resize-none"
+            class="w-full px-3.5 py-2.5 bg-white dark:bg-[#141414] border border-[#E5DFD5] dark:border-[#282828] rounded-xl admin-input text-[#1F1B16] dark:text-white focus:outline-none focus:border-[#E4572E] focus:ring-1 focus:ring-[#E4572E] resize-none"
           ></textarea>
         </div>
 
         <!-- Estado -->
         <div>
-          <label class="block text-xs font-bold uppercase tracking-wider mb-1.5 text-neutral-700 dark:text-neutral-200">
+          <label class="block admin-label mb-1.5 text-neutral-700 dark:text-neutral-200">
             Estado de Publicación
           </label>
           <div class="flex items-center gap-3">
@@ -715,7 +715,7 @@ function formatDate(dateStr: string) {
   </div>
 
   {/* Toast Container para notificaciones */}
-  <div id="galleryToast" class="fixed bottom-6 right-6 z-50 transform translate-y-10 opacity-0 pointer-events-none transition-all duration-300 flex items-center gap-3 px-4 py-3 rounded-2xl shadow-2xl text-xs font-semibold">
+  <div id="galleryToast" class="fixed bottom-6 right-6 z-50 transform translate-y-10 opacity-0 pointer-events-none transition-all duration-300 flex items-center gap-3 px-4 py-3 rounded-2xl shadow-2xl admin-toast">
     <span id="galleryToastMsg"></span>
   </div>
 </AdminLayout>
@@ -864,10 +864,10 @@ function formatDate(dateStr: string) {
           if (badge && badgeText) {
             badgeText.textContent = newStatus;
             if (newStatus === 'publicado') {
-              badge.className = 'status-badge px-2.5 py-0.5 rounded-lg backdrop-blur-md font-bold text-[10px] tracking-wide flex items-center gap-1.5 shadow-sm bg-emerald-950/80 border border-emerald-500/40 text-emerald-300';
+              badge.className = 'status-badge px-2.5 py-0.5 rounded-lg backdrop-blur-md admin-status-pill tracking-wide flex items-center gap-1.5 shadow-sm bg-emerald-950/80 border border-emerald-500/40 text-emerald-300';
               btn.setAttribute('title', 'Cambiar a Borrador');
             } else {
-              badge.className = 'status-badge px-2.5 py-0.5 rounded-lg backdrop-blur-md font-bold text-[10px] tracking-wide flex items-center gap-1.5 shadow-sm bg-amber-950/80 border border-amber-500/40 text-amber-300';
+              badge.className = 'status-badge px-2.5 py-0.5 rounded-lg backdrop-blur-md admin-status-pill tracking-wide flex items-center gap-1.5 shadow-sm bg-amber-950/80 border border-amber-500/40 text-amber-300';
               btn.setAttribute('title', 'Publicar Obra');
             }
           }
@@ -1043,9 +1043,9 @@ function formatDate(dateStr: string) {
     toastMsg.textContent = msg;
 
     if (type === 'success') {
-      toast.className = 'fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-2xl shadow-2xl text-xs font-semibold bg-slate-900 border border-emerald-500/40 text-emerald-300 transition-all duration-300 translate-y-0 opacity-100';
+      toast.className = 'fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-2xl shadow-2xl admin-toast bg-slate-900 border border-emerald-500/40 text-emerald-300 transition-all duration-300 translate-y-0 opacity-100';
     } else {
-      toast.className = 'fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-2xl shadow-2xl text-xs font-semibold bg-slate-900 border border-red-500/40 text-red-300 transition-all duration-300 translate-y-0 opacity-100';
+      toast.className = 'fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-2xl shadow-2xl admin-toast bg-slate-900 border border-red-500/40 text-red-300 transition-all duration-300 translate-y-0 opacity-100';
     }
 
     setTimeout(() => {

@@ -39,10 +39,10 @@ import { GALLERY_CATEGORIES } from '../../types/gallery';
         </svg>
         <span>Supabase Storage</span>
       </div>
-      <h3 id="uploadMediaModalTitle" class="text-xl sm:text-2xl font-bold text-[#1F1B16] dark:text-white tracking-tight">
+      <h3 id="uploadMediaModalTitle" class="admin-modal-title text-[#1F1B16] dark:text-white">
         Nueva Obra / Proyecto
       </h3>
-      <p class="text-xs sm:text-sm text-neutral-600 dark:text-slate-400 mt-1">
+      <p class="admin-page-subtitle text-neutral-600 dark:text-slate-400 mt-1">
         Sube una imagen de la obra y completa su ficha técnica para incorporarla al catálogo de la galería.
       </p>
     </div>
@@ -55,18 +55,18 @@ import { GALLERY_CATEGORIES } from '../../types/gallery';
       <svg class="w-4 h-4 shrink-0 text-red-500 dark:text-red-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
       </svg>
-      <span id="uploadModalErrorMsg" class="font-medium">Error al procesar la solicitud.</span>
+      <span id="uploadModalErrorMsg" class="admin-error-text">Error al procesar la solicitud.</span>
     </div>
 
     <!-- Success Banner (hidden by default) -->
     <div 
       id="uploadModalSuccess" 
-      class="hidden mb-5 p-3.5 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-[#2F4B3A] dark:text-emerald-300 text-xs flex items-start gap-2.5"
+      class="hidden mb-5 p-3.5 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-[#2F4B3A] dark:text-emerald-300 flex items-start gap-2.5"
     >
       <svg class="w-4 h-4 shrink-0 text-[#2F4B3A] dark:text-emerald-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
-      <span id="uploadModalSuccessMsg" class="font-medium">Obra registrada exitosamente.</span>
+      <span id="uploadModalSuccessMsg" class="admin-toast">Obra registrada exitosamente.</span>
     </div>
 
     <!-- Upload Form -->
@@ -74,7 +74,7 @@ import { GALLERY_CATEGORIES } from '../../types/gallery';
 
       <!-- Drag & Drop File Area -->
       <div>
-        <label class="block text-xs font-bold text-neutral-700 dark:text-slate-200 uppercase tracking-wider mb-1.5">
+        <label class="block admin-label text-neutral-700 dark:text-slate-200 mb-1.5">
           Imagen de la Obra *
         </label>
         <div 
@@ -101,7 +101,7 @@ import { GALLERY_CATEGORIES } from '../../types/gallery';
               <p class="text-sm font-medium text-neutral-700 dark:text-slate-200">
                 Arrastra tu imagen aquí o <span class="text-amber-600 dark:text-amber-400 underline underline-offset-2">examina archivos</span>
               </p>
-              <p class="text-xs text-neutral-500 dark:text-slate-500 mt-1">
+              <p class="admin-helper-text text-neutral-500 dark:text-slate-500 mt-1">
                 PNG, JPG, WEBP, GIF, AVIF — Máximo 10 MB
               </p>
             </div>
@@ -133,7 +133,7 @@ import { GALLERY_CATEGORIES } from '../../types/gallery';
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <!-- Título -->
         <div>
-          <label for="uploadMediaTitle" class="block text-xs font-bold text-neutral-700 dark:text-slate-200 uppercase tracking-wider mb-1.5">
+          <label for="uploadMediaTitle" class="block admin-label text-neutral-700 dark:text-slate-200 mb-1.5">
             Título *
           </label>
           <input 
@@ -142,20 +142,20 @@ import { GALLERY_CATEGORIES } from '../../types/gallery';
             name="title" 
             required
             placeholder="Ej. Abstracción Cósmica" 
-            class="w-full px-4 py-2.5 bg-white dark:bg-slate-950/80 border border-[#E5DFD5] dark:border-slate-700/80 focus:border-amber-500 dark:focus:border-amber-400 rounded-xl text-xs text-[#1F1B16] dark:text-white placeholder-neutral-400 dark:placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:focus:ring-amber-400 transition-all"
+            class="w-full px-4 py-2.5 bg-white dark:bg-slate-950/80 border border-[#E5DFD5] dark:border-slate-700/80 focus:border-amber-500 dark:focus:border-amber-400 rounded-xl admin-input text-[#1F1B16] dark:text-white focus:outline-none focus:ring-1 focus:ring-amber-500 dark:focus:ring-amber-400 transition-all"
           />
         </div>
 
         <!-- Categoría -->
         <div>
-          <label for="uploadMediaCategory" class="block text-xs font-bold text-neutral-700 dark:text-slate-200 uppercase tracking-wider mb-1.5">
+          <label for="uploadMediaCategory" class="block admin-label text-neutral-700 dark:text-slate-200 mb-1.5">
             Categoría
           </label>
           <div class="relative">
             <select 
               id="uploadMediaCategory" 
               name="category" 
-              class="w-full px-4 py-2.5 bg-white dark:bg-slate-950/80 border border-[#E5DFD5] dark:border-slate-700/80 focus:border-amber-500 dark:focus:border-amber-400 rounded-xl text-xs font-medium text-[#1F1B16] dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:focus:ring-amber-400 cursor-pointer transition-all appearance-none pr-9"
+              class="w-full px-4 py-2.5 bg-white dark:bg-slate-950/80 border border-[#E5DFD5] dark:border-slate-700/80 focus:border-amber-500 dark:focus:border-amber-400 rounded-xl admin-input font-medium text-[#1F1B16] dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:focus:ring-amber-400 cursor-pointer transition-all appearance-none pr-9"
             >
               <option value="general" class="bg-white dark:bg-slate-900 text-neutral-500 dark:text-slate-400">General</option>
               {GALLERY_CATEGORIES.map((cat) => (
@@ -173,7 +173,7 @@ import { GALLERY_CATEGORIES } from '../../types/gallery';
 
       <!-- Descripción -->
       <div>
-        <label for="uploadMediaDescription" class="block text-xs font-bold text-neutral-700 dark:text-slate-200 uppercase tracking-wider mb-1.5">
+        <label for="uploadMediaDescription" class="block admin-label text-neutral-700 dark:text-slate-200 mb-1.5">
           Descripción Corta
         </label>
         <textarea 
@@ -181,13 +181,13 @@ import { GALLERY_CATEGORIES } from '../../types/gallery';
           name="description" 
           rows="3" 
           placeholder="Breve ficha técnica o contexto de la obra..." 
-          class="w-full px-4 py-2.5 bg-white dark:bg-slate-950/80 border border-[#E5DFD5] dark:border-slate-700/80 focus:border-amber-500 dark:focus:border-amber-400 rounded-xl text-xs text-[#1F1B16] dark:text-white placeholder-neutral-400 dark:placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:focus:ring-amber-400 transition-all resize-none"
+          class="w-full px-4 py-2.5 bg-white dark:bg-slate-950/80 border border-[#E5DFD5] dark:border-slate-700/80 focus:border-amber-500 dark:focus:border-amber-400 rounded-xl admin-input text-[#1F1B16] dark:text-white focus:outline-none focus:ring-1 focus:ring-amber-500 dark:focus:ring-amber-400 transition-all resize-none"
         ></textarea>
       </div>
 
       <!-- Estado -->
       <div>
-        <label for="uploadMediaStatus" class="block text-xs font-bold text-neutral-700 dark:text-slate-200 uppercase tracking-wider mb-1.5">
+        <label for="uploadMediaStatus" class="block admin-label text-neutral-700 dark:text-slate-200 mb-1.5">
           Estado de Publicación
         </label>
         <div class="flex items-center gap-3">

@@ -25,17 +25,17 @@ import Button from '../common/Button.astro';
     <div class="px-6 sm:px-8 py-5 border-b border-[#E5DFD5] dark:border-[#282828] bg-white dark:bg-[#141414] flex items-center justify-between gap-4 shrink-0 transition-colors">
       <div class="min-w-0">
         <div class="flex items-center gap-2.5 mb-1.5 flex-wrap">
-          <span class="text-[11px] uppercase tracking-widest font-serif font-bold text-[#78716A] dark:text-neutral-400">
+          <span class="admin-eyebrow text-[#78716A] dark:text-neutral-400">
             Revista 870tivo &bull; Redacción
           </span>
           <span class="text-[10px] px-2 py-0.5 rounded-full bg-[#2F4B3A]/10 dark:bg-[#2F4B3A]/20 border border-[#2F4B3A]/30 text-[#2F4B3A] dark:text-[#A7C7B3] font-mono">
             bucket: blog-media
           </span>
-          <span id="editorModalModeBadge" class="text-[10px] px-2.5 py-0.5 rounded-full font-bold bg-[#E4572E]/10 dark:bg-[#E4572E]/20 text-[#E4572E] border border-[#E4572E]/30">
+          <span id="editorModalModeBadge" class="admin-badge px-2.5 py-0.5 rounded-full bg-[#E4572E]/10 dark:bg-[#E4572E]/20 text-[#E4572E] border border-[#E4572E]/30">
             Nueva Publicación
           </span>
         </div>
-        <h3 id="editorModalTitle" class="text-xl sm:text-2xl font-serif font-bold text-[#1F1B16] dark:text-white tracking-tight truncate">
+        <h3 id="editorModalTitle" class="admin-modal-title text-[#1F1B16] dark:text-white truncate">
           Redacción & Edición Editorial
         </h3>
         <p class="text-xs text-[#78716A] dark:text-neutral-400 mt-0.5 truncate hidden sm:block">
@@ -62,12 +62,12 @@ import Button from '../common/Button.astro';
       <!-- Error / Alert Banner -->
       <div 
         id="editorModalAlert" 
-        class="hidden p-3.5 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-700 dark:text-red-300 text-xs flex items-start gap-2.5 transition-all"
+        class="hidden p-3.5 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-700 dark:text-red-300 flex items-start gap-2.5 transition-all"
       >
         <svg class="w-4 h-4 shrink-0 text-red-500 dark:text-red-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
         </svg>
-        <span id="editorModalAlertMsg" class="font-medium">Error al procesar los datos.</span>
+        <span id="editorModalAlertMsg" class="admin-error-text">Error al procesar los datos.</span>
       </div>
 
       <!-- Form Container -->
@@ -76,7 +76,7 @@ import Button from '../common/Button.astro';
         <!-- 1. TÍTULO Y SLUG -->
         <div class="space-y-2">
           <div class="flex items-center justify-between">
-            <label for="postTitleInput" class="block text-xs font-bold text-[#1F1B16] dark:text-neutral-200 uppercase tracking-wider">
+            <label for="postTitleInput" class="block admin-label text-[#1F1B16] dark:text-neutral-200">
               Título del Artículo / Ensayo <span class="text-[#E4572E]">*</span>
             </label>
             <div class="text-[11px] text-[#78716A] dark:text-neutral-400 flex items-center gap-1.5 font-mono">
@@ -130,7 +130,7 @@ import Button from '../common/Button.astro';
           <!-- Selector de Autor con opción + Crear Autor (abre modal externo) -->
           <div>
             <div class="flex items-center justify-between mb-1.5">
-              <label for="postAuthorSelect" class="block text-xs font-bold text-[#1F1B16] dark:text-neutral-200 uppercase tracking-wider">
+              <label for="postAuthorSelect" class="block admin-label text-[#1F1B16] dark:text-neutral-200">
                 Autor / Redactor <span class="text-[#E4572E]">*</span>
               </label>
               <button 
@@ -153,7 +153,7 @@ import Button from '../common/Button.astro';
             <div class="relative">
               <select 
                 id="postAuthorSelect" 
-                class="w-full pl-9 pr-9 py-2.5 bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] focus:border-[#E4572E] dark:focus:border-[#E4572E] rounded-xl text-xs text-[#1F1B16] dark:text-white focus:outline-none focus:ring-1 focus:ring-[#E4572E] transition-all cursor-pointer appearance-none shadow-xs"
+                class="w-full pl-9 pr-9 py-2.5 bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] focus:border-[#E4572E] dark:focus:border-[#E4572E] rounded-xl admin-input text-[#1F1B16] dark:text-white focus:outline-none focus:ring-1 focus:ring-[#E4572E] transition-all cursor-pointer appearance-none shadow-xs"
               >
                 <option value="" disabled selected>Cargando autores...</option>
               </select>
@@ -165,14 +165,14 @@ import Button from '../common/Button.astro';
               </svg>
             </div>
 
-            <span class="text-[10px] text-[#78716A] dark:text-neutral-400 mt-1 block">
+            <span class="admin-helper-text text-[#78716A] dark:text-neutral-400 mt-1 block">
               Selecciona o crea un autor para este artículo.
             </span>
           </div>
 
           <!-- Enlace Social del Autor -->
           <div>
-            <label for="postAuthorSocialInput" class="block text-xs font-bold text-[#1F1B16] dark:text-neutral-200 uppercase tracking-wider mb-1.5">
+            <label for="postAuthorSocialInput" class="block admin-label text-[#1F1B16] dark:text-neutral-200 mb-1.5">
               Enlace Social del Autor <span class="text-[#78716A] dark:text-neutral-400 font-normal">(Opcional)</span>
             </label>
             <div class="relative">
@@ -181,18 +181,18 @@ import Button from '../common/Button.astro';
                 id="postAuthorSocialInput" 
                 name="authorSocial" 
                 placeholder="Ej: https://instagram.com/870tivo" 
-                class="w-full pl-9 pr-3.5 py-2.5 bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] focus:border-[#E4572E] dark:focus:border-[#E4572E] rounded-xl text-xs text-[#1F1B16] dark:text-white placeholder-[#A8A29E] dark:placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-[#E4572E] transition-all shadow-xs"
+                class="w-full pl-9 pr-3.5 py-2.5 bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] focus:border-[#E4572E] dark:focus:border-[#E4572E] rounded-xl admin-input text-[#1F1B16] dark:text-white focus:outline-none focus:ring-1 focus:ring-[#E4572E] transition-all shadow-xs"
               />
               <svg class="w-4 h-4 text-[#78716A] dark:text-neutral-400 absolute left-3 top-3 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
               </svg>
             </div>
-            <span class="text-[10px] text-[#78716A] dark:text-neutral-400 mt-1 block">Se sincroniza automáticamente con el autor seleccionado.</span>
+            <span class="admin-helper-text text-[#78716A] dark:text-neutral-400 mt-1 block">Se sincroniza automáticamente con el autor seleccionado.</span>
           </div>
 
           <!-- Categoría / Etiqueta -->
           <div class="sm:col-span-2 lg:col-span-1">
-            <label for="postCategoryInput" class="block text-xs font-bold text-[#1F1B16] dark:text-neutral-200 uppercase tracking-wider mb-1.5">
+            <label for="postCategoryInput" class="block admin-label text-[#1F1B16] dark:text-neutral-200 mb-1.5">
               Categoría / Sección
             </label>
             <input 
@@ -201,7 +201,7 @@ import Button from '../common/Button.astro';
               name="badge" 
               list="categorySuggestions"
               placeholder="Ej: ENSAYO DE PORTADA" 
-              class="w-full px-3.5 py-2.5 bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] focus:border-[#E4572E] dark:focus:border-[#E4572E] rounded-xl text-xs text-[#1F1B16] dark:text-white placeholder-[#A8A29E] dark:placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-[#E4572E] transition-all uppercase shadow-xs"
+              class="w-full px-3.5 py-2.5 bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] focus:border-[#E4572E] dark:focus:border-[#E4572E] rounded-xl admin-input text-[#1F1B16] dark:text-white focus:outline-none focus:ring-1 focus:ring-[#E4572E] transition-all uppercase shadow-xs"
             />
             <datalist id="categorySuggestions">
               <option value="ENSAYO DE PORTADA"></option>
@@ -222,7 +222,7 @@ import Button from '../common/Button.astro';
 
         <!-- 3. SUBTÍTULO / RESUMEN -->
         <div>
-          <label for="postSubtitleInput" class="block text-xs font-bold text-[#1F1B16] dark:text-neutral-200 uppercase tracking-wider mb-1.5">
+          <label for="postSubtitleInput" class="block admin-label text-[#1F1B16] dark:text-neutral-200 mb-1.5">
             Subtítulo / Bajada o Resumen Editorial
           </label>
           <textarea 
@@ -230,14 +230,14 @@ import Button from '../common/Button.astro';
             name="subtitle" 
             rows="2" 
             placeholder="Breve reflexión que introduce el artículo y engancha al lector en la landing page..." 
-            class="w-full px-4 py-2.5 bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] focus:border-[#E4572E] dark:focus:border-[#E4572E] rounded-xl text-xs sm:text-sm text-[#1F1B16] dark:text-neutral-200 placeholder-[#A8A29E] dark:placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-[#E4572E] transition-all resize-none shadow-xs"
+            class="w-full px-4 py-2.5 bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] focus:border-[#E4572E] dark:focus:border-[#E4572E] rounded-xl admin-input text-[#1F1B16] dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-[#E4572E] transition-all resize-none shadow-xs"
           ></textarea>
         </div>
 
         <!-- 4. GESTIÓN DE IMAGEN DE PORTADA PRINCIPAL (DRAG & DROP A SUPABASE STORAGE 'blog-media') -->
         <div>
           <div class="flex items-center justify-between mb-1.5">
-            <label class="block text-xs font-bold text-[#1F1B16] dark:text-neutral-200 uppercase tracking-wider">
+            <label class="block admin-label text-[#1F1B16] dark:text-neutral-200">
               Imagen de Portada Principal <span class="text-[#78716A] dark:text-neutral-400 font-normal">(Supabase Storage: blog-media)</span>
             </label>
             <button 
@@ -276,7 +276,7 @@ import Button from '../common/Button.astro';
                 <p class="text-xs sm:text-sm font-semibold text-[#1F1B16] dark:text-neutral-200">
                   Arrastra tu imagen de portada aquí o <span class="text-[#E4572E] underline underline-offset-2">examina tus archivos</span>
                 </p>
-                <p class="text-[11px] text-[#78716A] dark:text-neutral-400 mt-1">
+                <p class="admin-helper-text text-[#78716A] dark:text-neutral-400 mt-1">
                   Se subirá automáticamente al bucket <strong class="text-[#E4572E]">blog-media</strong> (JPG, PNG, WEBP, AVIF &mdash; máx 12 MB)
                 </p>
               </div>
@@ -321,7 +321,7 @@ import Button from '../common/Button.astro';
               type="text" 
               id="manualHeroUrlInput" 
               placeholder="https://ejemplo.com/imagen.jpg o /assets/images/pajaro-muerto.jpeg" 
-              class="w-full px-3.5 py-2 bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] rounded-xl text-xs text-[#1F1B16] dark:text-white placeholder-[#A8A29E] dark:placeholder-neutral-500 focus:outline-none focus:border-[#E4572E] transition-colors"
+              class="w-full px-3.5 py-2 bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] rounded-xl admin-input text-[#1F1B16] dark:text-white focus:outline-none focus:border-[#E4572E] transition-colors"
             />
           </div>
         </div>
@@ -330,10 +330,10 @@ import Button from '../common/Button.astro';
         <div class="space-y-2">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
-              <label for="postContentInput" class="block text-xs font-bold text-[#1F1B16] dark:text-neutral-200 uppercase tracking-wider">
+              <label for="postContentInput" class="block admin-label text-[#1F1B16] dark:text-neutral-200">
                 Cuerpo del Ensayo / Contenido Enriquecido
               </label>
-              <span class="text-[11px] text-[#78716A] dark:text-neutral-400">
+              <span class="admin-helper-text text-[#78716A] dark:text-neutral-400">
                 Compatible con Markdown, formato editorial y etiquetas <code>&lt;iframe&gt;</code> para videos.
               </span>
             </div>

@@ -227,22 +227,22 @@ function isPastEvent(dateStr: string) {
     <!-- ── CABECERA PRINCIPAL & ACCIONES ── -->
     <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
       <div>
-        <div class="flex flex-wrap items-center gap-2 mb-2">
-          <span class="text-[11px] uppercase font-bold tracking-widest text-[#E4572E]">
+        <div class="flex flex-wrap items-center gap-2 mb-2 font-sans">
+          <span class="admin-eyebrow text-[#E4572E]">
             Agenda & Programación Cultural
           </span>
-          <span class="text-xs px-2.5 py-0.5 rounded-full bg-white dark:bg-[#1E1E1E] border border-[#E5DFD5] dark:border-[#282828] text-[#1F1B16] dark:text-[#FAF6F0] font-semibold">
+          <span class="text-xs px-2.5 py-0.5 rounded-full bg-white dark:bg-[#1E1E1E] border border-[#E5DFD5] dark:border-[#282828] text-[#1F1B16] dark:text-[#FAF6F0] font-semibold tabular-nums">
             {allActivities.length} Eventos en Base
           </span>
-          <span class="text-xs px-2.5 py-0.5 rounded-full bg-[#2F4B3A]/10 dark:bg-[#2F4B3A]/25 border border-[#2F4B3A]/30 text-[#2F4B3A] dark:text-[#A7C7B3] font-medium">
+          <span class="text-xs px-2.5 py-0.5 rounded-full bg-[#2F4B3A]/10 dark:bg-[#2F4B3A]/25 border border-[#2F4B3A]/30 text-[#2F4B3A] dark:text-[#A7C7B3] font-medium font-mono">
             Storage: activities (16:10)
           </span>
         </div>
 
-        <h1 class="text-2xl sm:text-3xl font-extrabold text-[#1F1B16] dark:text-white tracking-tight">
+        <h1 class="admin-page-title text-[#1F1B16] dark:text-white">
           Gestión de Actividades Culturales
         </h1>
-        <p class="text-xs sm:text-sm text-[#78716A] dark:text-neutral-400 mt-1 max-w-3xl leading-relaxed">
+        <p class="admin-page-subtitle text-[#78716A] dark:text-neutral-400 mt-1 max-w-3xl">
           Programa y administra proyecciones, sesiones de lectura, talleres prácticos y encuentros comunitarios. Carga afiches con relación de aspecto 16:10 y sincroniza la visibilidad en el portal público de 870tivo.
         </p>
       </div>
@@ -283,55 +283,55 @@ function isPastEvent(dateStr: string) {
     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
       <!-- Total -->
       <div class="bg-white dark:bg-[#181818] p-3.5 rounded-2xl border border-[#E5DFD5] dark:border-[#282828] shadow-xs">
-        <span class="text-[10px] font-bold uppercase tracking-wider text-[#78716A] dark:text-neutral-400 block">Total</span>
-        <div class="flex items-baseline justify-between mt-1">
-          <span class="text-2xl font-black text-[#1F1B16] dark:text-white">{counts.todas}</span>
-          <span class="text-[10px] px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 font-mono">100%</span>
+        <span class="admin-kpi-label text-[#78716A] dark:text-neutral-400 block">Total</span>
+        <div class="flex items-baseline justify-between mt-1.5">
+          <span class="admin-kpi-value text-[#1F1B16] dark:text-white">{counts.todas}</span>
+          <span class="text-[10px] px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 font-sans font-medium tabular-nums">100%</span>
         </div>
       </div>
 
       <!-- Ciclos Cine -->
       <div class="bg-white dark:bg-[#181818] p-3.5 rounded-2xl border border-[#E5DFD5] dark:border-[#282828] shadow-xs">
-        <span class="text-[10px] font-bold uppercase tracking-wider text-[#E4572E] block">🎬 Cine</span>
-        <div class="flex items-baseline justify-between mt-1">
-          <span class="text-2xl font-black text-[#1F1B16] dark:text-white">{counts['ciclos-cine']}</span>
+        <span class="admin-kpi-label text-[#E4572E] block">🎬 Cine</span>
+        <div class="flex items-baseline justify-between mt-1.5">
+          <span class="admin-kpi-value text-[#1F1B16] dark:text-white">{counts['ciclos-cine']}</span>
           <span class="w-2 h-2 rounded-full bg-[#E4572E]"></span>
         </div>
       </div>
 
       <!-- Club Lectura -->
       <div class="bg-white dark:bg-[#181818] p-3.5 rounded-2xl border border-[#E5DFD5] dark:border-[#282828] shadow-xs">
-        <span class="text-[10px] font-bold uppercase tracking-wider text-[#2F4B3A] dark:text-[#A7C7B3] block">📚 Lectura</span>
-        <div class="flex items-baseline justify-between mt-1">
-          <span class="text-2xl font-black text-[#1F1B16] dark:text-white">{counts['club-lectura']}</span>
+        <span class="admin-kpi-label text-[#2F4B3A] dark:text-[#A7C7B3] block">📚 Lectura</span>
+        <div class="flex items-baseline justify-between mt-1.5">
+          <span class="admin-kpi-value text-[#1F1B16] dark:text-white">{counts['club-lectura']}</span>
           <span class="w-2 h-2 rounded-full bg-[#2F4B3A]"></span>
         </div>
       </div>
 
       <!-- Talleres -->
       <div class="bg-white dark:bg-[#181818] p-3.5 rounded-2xl border border-[#E5DFD5] dark:border-[#282828] shadow-xs">
-        <span class="text-[10px] font-bold uppercase tracking-wider text-[#F2B134] block">🛠️ Talleres</span>
-        <div class="flex items-baseline justify-between mt-1">
-          <span class="text-2xl font-black text-[#1F1B16] dark:text-white">{counts.talleres}</span>
+        <span class="admin-kpi-label text-[#F2B134] block">🛠️ Talleres</span>
+        <div class="flex items-baseline justify-between mt-1.5">
+          <span class="admin-kpi-value text-[#1F1B16] dark:text-white">{counts.talleres}</span>
           <span class="w-2 h-2 rounded-full bg-[#F2B134]"></span>
         </div>
       </div>
 
       <!-- Encuentros -->
       <div class="bg-white dark:bg-[#181818] p-3.5 rounded-2xl border border-[#E5DFD5] dark:border-[#282828] shadow-xs">
-        <span class="text-[10px] font-bold uppercase tracking-wider text-[#78716A] dark:text-neutral-300 block">🗣️ Encuentros</span>
-        <div class="flex items-baseline justify-between mt-1">
-          <span class="text-2xl font-black text-[#1F1B16] dark:text-white">{counts.encuentros}</span>
+        <span class="admin-kpi-label text-[#78716A] dark:text-neutral-300 block">🗣️ Encuentros</span>
+        <div class="flex items-baseline justify-between mt-1.5">
+          <span class="admin-kpi-value text-[#1F1B16] dark:text-white">{counts.encuentros}</span>
           <span class="w-2 h-2 rounded-full bg-neutral-400"></span>
         </div>
       </div>
 
       <!-- Estado: Publicadas -->
       <div class="bg-white dark:bg-[#181818] p-3.5 rounded-2xl border border-[#E5DFD5] dark:border-[#282828] shadow-xs">
-        <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 block">Publicadas</span>
-        <div class="flex items-baseline justify-between mt-1">
-          <span class="text-2xl font-black text-emerald-600 dark:text-emerald-400">{counts.publicadas}</span>
-          <span class="text-[10px] font-medium text-[#78716A] dark:text-neutral-400 font-mono">
+        <span class="admin-kpi-label text-emerald-600 dark:text-emerald-400 block">Publicadas</span>
+        <div class="flex items-baseline justify-between mt-1.5">
+          <span class="admin-kpi-value text-emerald-600 dark:text-emerald-400">{counts.publicadas}</span>
+          <span class="admin-micro text-[#78716A] dark:text-neutral-400 font-sans tabular-nums">
             {counts.borradores} borrador
           </span>
         </div>
@@ -355,14 +355,14 @@ function isPastEvent(dateStr: string) {
             role="tab"
             data-tab="todas"
             aria-selected={activeCategoryParam === 'todas' ? 'true' : 'false'}
-            class={`category-tab-btn flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer select-none shrink-0 border ${
+            class={`category-tab-btn admin-tab flex items-center gap-2 px-3.5 py-2 rounded-xl transition-all cursor-pointer select-none shrink-0 border ${
               activeCategoryParam === 'todas'
                 ? 'bg-[#1F1B16] text-white border-[#1F1B16] dark:bg-white dark:text-[#141414] dark:border-white shadow-xs'
                 : 'bg-[#FAF6F0] dark:bg-[#1E1E1E] text-[#78716A] dark:text-neutral-400 border-transparent hover:text-[#1F1B16] dark:hover:text-white hover:border-[#E5DFD5] dark:hover:border-[#333333]'
             }`}
           >
             <span>Todas</span>
-            <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-black/10 dark:bg-black/20 font-mono">
+            <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-black/10 dark:bg-black/20 font-sans font-semibold tabular-nums">
               {counts.todas}
             </span>
           </button>
@@ -373,14 +373,14 @@ function isPastEvent(dateStr: string) {
             role="tab"
             data-tab="ciclos-cine"
             aria-selected={activeCategoryParam === 'ciclos-cine' ? 'true' : 'false'}
-            class={`category-tab-btn flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer select-none shrink-0 border ${
+            class={`category-tab-btn admin-tab flex items-center gap-2 px-3.5 py-2 rounded-xl transition-all cursor-pointer select-none shrink-0 border ${
               activeCategoryParam === 'ciclos-cine'
                 ? 'bg-[#E4572E] text-white border-[#E4572E] shadow-xs'
                 : 'bg-[#FAF6F0] dark:bg-[#1E1E1E] text-[#78716A] dark:text-neutral-400 border-transparent hover:text-[#E4572E] hover:border-[#E4572E]/30'
             }`}
           >
             <span>🎬 Ciclos de Cine</span>
-            <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-black/10 dark:bg-black/20 font-mono">
+            <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-black/10 dark:bg-black/20 font-sans font-semibold tabular-nums">
               {counts['ciclos-cine']}
             </span>
           </button>
@@ -391,14 +391,14 @@ function isPastEvent(dateStr: string) {
             role="tab"
             data-tab="club-lectura"
             aria-selected={activeCategoryParam === 'club-lectura' ? 'true' : 'false'}
-            class={`category-tab-btn flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer select-none shrink-0 border ${
+            class={`category-tab-btn admin-tab flex items-center gap-2 px-3.5 py-2 rounded-xl transition-all cursor-pointer select-none shrink-0 border ${
               activeCategoryParam === 'club-lectura'
                 ? 'bg-[#2F4B3A] text-white border-[#2F4B3A] shadow-xs'
                 : 'bg-[#FAF6F0] dark:bg-[#1E1E1E] text-[#78716A] dark:text-neutral-400 border-transparent hover:text-[#2F4B3A] dark:hover:text-[#A7C7B3] hover:border-[#2F4B3A]/30'
             }`}
           >
             <span>📚 Club de Lectura</span>
-            <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-black/10 dark:bg-black/20 font-mono">
+            <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-black/10 dark:bg-black/20 font-sans font-semibold tabular-nums">
               {counts['club-lectura']}
             </span>
           </button>
@@ -409,14 +409,14 @@ function isPastEvent(dateStr: string) {
             role="tab"
             data-tab="talleres"
             aria-selected={activeCategoryParam === 'talleres' ? 'true' : 'false'}
-            class={`category-tab-btn flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer select-none shrink-0 border ${
+            class={`category-tab-btn admin-tab flex items-center gap-2 px-3.5 py-2 rounded-xl transition-all cursor-pointer select-none shrink-0 border ${
               activeCategoryParam === 'talleres'
-                ? 'bg-[#F2B134] text-[#1F1B16] border-[#F2B134] font-bold shadow-xs'
+                ? 'bg-[#F2B134] text-[#1F1B16] border-[#F2B134] shadow-xs'
                 : 'bg-[#FAF6F0] dark:bg-[#1E1E1E] text-[#78716A] dark:text-neutral-400 border-transparent hover:text-[#F2B134] hover:border-[#F2B134]/30'
             }`}
           >
             <span>🛠️ Talleres</span>
-            <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-black/10 dark:bg-black/20 font-mono">
+            <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-black/10 dark:bg-black/20 font-sans font-semibold tabular-nums">
               {counts.talleres}
             </span>
           </button>
@@ -427,14 +427,14 @@ function isPastEvent(dateStr: string) {
             role="tab"
             data-tab="encuentros"
             aria-selected={activeCategoryParam === 'encuentros' ? 'true' : 'false'}
-            class={`category-tab-btn flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer select-none shrink-0 border ${
+            class={`category-tab-btn admin-tab flex items-center gap-2 px-3.5 py-2 rounded-xl transition-all cursor-pointer select-none shrink-0 border ${
               activeCategoryParam === 'encuentros'
                 ? 'bg-[#1F1B16] text-white border-[#1F1B16] dark:bg-white dark:text-[#141414] dark:border-white shadow-xs'
                 : 'bg-[#FAF6F0] dark:bg-[#1E1E1E] text-[#78716A] dark:text-neutral-400 border-transparent hover:text-[#1F1B16] dark:hover:text-white hover:border-[#E5DFD5] dark:hover:border-[#333333]'
             }`}
           >
             <span>🗣️ Encuentros</span>
-            <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-black/10 dark:bg-black/20 font-mono">
+            <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-black/10 dark:bg-black/20 font-sans font-semibold tabular-nums">
               {counts.encuentros}
             </span>
           </button>
@@ -481,7 +481,7 @@ function isPastEvent(dateStr: string) {
             id="activitySearchInput"
             value={searchQuery}
             placeholder="Buscar por título, lugar o slug..."
-            class="w-full pl-9 pr-4 py-2 text-xs bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] rounded-xl text-[#1F1B16] dark:text-white placeholder-[#78716A] dark:placeholder-neutral-500 focus:outline-none focus:border-[#E4572E] transition-colors"
+            class="w-full pl-9 pr-4 py-2 admin-input bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] rounded-xl text-[#1F1B16] dark:text-white focus:outline-none focus:border-[#E4572E] transition-colors"
           />
           <svg class="w-4 h-4 text-[#78716A] dark:text-neutral-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -491,10 +491,10 @@ function isPastEvent(dateStr: string) {
 
       <!-- Filtro por Estado (Publicado / Borrador / Todos) -->
       <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
-        <span class="text-xs text-[#78716A] dark:text-neutral-400 font-medium">Estado:</span>
+        <span class="admin-meta text-[#78716A] dark:text-neutral-400">Estado:</span>
         <select
           id="activityStatusSelect"
-          class="px-3 py-1.5 text-xs bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] rounded-xl text-[#1F1B16] dark:text-white focus:outline-none focus:border-[#E4572E] transition-colors cursor-pointer"
+          class="px-3 py-1.5 admin-input bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] rounded-xl text-[#1F1B16] dark:text-white focus:outline-none focus:border-[#E4572E] transition-colors cursor-pointer"
         >
           <option value="all" selected={statusFilter === 'all'}>Todos los estados</option>
           <option value="publicado" selected={statusFilter === 'publicado'}>Solo Publicados</option>
@@ -511,9 +511,9 @@ function isPastEvent(dateStr: string) {
     <div id="activitiesTableView" class="space-y-4">
       <div class="bg-white dark:bg-[#181818] rounded-2xl border border-[#E5DFD5] dark:border-[#282828] overflow-hidden shadow-xs">
         <div class="overflow-x-auto custom-scrollbar">
-          <table class="w-full text-left border-collapse text-xs">
+          <table class="w-full text-left border-collapse font-sans text-xs">
             <thead>
-              <tr class="border-b border-[#E5DFD5] dark:border-[#282828] bg-[#FAF6F0]/70 dark:bg-[#141414]/70 text-[#78716A] dark:text-neutral-400 font-bold uppercase tracking-wider text-[10px]">
+              <tr class="border-b border-[#E5DFD5] dark:border-[#282828] bg-[#FAF6F0]/70 dark:bg-[#141414]/70 text-[#78716A] dark:text-neutral-400 admin-table-head">
                 <th scope="col" class="py-3 px-4 w-28">Afiche (16:10)</th>
                 <th scope="col" class="py-3 px-4">Actividad & Detalles</th>
                 <th scope="col" class="py-3 px-4 w-36">Categoría</th>
@@ -550,10 +550,10 @@ function isPastEvent(dateStr: string) {
                           />
                         ) : (
                           <div class="w-full h-full flex items-center justify-center text-neutral-400 dark:text-neutral-600 bg-neutral-200 dark:bg-neutral-800">
-                            <span class="text-[9px] font-mono font-bold">16:10</span>
+                            <span class="font-sans text-[10px] font-semibold tabular-nums">16:10</span>
                           </div>
                         )}
-                        <span class="absolute bottom-0.5 right-0.5 px-1 rounded bg-black/70 text-white font-mono text-[8px]">
+                        <span class="absolute bottom-0.5 right-0.5 px-1 rounded bg-black/70 text-white font-sans text-[10px] font-semibold tabular-nums">
                           16:10
                         </span>
                       </div>
@@ -566,12 +566,12 @@ function isPastEvent(dateStr: string) {
                           <a
                             href={`/actividades/${act.slug}`}
                             target="_blank"
-                            class="font-serif font-bold text-sm text-[#1F1B16] dark:text-white hover:text-[#E4572E] dark:hover:text-[#F2B134] transition-colors leading-snug line-clamp-1"
+                            class="admin-item-title text-[#1F1B16] dark:text-white hover:text-[#E4572E] dark:hover:text-[#F2B134] transition-colors line-clamp-1"
                           >
                             {act.title}
                           </a>
                           {isPast && (
-                            <span class="text-[9px] px-1.5 py-0.2 rounded font-mono bg-neutral-100 dark:bg-neutral-800 text-neutral-500 border border-neutral-200 dark:border-neutral-700">
+                            <span class="admin-badge px-1.5 py-0.2 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-500 border border-neutral-200 dark:border-neutral-700">
                               Pasado
                             </span>
                           )}
@@ -592,7 +592,7 @@ function isPastEvent(dateStr: string) {
 
                     <!-- Categoría con Badge Oficial -->
                     <td class="py-3 px-4 align-middle">
-                      <span class={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border ${meta.badgeClass}`}>
+                      <span class={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full admin-badge border ${meta.badgeClass}`}>
                         <span>
                           {act.category === 'ciclos-cine' && '🎬'}
                           {act.category === 'club-lectura' && '📚'}
@@ -606,13 +606,13 @@ function isPastEvent(dateStr: string) {
                     <!-- Fecha & Ubicación -->
                     <td class="py-3 px-4 align-middle">
                       <div class="space-y-0.5">
-                        <div class="font-medium text-[#1F1B16] dark:text-neutral-200 text-xs flex items-center gap-1.5">
+                        <div class="admin-meta tabular-nums text-[#1F1B16] dark:text-neutral-200 flex items-center gap-1.5">
                           <svg class="w-3.5 h-3.5 text-[#E4572E] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                           </svg>
                           <span>{formatDateTime(act.event_date)}</span>
                         </div>
-                        <div class="text-[11px] text-[#78716A] dark:text-neutral-400 flex items-center gap-1 truncate max-w-[180px]">
+                        <div class="admin-item-subtitle text-[#78716A] dark:text-neutral-400 flex items-center gap-1 truncate max-w-[180px]">
                           <svg class="w-3 h-3 text-neutral-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -626,7 +626,7 @@ function isPastEvent(dateStr: string) {
                     <td class="py-3 px-4 align-middle text-center">
                       <button
                         type="button"
-                        class="toggle-status-btn inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all cursor-pointer border"
+                        class="toggle-status-btn inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full admin-status-pill transition-all cursor-pointer border"
                         data-id={act.id}
                         data-status={act.status}
                         data-published={act.is_published ? 'true' : 'false'}
@@ -734,17 +734,17 @@ function isPastEvent(dateStr: string) {
               ) : (
                 <div class="w-full h-full flex flex-col items-center justify-center text-neutral-400 bg-neutral-200 dark:bg-neutral-800">
                   <span class="font-serif font-bold text-lg text-neutral-500">870tivo</span>
-                  <span class="text-[10px] font-mono">16:10 Cover</span>
+                  <span class="font-sans text-[10px] font-semibold tabular-nums">16:10 Cover</span>
                 </div>
               )}
 
               <!-- Badges Superpuestos -->
               <div class="absolute top-2.5 left-2.5 flex items-center gap-1.5">
-                <span class={`px-2 py-0.5 rounded-lg text-[10px] font-bold border backdrop-blur-md bg-white/90 dark:bg-[#141414]/90 ${meta.badgeClass}`}>
+                <span class={`px-2 py-0.5 rounded-lg admin-badge border backdrop-blur-md bg-white/90 dark:bg-[#141414]/90 ${meta.badgeClass}`}>
                   {meta.label}
                 </span>
                 {isPast && (
-                  <span class="px-2 py-0.5 rounded-lg text-[10px] font-mono bg-black/70 text-neutral-300">
+                  <span class="px-2 py-0.5 rounded-lg admin-badge bg-black/70 text-neutral-300">
                     Pasado
                   </span>
                 )}
@@ -752,17 +752,17 @@ function isPastEvent(dateStr: string) {
 
               <div class="absolute top-2.5 right-2.5">
                 {act.is_published && act.status === 'publicado' ? (
-                  <span class="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-emerald-500 text-white shadow-xs">
+                  <span class="px-2 py-0.5 rounded-lg admin-badge bg-emerald-500 text-white shadow-xs">
                     Publicado
                   </span>
                 ) : (
-                  <span class="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-amber-500 text-[#141414] shadow-xs">
+                  <span class="px-2 py-0.5 rounded-lg admin-badge bg-amber-500 text-[#141414] shadow-xs">
                     Borrador
                   </span>
                 )}
               </div>
 
-              <span class="absolute bottom-1 right-2 text-[9px] font-mono text-white/80 bg-black/60 px-1 rounded">
+              <span class="absolute bottom-1 right-2 font-sans text-[10px] font-semibold tabular-nums text-white/80 bg-black/60 px-1 rounded">
                 16:10
               </span>
             </div>
@@ -777,7 +777,7 @@ function isPastEvent(dateStr: string) {
                   <span>{formatDateTime(act.event_date)}</span>
                 </div>
 
-                <h3 class="font-serif font-bold text-base text-[#1F1B16] dark:text-white line-clamp-2 leading-snug group-hover:text-[#E4572E] transition-colors">
+                <h3 class="admin-item-title text-[#1F1B16] dark:text-white line-clamp-2 group-hover:text-[#E4572E] transition-colors">
                   {act.title}
                 </h3>
 
@@ -850,10 +850,10 @@ function isPastEvent(dateStr: string) {
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
         </svg>
       </div>
-      <h3 class="font-serif font-bold text-lg text-[#1F1B16] dark:text-white mb-1">
+      <h3 class="admin-empty-title text-[#1F1B16] dark:text-white mb-1">
         No se encontraron actividades
       </h3>
-      <p class="text-xs text-[#78716A] dark:text-neutral-400 max-w-sm mx-auto mb-5">
+      <p class="admin-empty-description text-[#78716A] dark:text-neutral-400 max-w-sm mx-auto mb-5">
         No hay registros que coincidan con los filtros aplicados o la categoría seleccionada.
       </p>
       {canCreate && (
@@ -891,7 +891,7 @@ function isPastEvent(dateStr: string) {
           </svg>
         </div>
         <div>
-          <h3 id="deleteModalTitle" class="font-serif font-bold text-base text-[#1F1B16] dark:text-white">
+          <h3 id="deleteModalTitle" class="admin-modal-title text-lg sm:text-xl text-[#1F1B16] dark:text-white">
             Eliminar Actividad
           </h3>
           <p class="text-xs text-[#78716A] dark:text-neutral-400">
@@ -929,7 +929,7 @@ function isPastEvent(dateStr: string) {
     id="adminToast"
     class="fixed bottom-6 right-6 z-50 transform translate-y-16 opacity-0 transition-all duration-300 pointer-events-none"
   >
-    <div class="flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-xl border text-xs font-medium bg-[#1F1B16] text-white border-neutral-700" id="toastInner">
+    <div class="flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-xl border admin-toast bg-[#1F1B16] text-white border-neutral-700" id="toastInner">
       <span id="toastIcon">✨</span>
       <span id="toastMessage">Operación realizada con éxito.</span>
     </div>
@@ -1097,16 +1097,16 @@ function isPastEvent(dateStr: string) {
           if (isSelected) {
             // Estilos activos según categoría
             if (activeCategory === 'ciclos-cine') {
-              t.className = 'category-tab-btn flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer select-none shrink-0 border bg-[#E4572E] text-white border-[#E4572E] shadow-xs';
+              t.className = 'category-tab-btn admin-tab flex items-center gap-2 px-3.5 py-2 rounded-xl transition-all cursor-pointer select-none shrink-0 border bg-[#E4572E] text-white border-[#E4572E] shadow-xs';
             } else if (activeCategory === 'club-lectura') {
-              t.className = 'category-tab-btn flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer select-none shrink-0 border bg-[#2F4B3A] text-white border-[#2F4B3A] shadow-xs';
+              t.className = 'category-tab-btn admin-tab flex items-center gap-2 px-3.5 py-2 rounded-xl transition-all cursor-pointer select-none shrink-0 border bg-[#2F4B3A] text-white border-[#2F4B3A] shadow-xs';
             } else if (activeCategory === 'talleres') {
-              t.className = 'category-tab-btn flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer select-none shrink-0 border bg-[#F2B134] text-[#1F1B16] border-[#F2B134] font-bold shadow-xs';
+              t.className = 'category-tab-btn admin-tab flex items-center gap-2 px-3.5 py-2 rounded-xl transition-all cursor-pointer select-none shrink-0 border bg-[#F2B134] text-[#1F1B16] border-[#F2B134] shadow-xs';
             } else {
-              t.className = 'category-tab-btn flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer select-none shrink-0 border bg-[#1F1B16] text-white border-[#1F1B16] dark:bg-white dark:text-[#141414] dark:border-white shadow-xs';
+              t.className = 'category-tab-btn admin-tab flex items-center gap-2 px-3.5 py-2 rounded-xl transition-all cursor-pointer select-none shrink-0 border bg-[#1F1B16] text-white border-[#1F1B16] dark:bg-white dark:text-[#141414] dark:border-white shadow-xs';
             }
           } else {
-            t.className = 'category-tab-btn flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer select-none shrink-0 border bg-[#FAF6F0] dark:bg-[#1E1E1E] text-[#78716A] dark:text-neutral-400 border-transparent hover:text-[#1F1B16] dark:hover:text-white hover:border-[#E5DFD5] dark:hover:border-[#333333]';
+            t.className = 'category-tab-btn admin-tab flex items-center gap-2 px-3.5 py-2 rounded-xl transition-all cursor-pointer select-none shrink-0 border bg-[#FAF6F0] dark:bg-[#1E1E1E] text-[#78716A] dark:text-neutral-400 border-transparent hover:text-[#1F1B16] dark:hover:text-white hover:border-[#E5DFD5] dark:hover:border-[#333333]';
           }
         });
 

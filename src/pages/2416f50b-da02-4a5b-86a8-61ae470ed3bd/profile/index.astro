@@ -122,9 +122,10 @@ const createdAtFormatted = currentUser.created_at
           </div>
 
           <!-- User Identifiers -->
-          <div class="space-y-1.5 min-w-0">
+          <div class="space-y-1.5 min-w-0 font-sans">
+            <span class="admin-eyebrow text-[#E4572E] block">Mi Cuenta</span>
             <div class="flex flex-wrap items-center gap-2.5">
-              <h1 id="headerHeroFullName" class="text-xl sm:text-2xl font-bold text-[#1F1B16] dark:text-white tracking-tight truncate">
+              <h1 id="headerHeroFullName" class="admin-page-title text-[#1F1B16] dark:text-white truncate">
                 {currentFullName || 'Administrador 870tivo'}
               </h1>
               <span class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-[#E4572E]/10 text-[#E4572E] border border-[#E4572E]/30 text-xs font-semibold uppercase tracking-wider">
@@ -164,7 +165,7 @@ const createdAtFormatted = currentUser.created_at
     <!-- Notification Toast Container -->
     <div id="statusToast" class="hidden transition-all duration-300 rounded-2xl p-4 border flex items-center gap-3 shadow-lg">
       <div id="statusToastIcon" class="shrink-0"></div>
-      <div class="text-xs sm:text-sm font-medium" id="statusToastMessage"></div>
+      <div class="admin-toast" id="statusToastMessage"></div>
     </div>
 
     <!-- Main Grid: Sections -->
@@ -182,7 +183,7 @@ const createdAtFormatted = currentUser.created_at
                   <Camera class="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 class="text-sm font-bold text-[#1F1B16] dark:text-white tracking-wide">Avatar de Perfil</h3>
+                  <h3 class="admin-section-title text-[#1F1B16] dark:text-white">Avatar de Perfil</h3>
                   <p class="text-[11px] text-neutral-500 dark:text-neutral-400">Personaliza la imagen visible de tu cuenta</p>
                 </div>
               </div>
@@ -287,7 +288,7 @@ const createdAtFormatted = currentUser.created_at
                 <User class="w-4 h-4" />
               </div>
               <div>
-                <h3 class="text-sm font-bold text-[#1F1B16] dark:text-white tracking-wide">Información Personal</h3>
+                <h3 class="admin-section-title text-[#1F1B16] dark:text-white">Información Personal</h3>
                 <p class="text-[11px] text-neutral-500 dark:text-neutral-400">Actualiza tus datos de identidad en la plataforma</p>
               </div>
             </div>
@@ -301,7 +302,7 @@ const createdAtFormatted = currentUser.created_at
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <!-- Nombre -->
               <div>
-                <label for="firstNameInput" class="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5 uppercase tracking-wider">
+                <label for="firstNameInput" class="block admin-label text-neutral-700 dark:text-neutral-300 mb-1.5">
                   Nombre <span class="text-[#E4572E]">*</span>
                 </label>
                 <div class="relative">
@@ -316,13 +317,13 @@ const createdAtFormatted = currentUser.created_at
                     required
                     autocomplete="given-name"
                     placeholder="Ej: Miguel Ángel"
-                    class="w-full pl-10 pr-4 py-3 rounded-xl bg-white dark:bg-[#111111] border border-[#E5DFD5] dark:border-[#282828] text-[#1F1B16] dark:text-white placeholder-neutral-400 dark:placeholder-neutral-600 text-sm focus:outline-none focus:border-[#E4572E] focus:ring-1 focus:ring-[#E4572E] transition-all"
+                    class="w-full pl-10 pr-4 py-3 rounded-xl bg-white dark:bg-[#111111] border border-[#E5DFD5] dark:border-[#282828] text-[#1F1B16] dark:text-white admin-input focus:outline-none focus:border-[#E4572E] focus:ring-1 focus:ring-[#E4572E] transition-all"
                   />
                 </div>
               </div>
               <!-- Apellido -->
               <div>
-                <label for="lastNameInput" class="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5 uppercase tracking-wider">
+                <label for="lastNameInput" class="block admin-label text-neutral-700 dark:text-neutral-300 mb-1.5">
                   Apellido <span class="text-[#E4572E]">*</span>
                 </label>
                 <div class="relative">
@@ -337,18 +338,18 @@ const createdAtFormatted = currentUser.created_at
                     required
                     autocomplete="family-name"
                     placeholder="Ej: Uribe"
-                    class="w-full pl-10 pr-4 py-3 rounded-xl bg-white dark:bg-[#111111] border border-[#E5DFD5] dark:border-[#282828] text-[#1F1B16] dark:text-white placeholder-neutral-400 dark:placeholder-neutral-600 text-sm focus:outline-none focus:border-[#E4572E] focus:ring-1 focus:ring-[#E4572E] transition-all"
+                    class="w-full pl-10 pr-4 py-3 rounded-xl bg-white dark:bg-[#111111] border border-[#E5DFD5] dark:border-[#282828] text-[#1F1B16] dark:text-white admin-input focus:outline-none focus:border-[#E4572E] focus:ring-1 focus:ring-[#E4572E] transition-all"
                   />
                 </div>
               </div>
             </div>
-            <p class="text-[11px] text-neutral-500 -mt-2">
+            <p class="admin-helper-text text-neutral-500 -mt-2">
               Tu nombre y apellido se asociarán como firma de autor en tus publicaciones editoriales.
             </p>
 
             <!-- Email (Read-only) -->
             <div>
-              <label for="emailInput" class="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5 uppercase tracking-wider">
+              <label for="emailInput" class="block admin-label text-neutral-700 dark:text-neutral-300 mb-1.5">
                 Correo Electrónico (Cuenta de Acceso)
               </label>
               <div class="relative">
@@ -360,10 +361,10 @@ const createdAtFormatted = currentUser.created_at
                   id="emailInput" 
                   value={userEmail} 
                   disabled 
-                  class="w-full pl-10 pr-4 py-3 rounded-xl bg-neutral-100 dark:bg-[#111111]/40 border border-[#E5DFD5] dark:border-[#282828] text-neutral-500 dark:text-neutral-400 text-sm cursor-not-allowed select-none"
+                  class="w-full pl-10 pr-4 py-3 rounded-xl bg-neutral-100 dark:bg-[#111111]/40 border border-[#E5DFD5] dark:border-[#282828] text-neutral-500 dark:text-neutral-400 admin-input cursor-not-allowed select-none"
                 />
               </div>
-              <p class="text-[11px] text-neutral-500 mt-1.5">
+              <p class="admin-helper-text text-neutral-500 mt-1.5">
                 El correo está vinculado a Supabase Auth y no puede modificarse desde este formulario.
               </p>
             </div>
@@ -416,7 +417,7 @@ const createdAtFormatted = currentUser.created_at
                 <Lock class="w-4 h-4" />
               </div>
               <div>
-                <h3 class="text-sm font-bold text-[#1F1B16] dark:text-white tracking-wide">Seguridad & Contraseña</h3>
+                <h3 class="admin-section-title text-[#1F1B16] dark:text-white">Seguridad & Contraseña</h3>
                 <p class="text-[11px] text-neutral-500 dark:text-neutral-400">Actualiza tu clave de acceso con validación criptográfica</p>
               </div>
             </div>
@@ -428,7 +429,7 @@ const createdAtFormatted = currentUser.created_at
           <form id="changePasswordForm" class="space-y-4">
             <!-- New Password Input -->
             <div>
-              <label for="newPasswordInput" class="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5 uppercase tracking-wider">
+              <label for="newPasswordInput" class="block admin-label text-neutral-700 dark:text-neutral-300 mb-1.5">
                 Nueva Contraseña <span class="text-[#2F4B3A]">*</span>
               </label>
               <div class="relative">
@@ -442,7 +443,7 @@ const createdAtFormatted = currentUser.created_at
                   required
                   minlength="6"
                   placeholder="Mínimo 6 caracteres seguros" 
-                  class="w-full pl-10 pr-10 py-3 rounded-xl bg-white dark:bg-[#111111] border border-[#E5DFD5] dark:border-[#282828] text-[#1F1B16] dark:text-white placeholder-neutral-400 dark:placeholder-neutral-600 text-sm focus:outline-none focus:border-[#2F4B3A] focus:ring-1 focus:ring-[#2F4B3A] transition-all font-mono"
+                  class="w-full pl-10 pr-10 py-3 rounded-xl bg-white dark:bg-[#111111] border border-[#E5DFD5] dark:border-[#282828] text-[#1F1B16] dark:text-white admin-input focus:outline-none focus:border-[#2F4B3A] focus:ring-1 focus:ring-[#2F4B3A] transition-all"
                 />
                 <button 
                   type="button" 
@@ -457,7 +458,7 @@ const createdAtFormatted = currentUser.created_at
 
             <!-- Confirm New Password Input -->
             <div>
-              <label for="confirmPasswordInput" class="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5 uppercase tracking-wider">
+              <label for="confirmPasswordInput" class="block admin-label text-neutral-700 dark:text-neutral-300 mb-1.5">
                 Confirmar Nueva Contraseña <span class="text-[#2F4B3A]">*</span>
               </label>
               <div class="relative">
@@ -471,7 +472,7 @@ const createdAtFormatted = currentUser.created_at
                   required
                   minlength="6"
                   placeholder="Repite la nueva contraseña" 
-                  class="w-full pl-10 pr-10 py-3 rounded-xl bg-white dark:bg-[#111111] border border-[#E5DFD5] dark:border-[#282828] text-[#1F1B16] dark:text-white placeholder-neutral-400 dark:placeholder-neutral-600 text-sm focus:outline-none focus:border-[#2F4B3A] focus:ring-1 focus:ring-[#2F4B3A] transition-all font-mono"
+                  class="w-full pl-10 pr-10 py-3 rounded-xl bg-white dark:bg-[#111111] border border-[#E5DFD5] dark:border-[#282828] text-[#1F1B16] dark:text-white admin-input focus:outline-none focus:border-[#2F4B3A] focus:ring-1 focus:ring-[#2F4B3A] transition-all"
                 />
                 <button 
                   type="button" 
@@ -485,12 +486,12 @@ const createdAtFormatted = currentUser.created_at
             </div>
 
             <!-- Live Match & Validation Feedback -->
-            <div id="passwordMismatchWarning" class="hidden text-[11px] text-red-500 dark:text-red-400 flex items-center gap-1.5 pt-1">
+            <div id="passwordMismatchWarning" class="hidden admin-error-text text-red-500 dark:text-red-400 flex items-center gap-1.5 pt-1">
               <AlertCircle class="w-3.5 h-3.5 shrink-0" />
               <span>Las contraseñas no coinciden.</span>
             </div>
 
-            <div id="passwordMatchSuccess" class="hidden text-[11px] text-[#2F4B3A] dark:text-[#A7C7B3] flex items-center gap-1.5 pt-1">
+            <div id="passwordMatchSuccess" class="hidden admin-helper-text text-[#2F4B3A] dark:text-[#A7C7B3] flex items-center gap-1.5 pt-1">
               <Check class="w-3.5 h-3.5 shrink-0" />
               <span>Las contraseñas coinciden correctamente.</span>
             </div>

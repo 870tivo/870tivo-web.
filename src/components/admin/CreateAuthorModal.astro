@@ -35,10 +35,10 @@ const { specialties = [] } = Astro.props;
           </svg>
         </div>
         <div>
-          <h3 id="createAuthorModalTitle" class="text-sm sm:text-base font-serif font-bold text-[#1F1B16] dark:text-white tracking-tight">
+          <h3 id="createAuthorModalTitle" class="admin-modal-title text-lg sm:text-xl text-[#1F1B16] dark:text-white">
             Nuevo Autor
           </h3>
-          <p class="text-[10px] text-[#78716A] dark:text-neutral-400 font-medium">
+          <p class="font-sans text-xs text-[#78716A] dark:text-neutral-400 font-medium">
             Ficha bibliográfica editorial
           </p>
         </div>
@@ -58,7 +58,7 @@ const { specialties = [] } = Astro.props;
     <!-- Body Compacto -->
     <div class="px-6 py-4 space-y-3.5 overflow-y-auto max-h-[calc(88vh-115px)]">
       <!-- Banner de Notificación Dinámico (Éxito o Error) -->
-      <div id="createAuthorNotice" class="hidden p-3 rounded-xl text-xs flex items-start gap-2.5 transition-all duration-200">
+      <div id="createAuthorNotice" class="hidden p-3 rounded-xl flex items-start gap-2.5 transition-all duration-200">
         <!-- Icono Error -->
         <svg id="noticeIconError" class="w-4 h-4 shrink-0 text-red-500 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -67,7 +67,7 @@ const { specialties = [] } = Astro.props;
         <svg id="noticeIconSuccess" class="hidden w-4 h-4 shrink-0 text-emerald-500 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
         </svg>
-        <span id="createAuthorNoticeMsg" class="font-medium leading-relaxed"></span>
+        <span id="createAuthorNoticeMsg" class="admin-error-text"></span>
       </div>
 
       <!-- ID y Slug ocultos si estamos editando -->
@@ -77,7 +77,7 @@ const { specialties = [] } = Astro.props;
 
       <!-- 1. AVATAR / FOTO EDITORIAL -->
       <div class="p-3.5 rounded-xl bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] space-y-2.5">
-        <label class="block text-[11px] font-bold text-[#1F1B16] dark:text-neutral-200 uppercase tracking-wider">
+        <label class="block admin-label text-[#1F1B16] dark:text-neutral-200">
           Fotografía / Retrato
         </label>
         
@@ -92,7 +92,7 @@ const { specialties = [] } = Astro.props;
             />
             <div 
               id="createAuthorAvatarPlaceholder" 
-              class="w-full h-full flex items-center justify-center font-serif font-bold text-base sm:text-lg text-[#E4572E] select-none"
+              class="w-full h-full flex items-center justify-center font-sans font-bold text-base sm:text-lg text-[#E4572E] select-none"
             >
               870
             </div>
@@ -150,7 +150,7 @@ const { specialties = [] } = Astro.props;
               </button>
             </div>
             
-            <p class="text-[10px] text-[#78716A] dark:text-neutral-400">
+            <p class="admin-helper-text text-[#78716A] dark:text-neutral-400">
               Sube directamente al bucket <code class="font-mono text-[#E4572E]">avatars</code> (JPG, PNG, WEBP, máx. 5MB).
             </p>
           </div>
@@ -162,7 +162,7 @@ const { specialties = [] } = Astro.props;
             type="url" 
             id="createAuthorAvatarUrlInput" 
             placeholder="Pegar URL directa de la imagen (https://...)" 
-            class="w-full px-3 py-1.5 bg-[#FAF6F0] dark:bg-[#141414] border border-[#E5DFD5] dark:border-[#282828] focus:border-[#E4572E] rounded-lg text-xs text-[#1F1B16] dark:text-white placeholder-[#A8A29E] dark:placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-[#E4572E] transition-all"
+            class="w-full px-3 py-1.5 bg-[#FAF6F0] dark:bg-[#141414] border border-[#E5DFD5] dark:border-[#282828] focus:border-[#E4572E] rounded-lg admin-input text-[#1F1B16] dark:text-white focus:outline-none focus:ring-1 focus:ring-[#E4572E] transition-all"
           />
         </div>
       </div>
@@ -170,20 +170,20 @@ const { specialties = [] } = Astro.props;
       <!-- 2. NOMBRE COMPLETO Y ESPECIALIDAD EDITORIAL -->
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
         <div>
-          <label for="createAuthorNameInput" class="block text-xs font-bold text-[#1F1B16] dark:text-neutral-200 uppercase tracking-wider mb-1">
+          <label for="createAuthorNameInput" class="block admin-label text-[#1F1B16] dark:text-neutral-200 mb-1">
             Nombre completo <span class="text-[#E4572E]">*</span>
           </label>
           <input 
             type="text" 
             id="createAuthorNameInput" 
             placeholder="Ej: Valeria Domínguez" 
-            class="w-full px-3.5 py-2 bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] focus:border-[#E4572E] rounded-xl text-sm text-[#1F1B16] dark:text-white placeholder-[#A8A29E] dark:placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-[#E4572E] transition-all shadow-xs"
+            class="w-full px-3.5 py-2 bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] focus:border-[#E4572E] rounded-xl admin-input text-[#1F1B16] dark:text-white focus:outline-none focus:ring-1 focus:ring-[#E4572E] transition-all shadow-xs"
           />
         </div>
 
         <div class="relative">
           <div class="flex items-center justify-between mb-1">
-            <label for="createAuthorSpecialtySelect" class="block text-xs font-bold text-[#1F1B16] dark:text-neutral-200 uppercase tracking-wider">
+            <label for="createAuthorSpecialtySelect" class="block admin-label text-[#1F1B16] dark:text-neutral-200">
               Especialidad
             </label>
             <button
@@ -200,7 +200,7 @@ const { specialties = [] } = Astro.props;
 
           <select 
             id="createAuthorSpecialtySelect" 
-            class="w-full px-3.5 py-2 bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] focus:border-[#E4572E] rounded-xl text-xs sm:text-sm text-[#1F1B16] dark:text-white focus:outline-none focus:ring-1 focus:ring-[#E4572E] transition-all shadow-xs cursor-pointer"
+            class="w-full px-3.5 py-2 bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] focus:border-[#E4572E] rounded-xl admin-input text-[#1F1B16] dark:text-white focus:outline-none focus:ring-1 focus:ring-[#E4572E] transition-all shadow-xs cursor-pointer"
           >
             <option value="">Seleccionar especialidad (opcional)</option>
             {specialties.map((spec) => (
@@ -217,13 +217,13 @@ const { specialties = [] } = Astro.props;
               <span class="text-[10px] font-bold uppercase tracking-wider text-[#78716A] dark:text-neutral-400">
                 Nueva especialidad
               </span>
-              <span id="inlineSpecialtyNotice" class="text-[10px] text-red-500 font-medium hidden"></span>
+              <span id="inlineSpecialtyNotice" class="admin-error-text text-red-500 hidden"></span>
             </div>
             <input 
               type="text" 
               id="inlineSpecialtyNameInput" 
               placeholder="Ej: Ilustrador, Editor..." 
-              class="w-full px-3 py-1.5 bg-[#FAF6F0] dark:bg-[#121214] border border-[#E5DFD5] dark:border-zinc-700 focus:border-[#E4572E] rounded-lg text-xs text-[#1F1B16] dark:text-white placeholder-[#A8A29E] dark:placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-[#E4572E]"
+              class="w-full px-3 py-1.5 bg-[#FAF6F0] dark:bg-[#121214] border border-[#E5DFD5] dark:border-zinc-700 focus:border-[#E4572E] rounded-lg admin-input text-[#1F1B16] dark:text-white focus:outline-none focus:ring-1 focus:ring-[#E4572E]"
             />
             <div class="flex items-center justify-end gap-2 pt-0.5">
               <button 
@@ -248,10 +248,10 @@ const { specialties = [] } = Astro.props;
       <!-- 3. BIOGRAFÍA EDITORIAL -->
       <div>
         <div class="flex items-center justify-between mb-1">
-          <label for="createAuthorBioInput" class="block text-xs font-bold text-[#1F1B16] dark:text-neutral-200 uppercase tracking-wider">
+          <label for="createAuthorBioInput" class="block admin-label text-[#1F1B16] dark:text-neutral-200">
             Biografía / Reseña <span class="text-[#78716A] dark:text-neutral-400 font-normal">(Opcional)</span>
           </label>
-          <span id="createAuthorBioCounter" class="text-[10px] font-mono text-[#78716A] dark:text-neutral-400">
+          <span id="createAuthorBioCounter" class="text-[10px] font-sans tabular-nums text-[#78716A] dark:text-neutral-400">
             0 / 500
           </span>
         </div>
@@ -260,13 +260,13 @@ const { specialties = [] } = Astro.props;
           rows="3" 
           maxlength="800"
           placeholder="Reseña biográfica, intereses, trayectoria o áreas de colaboración en el colectivo..."
-          class="w-full px-3.5 py-2 bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] focus:border-[#E4572E] rounded-xl text-xs sm:text-sm text-[#1F1B16] dark:text-white placeholder-[#A8A29E] dark:placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-[#E4572E] transition-all shadow-xs resize-y"
+          class="w-full px-3.5 py-2 bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] focus:border-[#E4572E] rounded-xl admin-input text-[#1F1B16] dark:text-white focus:outline-none focus:ring-1 focus:ring-[#E4572E] transition-all shadow-xs resize-y"
         ></textarea>
       </div>
 
       <!-- 4. ENLACE O RED SOCIAL ÚNICO -->
       <div>
-        <label for="createAuthorSocialInput" class="block text-xs font-bold text-[#1F1B16] dark:text-neutral-200 uppercase tracking-wider mb-1">
+        <label for="createAuthorSocialInput" class="block admin-label text-[#1F1B16] dark:text-neutral-200 mb-1">
           Enlace o red social <span class="text-[#78716A] dark:text-neutral-400 font-normal">(Opcional)</span>
         </label>
         <div class="relative">
@@ -274,13 +274,13 @@ const { specialties = [] } = Astro.props;
             type="text" 
             id="createAuthorSocialInput" 
             placeholder="https://instagram.com/usuario, @usuario o web personal" 
-            class="w-full pl-9 pr-3.5 py-2 bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] focus:border-[#E4572E] rounded-xl text-xs sm:text-sm text-[#1F1B16] dark:text-white placeholder-[#A8A29E] dark:placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-[#E4572E] transition-all shadow-xs"
+            class="w-full pl-9 pr-3.5 py-2 bg-white dark:bg-[#181818] border border-[#E5DFD5] dark:border-[#282828] focus:border-[#E4572E] rounded-xl admin-input text-[#1F1B16] dark:text-white focus:outline-none focus:ring-1 focus:ring-[#E4572E] transition-all shadow-xs"
           />
           <svg class="w-4 h-4 text-[#78716A] dark:text-neutral-400 absolute left-3 top-2.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
           </svg>
         </div>
-        <p class="mt-1 text-[10px] text-[#78716A] dark:text-neutral-400">
+        <p class="mt-1 admin-helper-text text-[#78716A] dark:text-neutral-400">
           Se enlazará automáticamente con su icono correspondiente (Instagram, X, Substack o Web) en su perfil público.
         </p>
       </div>
@@ -376,7 +376,7 @@ const { specialties = [] } = Astro.props;
     createAuthorNoticeMsg.textContent = msg;
 
     if (type === 'success') {
-      createAuthorNotice.className = 'p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs flex items-start gap-2.5';
+      createAuthorNotice.className = 'p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 flex items-start gap-2.5';
       noticeIconSuccess?.classList.remove('hidden');
       noticeIconError?.classList.add('hidden');
 
@@ -386,7 +386,7 @@ const { specialties = [] } = Astro.props;
         }
       }, 3500);
     } else {
-      createAuthorNotice.className = 'p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-700 dark:text-red-300 text-xs flex items-start gap-2.5';
+      createAuthorNotice.className = 'p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-700 dark:text-red-300 flex items-start gap-2.5';
       noticeIconError?.classList.remove('hidden');
       noticeIconSuccess?.classList.add('hidden');
     }

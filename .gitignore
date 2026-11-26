@@ -41,3 +41,7 @@ pnpm-debug.log*
 
 # Skills & Agents configuration
 skills/
+
+# Wiki local de Obsidian e instrucciones internas
+docs/
+AGENTS.md
