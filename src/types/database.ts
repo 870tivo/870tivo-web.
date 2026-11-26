@@ -147,7 +147,7 @@ export interface Database {
           user_email: string;
           action: string;
           target: string;
-          entity_type: 'post' | 'activity' | 'gallery' | 'role' | 'user';
+          entity_type: 'post' | 'activity' | 'gallery' | 'author' | 'role' | 'user';
           details: Json | null;
           created_at: string;
         };
@@ -156,7 +156,7 @@ export interface Database {
           user_email: string;
           action: string;
           target: string;
-          entity_type?: 'post' | 'activity' | 'gallery' | 'role' | 'user';
+          entity_type?: 'post' | 'activity' | 'gallery' | 'author' | 'role' | 'user';
           details?: Json | null;
           created_at?: string;
         };
@@ -165,7 +165,7 @@ export interface Database {
           user_email?: string;
           action?: string;
           target?: string;
-          entity_type?: 'post' | 'activity' | 'gallery' | 'role' | 'user';
+          entity_type?: 'post' | 'activity' | 'gallery' | 'author' | 'role' | 'user';
           details?: Json | null;
           created_at?: string;
         };

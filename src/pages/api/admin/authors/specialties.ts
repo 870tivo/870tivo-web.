@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { supabaseAdmin } from '../../../../lib/supabase';
+import { recordAuditLog } from '../../../../lib/auditLog';
 
 export const prerender = false;
 
@@ -42,7 +43,7 @@ export const GET: APIRoute = async () => {
  * Crea una nueva especialidad editorial en public.specialties,
  * asegurando la ausencia de duplicados insensibles a mayúsculas/minúsculas.
  */
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, locals }) => {
   try {
     const body = await request.json();
     const { name } = body;
@@ -121,6 +122,14 @@ export const POST: APIRoute = async ({ request }) => {
 
       throw error;
     }
+
+    await recordAuditLog({
+      userEmail: (locals as any)?.user?.email || 'Equipo Editorial',
+      action: 'creó la especialidad',
+      target: `«${data.name}»`,
+      entityType: 'author',
+      details: { id: data.id, kind: 'specialty' },
+    });
 
     return new Response(
       JSON.stringify({

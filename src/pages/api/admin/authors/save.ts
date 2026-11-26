@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { supabaseAdmin } from '../../../../lib/supabase';
+import { recordAuditLog } from '../../../../lib/auditLog';
 
 export const prerender = false;
 
@@ -44,7 +45,7 @@ async function getUniqueSlug(baseSlug: string, currentAuthorId?: string): Promis
  * Crea o actualiza un autor en la tabla public.authors sincronizando todos sus campos:
  * name, slug, specialty, bio, avatar_url, social_url, social_links.
  */
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, locals }) => {
   try {
     const body = await request.json();
     const { id, name, bio, specialty, avatarUrl, socialUrl, socialLinks } = body;
@@ -193,6 +194,14 @@ export const POST: APIRoute = async ({ request }) => {
       }
       result = data;
     }
+
+    await recordAuditLog({
+      userEmail: (locals as any)?.user?.email || 'Equipo Editorial',
+      action: id ? 'actualizó el autor' : 'creó el autor',
+      target: `«${result.name}»`,
+      entityType: 'author',
+      details: { id: result.id, slug: result.slug, specialty: result.specialty ?? null },
+    });
 
     return new Response(
       JSON.stringify({ success: true, author: result, message: `Autor «${result.name}» guardado exitosamente.` }),

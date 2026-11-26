@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { supabaseAdmin, supabase as defaultSupabase } from '../../../../lib/supabase';
 import { hasPermission } from '../../../../lib/auth';
+import { recordAuditLog } from '../../../../lib/auditLog';
 import { ALLOWED_MIME_TYPES, MAX_FILE_SIZE_BYTES, GALLERY_BUCKET } from '../../../../types/gallery';
 import type { GalleryUpdate } from '../../../../types/database';
 
@@ -244,6 +245,14 @@ export const POST: APIRoute = async (context) => {
       throw new Error(`Error al registrar la obra: ${insertError.message}`);
     }
 
+    await recordAuditLog({
+      userEmail: user.email || 'Equipo Galería',
+      action: status === 'publicado' ? 'publicó la obra' : 'añadió la obra',
+      target: `«${insertedItem.title}»`,
+      entityType: 'gallery',
+      details: { id: insertedItem.id, category: insertedItem.category, status: insertedItem.status },
+    });
+
     return new Response(
       JSON.stringify({ 
         success: true, 
@@ -318,7 +327,7 @@ export const DELETE: APIRoute = async (context) => {
     // 4. Obtener datos de la obra antes de eliminar (necesitamos la URL para limpiar Storage)
     const { data: existingItem, error: fetchError } = await supabaseAdmin
       .from('gallery')
-      .select('id, image_url')
+      .select('id, title, image_url')
       .eq('id', id)
       .single();
 
@@ -359,6 +368,14 @@ export const DELETE: APIRoute = async (context) => {
       // No bloquear la respuesta si falla la limpieza de Storage
       console.warn('Error limpiando archivo de Storage:', storageErr);
     }
+
+    await recordAuditLog({
+      userEmail: user.email || 'Equipo Galería',
+      action: 'eliminó la obra',
+      target: `«${existingItem.title}»`,
+      entityType: 'gallery',
+      details: { id: existingItem.id },
+    });
 
     return new Response(
       JSON.stringify({ success: true, message: 'Obra eliminada exitosamente.' }),
@@ -448,6 +465,24 @@ export const PATCH: APIRoute = async (context) => {
       console.error('Error actualizando obra en gallery:', error);
       throw new Error(`Error al actualizar obra: ${error.message}`);
     }
+
+    const isStatusOnly =
+      status !== undefined &&
+      title === undefined &&
+      description === undefined &&
+      category === undefined;
+
+    await recordAuditLog({
+      userEmail: user.email || 'Equipo Galería',
+      action: isStatusOnly
+        ? status === 'publicado'
+          ? 'publicó la obra'
+          : 'pasó a borrador la obra'
+        : 'actualizó la obra',
+      target: `«${updatedItem.title}»`,
+      entityType: 'gallery',
+      details: { id: updatedItem.id, updates },
+    });
 
     return new Response(
       JSON.stringify({ success: true, message: 'Obra actualizada exitosamente.', item: updatedItem }),
