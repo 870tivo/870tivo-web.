@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { supabaseAdmin, supabase as defaultSupabase } from '../../../../lib/supabase';
 import { hasPermission } from '../../../../lib/auth';
 import { ALLOWED_MIME_TYPES, MAX_FILE_SIZE_BYTES, GALLERY_BUCKET } from '../../../../types/gallery';
+import type { GalleryUpdate } from '../../../../types/database';
 
 export const prerender = false;
 
@@ -415,9 +416,9 @@ export const PATCH: APIRoute = async (context) => {
       );
     }
 
-    const updates: Record<string, any> = {};
+    const updates: GalleryUpdate = {};
     if (status !== undefined) {
-      if (!['publicado', 'borrador'].includes(status)) {
+      if (status !== 'publicado' && status !== 'borrador') {
         return new Response(
           JSON.stringify({ success: false, message: 'Estado inválido.' }),
           { status: 400, headers: { 'Content-Type': 'application/json' } }

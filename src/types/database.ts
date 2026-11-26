@@ -115,41 +115,77 @@ export interface Database {
         Row: {
           id: string;
           title: string;
-          artist: string | null;
-          technique: string | null;
-          dimensions: string | null;
-          year: number | null;
           description: string | null;
           image_url: string;
-          visible: boolean;
+          category: string;
+          status: 'publicado' | 'borrador';
           created_at: string;
-          updated_at: string;
         };
         Insert: {
           id?: string;
           title: string;
-          artist?: string | null;
-          technique?: string | null;
-          dimensions?: string | null;
-          year?: number | null;
           description?: string | null;
           image_url: string;
-          visible?: boolean;
+          category?: string;
+          status?: 'publicado' | 'borrador';
           created_at?: string;
-          updated_at?: string;
         };
         Update: {
           id?: string;
           title?: string;
-          artist?: string | null;
-          technique?: string | null;
-          dimensions?: string | null;
-          year?: number | null;
           description?: string | null;
           image_url?: string;
-          visible?: boolean;
+          category?: string;
+          status?: 'publicado' | 'borrador';
           created_at?: string;
-          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      audit_log: {
+        Row: {
+          id: string;
+          user_email: string;
+          action: string;
+          target: string;
+          entity_type: 'post' | 'activity' | 'gallery' | 'role' | 'user';
+          details: Json | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_email: string;
+          action: string;
+          target: string;
+          entity_type?: 'post' | 'activity' | 'gallery' | 'role' | 'user';
+          details?: Json | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_email?: string;
+          action?: string;
+          target?: string;
+          entity_type?: 'post' | 'activity' | 'gallery' | 'role' | 'user';
+          details?: Json | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      site_settings: {
+        Row: {
+          key: string;
+          value: Json;
+          updated_at: string | null;
+        };
+        Insert: {
+          key: string;
+          value: Json;
+          updated_at?: string | null;
+        };
+        Update: {
+          key?: string;
+          value?: Json;
+          updated_at?: string | null;
         };
         Relationships: [];
       };
@@ -474,6 +510,18 @@ export type PostUpdate = TablesUpdate<'posts'>;
 export type CommentRow    = Tables<'comments'>;
 export type CommentInsert = TablesInsert<'comments'>;
 export type CommentUpdate = TablesUpdate<'comments'>;
+
+export type GalleryRow    = Tables<'gallery'>;
+export type GalleryInsert = TablesInsert<'gallery'>;
+export type GalleryUpdate = TablesUpdate<'gallery'>;
+
+export type AuditLogRow    = Tables<'audit_log'>;
+export type AuditLogInsert = TablesInsert<'audit_log'>;
+export type AuditLogUpdate = TablesUpdate<'audit_log'>;
+
+export type SiteSettingRow    = Tables<'site_settings'>;
+export type SiteSettingInsert = TablesInsert<'site_settings'>;
+export type SiteSettingUpdate = TablesUpdate<'site_settings'>;
 
 export interface ActivityCategoryMeta {
   slug: ActivityCategory;

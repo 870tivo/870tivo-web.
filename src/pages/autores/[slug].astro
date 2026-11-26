@@ -89,14 +89,8 @@ if (author) {
     (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   );
 
-  // C. Obras en galería vinculadas por nombre (si existen)
-  const { count } = await supabase
-    .from('gallery')
-    .select('*', { count: 'exact', head: true })
-    .eq('visible', true)
-    .ilike('artist', `%${author.name}%`);
-
-  galleryCount = count || 0;
+  // C. `public.gallery` no posee columna `artist` en el esquema actual; se mantiene galleryCount en 0.
+  galleryCount = 0;
 }
 
 const pageTitle = author

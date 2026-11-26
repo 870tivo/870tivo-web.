@@ -10,15 +10,12 @@
  */
 
 import { supabaseAdmin } from '../../../lib/supabase';
+import type { AuditLogRow } from '../../../types/database';
 
-interface AuditItem {
-  id: string;
-  user_email: string;
-  action: string;
-  target: string;
-  entity_type: 'post' | 'activity' | 'gallery' | 'role' | 'user';
-  created_at: string;
-}
+type AuditItem = Pick<
+  AuditLogRow,
+  'id' | 'user_email' | 'action' | 'target' | 'entity_type' | 'created_at'
+>;
 
 let auditFeed: AuditItem[] = [];
 
@@ -31,7 +28,7 @@ try {
     .limit(7);
 
   if (!error && data && data.length > 0) {
-    auditFeed = data as AuditItem[];
+    auditFeed = data;
   }
 } catch {
   // Ignorar si no existe y continuar a la síntesis
