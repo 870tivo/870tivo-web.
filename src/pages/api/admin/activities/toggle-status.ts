@@ -4,6 +4,7 @@
  */
 import type { APIRoute } from 'astro';
 import { supabaseAdmin } from '../../../../lib/supabase';
+import { recordAuditLog } from '../../../../lib/auditLog';
 
 export const prerender = false;
 
@@ -48,6 +49,14 @@ export const PATCH: APIRoute = async (context) => {
         { status: 500, headers: { 'Content-Type': 'application/json' } }
       );
     }
+
+    await recordAuditLog({
+      userEmail: user.email || 'Equipo Editorial',
+      action: nextPublished ? 'publicó la actividad' : 'pasó a borrador la actividad',
+      target: `«${updated.title}»`,
+      entityType: 'activity',
+      details: { id: updated.id, status: updated.status, is_published: updated.is_published },
+    });
 
     return new Response(
       JSON.stringify({

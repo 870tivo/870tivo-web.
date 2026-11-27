@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { supabaseAdmin } from '../../../../lib/supabase';
 import { deleteCustomPost } from '../../../../lib/customPosts';
+import { recordAuditLog } from '../../../../lib/auditLog';
 
 export const prerender = false;
 
@@ -10,7 +11,7 @@ export const prerender = false;
  * REGLA ESTRICTA DE NEGOCIO: La publicación DEBE estar en estado 'borrador'.
  * Si está en estado 'publicado', la solicitud es rechazada con código 400.
  */
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, locals }) => {
   try {
     const body = await request.json();
     const { slug } = body;
@@ -66,6 +67,14 @@ export const POST: APIRoute = async ({ request }) => {
 
     // 3. Eliminar de posts-custom.json si existía allí
     deleteCustomPost(cleanSlug);
+
+    await recordAuditLog({
+      userEmail: (locals as any)?.user?.email || 'Equipo Editorial',
+      action: 'eliminó la publicación',
+      target: `«${existingPost?.title || cleanSlug}»`,
+      entityType: 'post',
+      details: { id: existingPost?.id ?? null, slug: cleanSlug },
+    });
 
     return new Response(
       JSON.stringify({

@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { savePost } from '../../../../lib/customPosts';
 import { supabaseAdmin } from '../../../../lib/supabase';
 import { notifySubscribersOnPublish } from '../../../../lib/newsletter';
+import { recordAuditLog } from '../../../../lib/auditLog';
 
 export const prerender = false;
 
@@ -9,7 +10,7 @@ export const prerender = false;
  * POST /api/admin/posts/save
  * Guarda o actualiza un ensayo/artículo editorial con su estado (publicado/borrador)
  */
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, locals }) => {
   try {
     const body = await request.json();
     const { 
@@ -67,7 +68,16 @@ export const POST: APIRoute = async ({ request }) => {
     });
 
     // Sincronizar en base de datos Supabase
+    let isUpdate = false;
     try {
+      const { data: existingPost } = await supabaseAdmin
+        .from('posts')
+        .select('id')
+        .eq('slug', finalSlug)
+        .maybeSingle();
+
+      isUpdate = Boolean(existingPost?.id);
+
       const { error: sbError } = await supabaseAdmin
         .from('posts')
         .upsert({
@@ -104,6 +114,23 @@ export const POST: APIRoute = async ({ request }) => {
         console.error('[save.ts] Error al despachar notificaciones:', notifyErr);
       });
     }
+
+    const auditAction =
+      postStatus === 'publicado'
+        ? 'publicó el artículo'
+        : postStatus === 'archivado'
+          ? 'archivó el artículo'
+          : isUpdate
+            ? 'actualizó el borrador'
+            : 'creó el borrador';
+
+    await recordAuditLog({
+      userEmail: (locals as any)?.user?.email || saved.author || 'Equipo Editorial',
+      action: auditAction,
+      target: `«${saved.title}»`,
+      entityType: 'post',
+      details: { slug: finalSlug, status: postStatus, category: badge?.trim() || 'EDITORIAL' },
+    });
 
     return new Response(
       JSON.stringify({

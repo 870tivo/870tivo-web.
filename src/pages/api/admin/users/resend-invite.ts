@@ -4,6 +4,7 @@ import { supabaseAdmin } from '../../../../lib/supabase';
 import { isUserAdminOrHasAccess } from '../../../../lib/auth';
 import { getSiteUrl } from '../../../../lib/mailer';
 import { sendInvitationEmail } from '../../../../lib/invitations';
+import { recordAuditLog } from '../../../../lib/auditLog';
 
 export const prerender = false;
 
@@ -274,6 +275,14 @@ export const POST: APIRoute = async ({ request, locals }) => {
     if (profileUpdateErr) {
       console.warn('[ResendInvite] No se pudo actualizar updated_at en profiles:', profileUpdateErr.message);
     }
+
+    await recordAuditLog({
+      userEmail: locals.user.email || 'Administrador',
+      action: 'reenvió la invitación a',
+      target: `«${targetEmail}»`,
+      entityType: 'user',
+      details: { userId: targetUser.id, email: targetEmail, resendCount },
+    });
 
     return jsonResponse(
       {

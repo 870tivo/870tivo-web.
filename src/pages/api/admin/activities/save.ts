@@ -5,6 +5,7 @@
  */
 import type { APIRoute } from 'astro';
 import { supabaseAdmin } from '../../../../lib/supabase';
+import { recordAuditLog } from '../../../../lib/auditLog';
 import type { ActivityCategory } from '../../../../types/database';
 
 export const prerender = false;
@@ -149,6 +150,14 @@ export const POST: APIRoute = async (context) => {
         );
       }
 
+      await recordAuditLog({
+        userEmail: user.email || 'Equipo Editorial',
+        action: 'actualizó la actividad',
+        target: `«${updated.title}»`,
+        entityType: 'activity',
+        details: { id: updated.id, slug: updated.slug, category: updated.category, status: updated.status },
+      });
+
       return new Response(
         JSON.stringify({
           success: true,
@@ -184,6 +193,14 @@ export const POST: APIRoute = async (context) => {
           { status: 500, headers: { 'Content-Type': 'application/json' } }
         );
       }
+
+      await recordAuditLog({
+        userEmail: user.email || 'Equipo Editorial',
+        action: 'creó la actividad',
+        target: `«${inserted.title}»`,
+        entityType: 'activity',
+        details: { id: inserted.id, slug: inserted.slug, category: inserted.category, status: inserted.status },
+      });
 
       return new Response(
         JSON.stringify({

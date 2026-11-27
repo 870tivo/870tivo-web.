@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { supabaseAdmin } from '../../../../lib/supabase';
 import { isUserAdminOrHasAccess } from '../../../../lib/auth';
+import { recordAuditLog } from '../../../../lib/auditLog';
 
 export const prerender = false;
 
@@ -35,6 +36,14 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
     const requesterIsSuperAdmin = Boolean(locals.isSuperAdmin || locals.role?.name === 'Super Administrador');
 
+    let targetLabel = userId;
+    try {
+      const { data: userLookup } = await supabaseAdmin.auth.admin.getUserById(userId);
+      if (userLookup?.user?.email) {
+        targetLabel = userLookup.user.email;
+      }
+    } catch {}
+
     // Consultar el rol actual del usuario objetivo en la base de datos
     const { data: currentUR } = await supabaseAdmin
       .from('user_roles')
@@ -65,6 +74,14 @@ export const POST: APIRoute = async ({ request, locals }) => {
         .eq('user_id', userId);
 
       if (delErr) throw delErr;
+
+      await recordAuditLog({
+        userEmail: locals.user.email || 'Administrador',
+        action: 'removió el rol de',
+        target: `«${targetLabel}»`,
+        entityType: 'user',
+        details: { userId, previousRole: currentRole?.name || null, newRole: null },
+      });
 
       return new Response(
         JSON.stringify({ success: true, message: 'Rol removido correctamente.', role: null }),
@@ -115,6 +132,14 @@ export const POST: APIRoute = async ({ request, locals }) => {
       .single();
 
     if (insertErr) throw insertErr;
+
+    await recordAuditLog({
+      userEmail: locals.user.email || 'Administrador',
+      action: `asignó el rol «${targetRole.name}» a`,
+      target: `«${targetLabel}»`,
+      entityType: 'user',
+      details: { userId, roleId: targetRole.id, roleName: targetRole.name },
+    });
 
     return new Response(
       JSON.stringify({ 

@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { supabaseAdmin } from '../../../../lib/supabase';
 import { isUserAdminOrHasAccess } from '../../../../lib/auth';
+import { recordAuditLog } from '../../../../lib/auditLog';
 
 export const prerender = false;
 
@@ -271,6 +272,19 @@ export const POST: APIRoute = async ({ request, locals }) => {
     if (profileInitErr) {
       console.warn('Aviso no crítico al inicializar perfil en public.profiles:', profileInitErr.message);
     }
+
+    await recordAuditLog({
+      userEmail: locals.user.email || 'Administrador',
+      action: 'invitó al usuario',
+      target: `«${normalizedEmail}»`,
+      entityType: 'user',
+      details: {
+        invitedUserId: invitedUser.id,
+        invitedEmail: normalizedEmail,
+        roleId: targetRole?.id || null,
+        roleName: targetRole?.name || null,
+      },
+    });
 
     // 10. Respuesta exitosa
     return jsonResponse(

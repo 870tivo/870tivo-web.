@@ -5,6 +5,7 @@
 import type { APIRoute } from 'astro';
 import { supabaseAdmin } from '../../../../lib/supabase';
 import { deleteActivityCover } from '../../../../lib/supabase-storage';
+import { recordAuditLog } from '../../../../lib/auditLog';
 
 export const prerender = false;
 
@@ -70,6 +71,14 @@ export const DELETE: APIRoute = async (context) => {
         console.warn('Aviso: no se pudo limpiar el afiche de Storage (no crítico):', storageErr);
       }
     }
+
+    await recordAuditLog({
+      userEmail: user.email || 'Equipo Editorial',
+      action: 'eliminó la actividad',
+      target: `«${targetTitle}»`,
+      entityType: 'activity',
+      details: { id: existingActivity?.id ?? id ?? null, slug: slug ?? null },
+    });
 
     return new Response(
       JSON.stringify({

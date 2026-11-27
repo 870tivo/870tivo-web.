@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { supabaseAdmin } from '../../../../lib/supabase';
 import { hasPermission } from '../../../../lib/auth';
 import { notifySubscribersOnPublish } from '../../../../lib/newsletter';
+import { recordAuditLog } from '../../../../lib/auditLog';
 
 export const prerender = false;
 
@@ -96,6 +97,14 @@ export const POST: APIRoute = async ({ request, locals }) => {
         console.error('[toggle-visibility] Error notificando suscriptores:', err)
       );
     }
+
+    await recordAuditLog({
+      userEmail: locals.user.email || 'Equipo Editorial',
+      action: isPublished ? 'publicó el artículo' : 'pasó a borrador el artículo',
+      target: `«${updatedPost.title}»`,
+      entityType: 'post',
+      details: { slug: updatedPost.slug, status: updatedPost.status, isPublished },
+    });
 
     return new Response(
       JSON.stringify({

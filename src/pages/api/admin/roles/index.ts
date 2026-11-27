@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { supabaseAdmin } from '../../../../lib/supabase';
 import { getAllRoles, isUserAdminOrHasAccess } from '../../../../lib/auth';
+import { recordAuditLog } from '../../../../lib/auditLog';
 import type { RoleFormInput } from '../../../../types/roles';
 
 export const prerender = false;
@@ -94,6 +95,14 @@ export const POST: APIRoute = async ({ request, locals }) => {
       throw error;
     }
 
+    await recordAuditLog({
+      userEmail: locals.user.email || 'Administrador',
+      action: 'creó el rol',
+      target: `«${data.name}»`,
+      entityType: 'role',
+      details: { id: data.id, name: data.name },
+    });
+
     return new Response(
       JSON.stringify({ success: true, message: 'Rol creado exitosamente.', role: data }),
       { status: 201, headers: { 'Content-Type': 'application/json' } }
@@ -186,6 +195,14 @@ export const PUT: APIRoute = async ({ request, locals }) => {
       throw error;
     }
 
+    await recordAuditLog({
+      userEmail: locals.user.email || 'Administrador',
+      action: 'actualizó el rol',
+      target: `«${data.name}»`,
+      entityType: 'role',
+      details: { id: data.id, name: data.name },
+    });
+
     return new Response(
       JSON.stringify({ success: true, message: 'Rol actualizado exitosamente.', role: data }),
       { status: 200, headers: { 'Content-Type': 'application/json' } }
@@ -272,6 +289,14 @@ export const DELETE: APIRoute = async ({ request, locals }) => {
       .eq('id', id);
 
     if (deleteErr) throw deleteErr;
+
+    await recordAuditLog({
+      userEmail: locals.user.email || 'Administrador',
+      action: 'eliminó el rol',
+      target: `«${role.name}»`,
+      entityType: 'role',
+      details: { id, name: role.name },
+    });
 
     return new Response(
       JSON.stringify({ success: true, message: 'Rol eliminado exitosamente.' }),
